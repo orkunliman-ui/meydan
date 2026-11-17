@@ -40,6 +40,8 @@
 @media (max-width: 500px) { .veille-dialog header { top: -14px; } }
 
 .verification-reglage input, .veille-dialog input { accent-color: var(--paper); }
+/* Équipe locale (tâche 18 du 17/11) : « Mac hors ligne » dans la couleur « t'attend » du thème, le reste de la ligne terne. */
+.equipe .equipe-mac b, .verification-reglage .mac-avis.est-hors { color: var(--needs); }
 
 /* Le formulaire prend le premier plan pendant la création, y compris sur un téléphone de 667 points de haut. */
 [data-reel='oui'] .app.is-mobile .rail:has(.pli.is-ouvert) > :is(.scene, .veille-acces),

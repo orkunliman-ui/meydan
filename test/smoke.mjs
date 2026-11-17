@@ -1,5 +1,6 @@
 // Essai de bout en bout du moteur, isolé du vrai : port, dossier de données et serveur tmux à part.
 // node test/smoke.mjs   → sort en 0 si tout passe, 1 sinon.
+import { FAUX_NAVIGATEUR } from './outils/environnement-essai.mjs' // en premier : nom et navigateur fixés avant lib/
 import assert from 'node:assert/strict'
 import crypto from 'node:crypto'
 import fs from 'node:fs'
@@ -1368,7 +1369,7 @@ try {
     const recu = e.slice(e.lastIndexOf('FAUX_CLAUDE '))
     const nav = path.join(journal(m), 'navigateur-mcp.json')
     assert.ok(recu.includes(` --chrome --mcp-config ${nav} --restricted --strict-mcp-config --tools Bash,Read,Edit,Write,Grep,Glob`) && recu.split(' --mcp-config ').length === 2 && recu.split(' --chrome ').length === 2 && !e.includes('--no-chrome') && recu.includes('--permission-mode auto Lis ton brief et suis-le : '), e)
-    assert.deepEqual(JSON.parse(fs.readFileSync(nav, 'utf8')), { mcpServers: { 'orkun-browser': { command: '/usr/bin/node', args: ['~/chrome-bridge/src/mcp.mjs'] } } })
+    assert.deepEqual(JSON.parse(fs.readFileSync(nav, 'utf8')), { mcpServers: { 'orkun-browser': { command: '/usr/bin/node', args: [FAUX_NAVIGATEUR] } } })
     assert.equal(fs.statSync(nav).mode & 0o777, 0o600)
     assert.deepEqual(JSON.parse(fs.readFileSync(path.join(journal(m), 'reglages.json'), 'utf8')).permissions.deny, ['Bash(git push:*)', 'Bash(pm2:*)', 'Bash(sudo:*)', 'Bash(systemctl:*)'])
     assert.ok(chromeDansBrief(m), m.role)

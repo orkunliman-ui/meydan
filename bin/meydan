@@ -3,6 +3,7 @@
 // Parle au serveur local avec le jeton de la console (MEYDAN_ID, MEYDAN_TOKEN_FILE, MEYDAN_PORT, posés par Meydan).
 import fs from 'node:fs'
 import { execFileSync } from 'node:child_process'
+import { NOM, deNom } from '../lib/nom.mjs'
 
 const AIDE = `meydan — commandes des agents
 
@@ -10,11 +11,11 @@ Retours locaux (trois entrées par projet/session au total) :
   meydan suggere "<amélioration concrète>"
   meydan plainte "<friction rencontrée>"
 
-Toute console Meydan (mémoire du projet, validée par Orkun) :
+Toute console Meydan (mémoire du projet, validée par ${NOM}) :
   meydan fait "<une phrase>"              proposer un fait durable, utile à toute future console du projet (jamais un secret)
   meydan faits                            les faits validés du projet de cette console
 
-Toute console Meydan (navigateur de la console, pages http://localhost:<port> seulement ; Orkun le voit sur le plateau) :
+Toute console Meydan (navigateur de la console, pages http://localhost:<port> seulement ; ${NOM} le voit sur le plateau) :
   meydan nav ouvre <url>                  ouvrir une page (lance le navigateur au besoin)
   meydan nav capture                      capture d'écran PNG, rend son chemin
   meydan nav clique <sélecteur CSS>       clic réel sur l'élément
@@ -26,7 +27,7 @@ Toute console Meydan (navigateur de la console, pages http://localhost:<port> se
 Équipe :
   meydan statut <verbe> "<une ligne>"     déclarer son statut (working, needs-decision, blocked, done, failed, resolved)
   meydan etat                             où en est l'équipe
-  meydan capitaine "<mission>"            sur l'ordre d'Orkun : cette console devient capitaine d'une équipe
+  meydan capitaine "<mission>"            sur l'ordre ${deNom()} : cette console devient capitaine d'une équipe
                                           posée sur son dossier (elle peut ensuite lancer des équipiers)
 
 Réservé au vérificateur de fin :
@@ -120,10 +121,10 @@ if (cmd === 'nav') {
   const texte = a.join(' ').trim()
   if (!texte) fin('usage : meydan fait "<une phrase>"', 2)
   const r = await appel('POST', 'fait', { texte })
-  console.log(r.deja ? `déjà dans la mémoire du projet « ${r.projet} » (${r.deja === 'valide' ? 'validé par Orkun' : 'proposé, en attente d’Orkun'}) : rien d’ajouté` : `proposé pour la mémoire du projet « ${r.projet} » (${r.id}) : Orkun le validera`)
+  console.log(r.deja ? `déjà dans la mémoire du projet « ${r.projet} » (${r.deja === 'valide' ? `validé par ${NOM}` : `proposé, en attente ${deNom('’')}`}) : rien d’ajouté` : `proposé pour la mémoire du projet « ${r.projet} » (${r.id}) : ${NOM} le validera`)
 } else if (cmd === 'faits') {
   const r = await appel('GET', 'faits')
-  console.log(`Mémoire du projet « ${r.projet} » : ${r.faits.length} fait(s) validé(s) par Orkun${r.proposes ? `, ${r.proposes} proposition(s) en attente` : ''}`)
+  console.log(`Mémoire du projet « ${r.projet} » : ${r.faits.length} fait(s) validé(s) par ${NOM}${r.proposes ? `, ${r.proposes} proposition(s) en attente` : ''}`)
   for (const f of r.faits) console.log(`- ${f}`)
 } else if (cmd === 'roles') {
   for (const r of (await appel('GET', 'roles')).roles) console.log(`${r.nom} — ${r.agent}${r.modele ? ` ${r.modele}` : ''} — ${r.ecrit ? 'écrit' : 'lit seulement'} — ${r.resume}`)
@@ -157,7 +158,7 @@ if (cmd === 'nav') {
   }
   const r = await appel('POST', 'lancer', { role, nom, tache, base, dossier })
   // 202 (volet quota) : l'équipe est « à valider », rien n'est lancé tant qu'Orkun n'a pas accepté.
-  if (r.attente) console.log(`demande envoyée à Orkun (${r.demande}) : il doit l'accepter ; tu recevras sa réponse dans cette console par un message [Meydan]. Ne relance pas la commande.`)
+  if (r.attente) console.log(`demande envoyée à ${NOM} (${r.demande}) : il doit l'accepter ; tu recevras sa réponse dans cette console par un message [Meydan]. Ne relance pas la commande.`)
   else console.log(`lancé : ${r.id} · ${r.nom}\n  dossier ${r.dossier}${r.branche ? `\n  branche ${r.branche}` : ''}`)
 } else if (cmd === 'dire') {
   if (!a[0] || !a[1]) fin('usage : meydan dire <id> "<une ligne>"', 2)

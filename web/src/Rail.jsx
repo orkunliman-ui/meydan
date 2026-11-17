@@ -67,6 +67,9 @@ export function Composer({ onCreated, rev, fold, extra, pied }) {
   const [mission, setMission] = useState('')
   const [verifierFin, setVerifierFin] = useState(false)
   const [validerLancements, setValiderLancements] = useState(false) // volet quota : chaque lancement d'équipier attend ton accord
+  // Équipe locale (tâche 18 du 17/11, lib/locale.mjs) : capitaine et équipiers sur le modèle du Mac d'Orkun.
+  const [enLocal, setEnLocal] = useState(false)
+  const [mac, setMac] = useState(null) // GET /api/locale : { enLigne, raison, modele, max, ouvertes } ; null = pas lu
   const [consigne, setConsigne] = useState('') // premier message donné aux agents lancés (facultatif)
   // « Dans une copie » (volet copies, Copies.jsx) : la demande de copie, ou null ; `tour` remet la case à zéro après un lancement.
   const [copie, setCopie] = useState(null)
@@ -102,6 +105,19 @@ export function Composer({ onCreated, rev, fold, extra, pied }) {
     }
   }, [voit, compte])
   const aConnecter = parCompte && compte === '2' && !!comptes?.some((x) => x.kind === kind && x.compte === '2' && x.connecte === false)
+  // Le Mac, relu toutes les 10 s tant que la case « équipe locale » est cochée et le formulaire visible.
+  const voitMac = voit && equipe && enLocal
+  useEffect(() => {
+    if (!voitMac) return
+    let vivant = true
+    const lis = () => api('GET', '/api/locale').then((r) => vivant && setMac(r?.locale || null), () => vivant && setMac(null))
+    lis()
+    const t = setInterval(lis, 10000)
+    return () => {
+      vivant = false
+      clearInterval(t)
+    }
+  }, [voitMac])
 
   useEffect(() => {
     api('GET', '/api/projects').then((m) => {
@@ -116,7 +132,7 @@ export function Composer({ onCreated, rev, fold, extra, pied }) {
     setError('')
     try {
       if (equipe) {
-        const r = await api('POST', '/api/equipes', { cwd, mission, verifierFin, ...(validerLancements ? { validerLancements } : {}) })
+        const r = await api('POST', '/api/equipes', { cwd, mission, verifierFin, ...(validerLancements ? { validerLancements } : {}), ...(enLocal ? { locale: true } : {}) })
         onCreated([{ id: r.team.chief }])
         setMission('')
       } else {
@@ -217,7 +233,20 @@ export function Composer({ onCreated, rev, fold, extra, pied }) {
         </label>
       )}
       {equipe && <label className="verification-reglage"><input type="checkbox" checked={verifierFin} onChange={(e) => setVerifierFin(e.target.checked)} /> Vérifier à la fin · Codex</label>}
+      {/* Juste après « Vérifier à la fin » : au téléphone debout, les deux cases partagent une rangée (budget.css). */}
       {equipe && <CaseValider checked={validerLancements} onChange={setValiderLancements} />}
+      {/* L'état du Mac tient dans la ligne de la case (mesuré le 17/11 : un avis à part tombait sous le bas d'un écran de
+          768 px et prenait une rangée de plus à la liste du téléphone) ; la raison détaillée en bulle, et dans le refus. */}
+      {equipe && (
+        <label className="verification-reglage">
+          <input type="checkbox" name="locale" checked={enLocal} onChange={(e) => { setEnLocal(e.target.checked); setError('') }} /> <span title="Capitaine et équipiers sur le Qwen du Mac (oMLX)">Équipe locale · Mac</span>
+          {enLocal && mac && (
+            <span className={cls('mac-avis', !mac.enLigne && 'est-hors')} role="status" title={mac.enLigne ? `${mac.modele} · ${mac.ouvertes}/${mac.max} consoles locales ouvertes` : `${mac.raison} : réveille le Mac`}>
+              {mac.enLigne ? ` · en ligne ${mac.ouvertes}/${mac.max}` : ' · hors ligne'}
+            </span>
+          )}
+        </label>
+      )}
       {!equipe && kind !== 'shell' && (
         <label className="field mission consigne">
           <span>Consigne</span>
@@ -699,7 +728,7 @@ function Equipe({ team, membres, activeId, onPick, actions }) {
     <li className={cls('equipe', equipeAttend(team) && 'is-prete')}>
       <div className="equipe-tete">
         <span className="equipe-titre">
-          <i>{prete ? 'ÉQUIPE PRÊTE' : appel ? 'ÉQUIPE · T’ATTEND' : 'ÉQUIPE'}</i>
+          <i>{prete ? 'ÉQUIPE PRÊTE' : appel ? 'ÉQUIPE · T’ATTEND' : team.locale ? 'ÉQUIPE LOCALE' : 'ÉQUIPE'}</i>
           <b>{team.nom}</b>
         </span>
         <button type="button" className={cls('arreter', arme === 'arreter' && 'is-arme')} disabled={busy} onClick={() => agir('arreter')}>
@@ -710,8 +739,15 @@ function Equipe({ team, membres, activeId, onPick, actions }) {
         <span className="equipe-bas">
           {shortDir(team.projet)}
           {team.git ? (team.branche ? ` · ${team.branche}` : '') : ' · sans git'} · {crew} équipier{crew > 1 ? 's' : ''}
+          {team.locale ? ' · sur le Mac' : ''}
           {team.livre ? ` · livrée ${team.livre.apres.slice(0, 7)}` : ''}
         </span>
+        {/* Équipe locale : le Mac (oMLX par son tunnel) ne répond plus ; ses consoles attendent, `meydan lancer` refuse. */}
+        {team.locale && team.mac?.enLigne === false && (
+          <span className="equipe-bas equipe-mac" role="status">
+            <b>Mac hors ligne</b> : réveille-le · {team.mac.raison}
+          </span>
+        )}
         {livraison && (
           <span className="equipe-bas equipe-contenu">
             {livraison.fichiers} fichier{livraison.fichiers > 1 ? 's' : ''} · +{livraison.ajouts} −{livraison.retraits} · {livraison.noms.join(' · ')}

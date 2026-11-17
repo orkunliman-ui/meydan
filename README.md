@@ -53,6 +53,8 @@ wherever you are.
   - A mission map (key `X`) shows the whole team.
   - The captain relays messages, verifies the work and delivers only when you say go.
   - Each launch can wait for your approval.
+  - *Experimental:* a team can run on a local model (Claude Code pointed at an oMLX server on your Mac, through an
+    SSH tunnel).
 - **Command bar and spoken orders.** Commands like « relaunch the builder », « who is waiting for me? » or « tell the
   reviewer to … » go through a small planner on your own Claude subscription (`claude -p`).
 - **Project memory.** Agents propose durable facts, you validate them, and every future console of the project starts
@@ -101,6 +103,9 @@ ssh -L 3070:127.0.0.1:3070 you@your-server        # from your computer
 
 Keep that link private: it opens your shells.
 
+Agents address you by name in their instructions (« Alex te confie une mission… »): by default your Unix user name,
+or set `MEYDAN_NOM=Alex` in `meydan.env`.
+
 ## Phone access (optional)
 
 1. Create the login:
@@ -132,7 +137,6 @@ commands.
 
 - **Next phase: a second board for local models.** The same canvas, dedicated to agents running on local LLMs (for
   example on a Mac with MLX), next to the cloud agents' board.
-- Your own name in the agents' instructions: they currently address the author, Orkun (coming next).
 - English interface.
 - Proper isolation of team members (dedicated Unix user, sandbox).
 

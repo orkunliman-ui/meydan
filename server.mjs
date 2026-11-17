@@ -44,7 +44,10 @@ import { ouvreNomsComptes } from './lib/comptes-noms.mjs'
 import { ouvreEspaces } from './lib/espaces.mjs'
 // Lot « sécurité » : garde du texte risqué dans la barre d'envoi (décision ordres-4).
 import { gardeEnvoi } from './lib/garde-envoi.mjs'
+import { NOM, deNom } from './lib/nom.mjs'
 import { ouvreBudget } from './lib/budget.mjs' // volet quota (17/11) : usage par console, budgets, validation des lancements
+// Équipes « locales » (tâche 18 du 17/11) : Claude Code sur le modèle du Mac d'Orkun (oMLX par son tunnel).
+import { ouvreLocale } from './lib/locale.mjs'
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url))
 const DATA = process.env.MEYDAN_DATA || path.join(ROOT, 'data')
@@ -210,6 +213,22 @@ const CODEX_SESSIONS = process.env.MEYDAN_CODEX_SESSIONS || path.join(HOME, '.co
 const COMPTE2_CLAUDE = path.resolve(process.env.MEYDAN_COMPTE2_CLAUDE || path.join(HOME, '.meydan-comptes', 'claude-2'))
 const COMPTE2_CODEX = path.resolve(process.env.MEYDAN_COMPTE2_CODEX || path.join(HOME, '.meydan-comptes', 'codex-2'))
 const comptes = ouvreComptes({ home: HOME, claudeProjets: CLAUDE_PROJECTS, codexSessions: CODEX_SESSIONS, compte2Claude: COMPTE2_CLAUDE, compte2Codex: COMPTE2_CODEX })
+// Consoles locales (lib/locale.mjs) : une console Claude marquée `local`, son dossier de configuration à elle, le Mac sondé
+// tant qu'une équipe locale existe (`teams` est déclaré plus bas : lu seulement par le minuteur, après le démarrage).
+const locale = ouvreLocale({ DATA, actif: () => teams.some((t) => t.locale) })
+// Où lire les conversations d'une console Claude : son compte (1 ou 2), ou son propre dossier si elle est locale.
+const projetsClaude = (c) => (c?.local ? locale.journaux(c.id) : comptes.journaux('claude', compteDe(c)).projets)
+// L'indicateur « Mac hors ligne » : porté par chaque équipe locale (`team.mac`), poussé à l'écran à chaque changement.
+const macVue = () => {
+  const e = locale.etat()
+  return { enLigne: e.enLigne, raison: e.raison, depuis: e.depuis }
+}
+locale.surChangement(() => {
+  for (const t of teams.filter((x) => x.locale)) {
+    t.mac = macVue()
+    broadcast({ type: 'team', team: t })
+  }
+})
 // Fichiers d'identité des agents : jamais servis par Meydan, où qu'ils soient (route /fichier).
 const IDENTITES = new Set(['.credentials.json', '.claude.json', 'auth.json'])
 // Un chemin RÉEL (après realpath) que Meydan peut montrer : sous le dossier personnel, hors dossiers et fichiers cachés
@@ -286,14 +305,14 @@ const KINDS = {
   // `--add-dir` qui avalerait la valeur suivante. Aucun fait : rien d'ajouté, commande inchangée.
   claude: {
     label: 'Claude',
-    cmd: (c) => `${CLAUDE_BIN}${c.team ? '' : lancementModele(c)}${!c.team && c.permission === 'auto' ? ' --permission-mode auto' : ''}${memoireAuLancement(c)} --settings ${c.team ? memberSettings(c) : CLAUDE_HOOKS} --add-dir ${envois.dirOf(DATA, c.id)}${c.team ? claudeTeamArgs(c) : ''}`,
+    cmd: (c) => (c.local ? ligneLocale(c) : `${CLAUDE_BIN}${c.team ? '' : lancementModele(c)}${!c.team && c.permission === 'auto' ? ' --permission-mode auto' : ''}${memoireAuLancement(c)} --settings ${c.team ? memberSettings(c) : CLAUDE_HOOKS} --add-dir ${envois.dirOf(DATA, c.id)}${c.team ? claudeTeamArgs(c) : ''}`),
     // Reprise d'une console hors équipe : `--system-prompt-snapshot off` (décision d'Orkun du 17/11, memoire-3 : « Rafraîchir
     // à chaque reprise »). Sans lui, Claude Code (2.1.326) renvoie l'invite système enregistrée à la première demande de la
     // conversation, faits de projet compris, même quand la relance passe un autre fichier (sondé le 17/11 avec Haiku :
     // ALPHA restait ALPHA ; avec « off », le nouveau mot était lu). Les équipiers ne reçoivent pas de faits : inchangés.
     resume: (base, agent, c) => `${base}${c?.team ? '' : ' --system-prompt-snapshot off'} --resume ${agent}`,
-    journal: (agent, compte) => {
-      const projets = comptes.journaux('claude', compte).projets
+    journal: (agent, compte, c) => {
+      const projets = c?.local ? locale.journaux(c.id) : comptes.journaux('claude', compte).projets
       return fs.readdirSync(projets).some((d) => nonEmpty(path.join(projets, d, `${agent}.jsonl`)))
     },
   },
@@ -438,7 +457,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 function resumable(c) {
   if (!/^[A-Za-z0-9][A-Za-z0-9-]{7,79}$/.test(String(c.agent ?? '')) || !KINDS[c.kind]?.journal) return false
   try {
-    return KINDS[c.kind].journal(c.agent, compteDe(c))
+    return KINDS[c.kind].journal(c.agent, compteDe(c), c)
   } catch {
     return false // dossier des journaux absent ou illisible : on repart à neuf
   }
@@ -515,12 +534,16 @@ async function terminalDans(id, dir, ident = null) {
 async function openSession(c, dir, launch, commande = null, ident = null) {
   const id = c.id
   const env = ['-e', `MEYDAN_ID=${id}`, '-e', `MEYDAN_PORT=${PORT}`, '-e', `MEYDAN_TOKEN_FILE=${fichierJeton(c)}`]
+  // Le nom réglé (lib/nom.mjs, déjà validé) suit jusqu'à `meydan` dans la console : CHILD_ENV ne le transmet pas.
+  if (process.env.MEYDAN_NOM !== undefined) env.push('-e', `MEYDAN_NOM=${NOM}`)
   // Compte 2 (« Plusieurs comptes Claude / Codex ») : son dossier passe par l'environnement de la SESSION, pas devant la
   // commande : un `claude` ou un `codex login --device-auth` relancé à la main dans cette console reste sur ce compte.
   // `prepare` crée d'abord le dossier s'il manque (Codex refuse de démarrer sans lui). Compte 1 : rien de plus.
   let compteEnv
   try {
-    compteEnv = comptes.prepare(c.kind, compteDe(c))
+    // Console locale : son dossier de configuration (prêt avant le lancement) et le Mac à la place d'Anthropic, par
+    // l'environnement de la session (lib/locale.mjs, envSession : aucun secret dedans).
+    compteEnv = c.local ? (locale.prepare(c.id), locale.envSession(c.id)) : comptes.prepare(c.kind, compteDe(c))
   } catch (e) {
     // Le détail (chemin complet) reste au journal du serveur ; la page reçoit un message clair (relecture du 11/11).
     console.error(`[comptes] dossier du compte ${compteDe(c)} (${c.kind}) inutilisable : ${e.message}`)
@@ -543,7 +566,16 @@ async function revive(c) {
   if (!Object.hasOwn(KINDS, c.kind)) throw refus(`type « ${c.kind} » indisponible sur ce serveur`)
   if ((await panes()).has(c.id)) throw refus('cette console tourne déjà')
   const dir = safeDir(c.cwd) // lève si le dossier a disparu
-  await openSession(c, dir, launchOf(c, true))
+  // Console locale : plafond et Mac joignable, comme à son lancement (lib/locale.mjs) ; Mac hors ligne au redémarrage du
+  // VPS : elle n'est pas rouverte (dit au journal par reviveAfterBoot), Orkun la relance une fois le Mac réveillé.
+  // Sans elle-même : au redémarrage du VPS, la console à rouvrir n'est pas encore « closed » dans l'état (relecture du
+  // 17/11 : avec 4 consoles locales sur 4, aucune n'était rouverte, chacune se comptait).
+  const libere = c.local ? await locale.prend(consoles.filter((x) => x !== c)) : () => {}
+  try {
+    await openSession(c, dir, launchOf(c, true))
+  } finally {
+    libere()
+  }
   c.cmd = ''
   c.note = ''
   c.status = c.kind === 'shell' ? 'shell' : 'starting'
@@ -795,7 +827,7 @@ function journalDe(c) {
   const m = journaux.get(c.id)
   if (m && m.agent === c.agent && fs.existsSync(m.f)) return m.f
   // Dans les dossiers du compte de la console (volet comptes : le compte 2 a les siens).
-  const f = c.kind === 'claude' ? fil.journalClaude(comptes.journaux('claude', compteDe(c)).projets, c.agent) : fil.journalCodex(comptes.journaux('codex', compteDe(c)).sessions, c.agent)
+  const f = c.kind === 'claude' ? fil.journalClaude(projetsClaude(c), c.agent) : fil.journalCodex(comptes.journaux('codex', compteDe(c)).sessions, c.agent)
   if (f) journaux.set(c.id, { agent: c.agent, f })
   else journaux.delete(c.id)
   return f
@@ -1003,14 +1035,28 @@ async function reconcile1() {
 // au plus par console. MEYDAN_CONFIANCE_AUTO=non coupe tout (les bancs d'essai, dont le décor garde cette question).
 const CONFIANCE_AUTO = process.env.MEYDAN_CONFIANCE_AUTO !== 'non'
 const confianceEssai = new Map() // console → heure de la dernière tentative
+// Les dossiers que Meydan met lui-même sur la ligne `--add-dir` d'une console Claude : ses pièces jointes, et pour un membre
+// d'équipe son dossier d'équipe. Dans un dossier de configuration neuf (console locale, lib/locale.mjs), Claude Code demande
+// pour chacun « Adding a new directory » : Meydan y répond oui, pour CES dossiers seulement (le ~/.claude d'Orkun les
+// connaît déjà par ~/meydan, approuvé : aucune question chez les autres consoles).
+const dossiersMeydan = (c) => [envois.dirOf(DATA, c.id), ...(c.team ? [c.chief ? teamDir(c.team) : memberDir(c)] : [])].map((d) => path.resolve(d))
 async function accepteConfiance(c, ecran) {
   if (!CONFIANCE_AUTO || (c.kind !== 'claude' && c.kind !== 'codex')) return false
-  const rang = question.rangConfiance(ecran)
-  if (rang < 0 || Date.now() - (confianceEssai.get(c.id) || 0) < 15000) return false
-  confianceEssai.set(c.id, Date.now())
+  let rang = question.rangConfiance(ecran)
+  let quoi = `dossier ${c.cwd}`
+  if (rang < 0 && c.local) {
+    const ajoute = question.dossierAjoute(ecran)
+    if (ajoute && dossiersMeydan(c).includes(ajoute.dossier)) [rang, quoi] = [ajoute.rang, `dossier ajouté ${ajoute.dossier} (posé par Meydan)`]
+  }
+  // Une tentative toutes les 15 s au plus, PAR QUESTION (dossier) : les questions d'un même lancement (confiance du dossier,
+  // puis un « Adding a new directory » par dossier ajouté) se suivent sans attendre 15 s chacune.
+  const cle = `${c.id}|${quoi}`
+  if (rang < 0 || Date.now() - (confianceEssai.get(cle) || 0) < 15000) return false
+  if (confianceEssai.size > 500) confianceEssai.clear()
+  confianceEssai.set(cle, Date.now())
   try {
     await question.repondre({ ecran: () => tmux('capture-pane', '-p', '-J', '-t', c.id), touche: (t) => tmux('send-keys', '-t', c.id, t) }, rang, question.lireQuestion(ecran).options[rang].texte)
-    console.log(`[confiance] ${c.name} : dossier ${c.cwd} approuvé (réponse automatique, ordre d'Orkun du 11/11)`)
+    console.log(`[confiance] ${c.name} : ${quoi} approuvé (réponse automatique, ordre d'Orkun du 11/11)`)
     return true
   } catch (e) {
     console.error(`[confiance] ${c.name} : ${e.message}`)
@@ -1268,13 +1314,19 @@ function memberSettings(c) {
   const { hooks } = JSON.parse(fs.readFileSync(CLAUDE_HOOKS, 'utf8'))
   // La garde des commandes Bash (n°13) : un refus (sortie 2) bloque la commande et son message va au modèle.
   hooks.PreToolUse = [...(hooks.PreToolUse || []), { matcher: 'Bash', hooks: [{ type: 'command', command: GARDE_BASH }] }]
-  fs.writeFileSync(file, JSON.stringify({ hooks, permissions: { deny: REFUS_MEMBRE }, disabledMcpjsonServers: equipage.mcpNames(c.cwd) }, null, 2) + '\n', { mode: 0o600 })
+  // Membre local (lib/locale.mjs) : la clé d'oMLX par `apiKeyHelper` (lue par Claude Code, absente de l'environnement du
+  // Bash de l'agent : sondé le 17/11, `env | grep -c ANTHROPIC_AUTH_TOKEN` → 0), et Bash permis par une règle (voir
+  // ligneLocale : le mode « auto » ne marche pas sur le Mac).
+  const local = c.local ? { apiKeyHelper: locale.aideCle } : {}
+  const permissions = { ...(c.local && { allow: ['Bash'] }), deny: REFUS_MEMBRE }
+  fs.writeFileSync(file, JSON.stringify({ hooks, permissions, disabledMcpjsonServers: equipage.mcpNames(c.cwd), ...local }, null, 2) + '\n', { mode: 0o600 })
   return equipage.sur(file)
 }
 // Le navigateur d'Orkun pour un membre Claude : Orkun Browser (~/chrome-bridge, l'extension de son profil
 // Chrome habituel, le même serveur que `orkun-browser` chez Codex), seul serveur de `--mcp-config`. Réécrit à chaque
 // lancement, à côté de reglages.json et comme lui hors de portée du membre.
-const NAVIGATEUR_MCP = { mcpServers: { 'orkun-browser': { command: '/usr/bin/node', args: ['~/chrome-bridge/src/mcp.mjs'] } } }
+// Chemin réglable (MEYDAN_NAVIGATEUR_MCP, equipage.NAVIGATEUR_MCP) ; fichier absent : pas de `--mcp-config` du tout.
+const NAVIGATEUR_MCP = { mcpServers: { 'orkun-browser': { command: '/usr/bin/node', args: [equipage.NAVIGATEUR_MCP] } } }
 function memberNavigateur(c) {
   const file = path.join(serverDir(c), 'navigateur-mcp.json')
   fs.writeFileSync(file, JSON.stringify(NAVIGATEUR_MCP) + '\n', { mode: 0o600 })
@@ -1306,7 +1358,7 @@ function memberNavigateur(c) {
 // equipage.OUTILS_EN_PLUS (`outils:` : recherche web, lecture de page, sous-agents), relus sur la console à chaque relance.
 const outilsMembre = (c) => [OUTILS_MEMBRE, ...(Array.isArray(c.outils) ? c.outils.filter((t) => equipage.OUTILS_EN_PLUS.has(t)) : [])].join(',')
 const claudeTeamArgs = (c) =>
-  ` --chrome --mcp-config ${memberNavigateur(c)} --restricted --strict-mcp-config --tools ${outilsMembre(c)} --add-dir ${equipage.sur(c.chief ? teamDir(c.team) : memberDir(c))}${c.modele ? ` --model ${equipage.sur(c.modele)}` : ''}${c.conseiller && c.conseiller !== c.modele ? ` --advisor ${equipage.sur(c.conseiller)}` : ''}${c.effort ? ` --effort ${equipage.sur(c.effort)}` : ''} --permission-mode auto`
+  ` --chrome${equipage.NAVIGATEUR_PRESENT ? ` --mcp-config ${memberNavigateur(c)}` : ''} --restricted --strict-mcp-config --tools ${outilsMembre(c)} --add-dir ${equipage.sur(c.chief ? teamDir(c.team) : memberDir(c))}${c.modele ? ` --model ${equipage.sur(c.modele)}` : ''}${c.conseiller && c.conseiller !== c.modele ? ` --advisor ${equipage.sur(c.conseiller)}` : ''}${c.effort ? ` --effort ${equipage.sur(c.effort)}` : ''} --permission-mode auto`
 // Codex : écriture limitée à son dossier de travail et à son dossier d'équipe ; réseau ouvert (dépendances, commande
 // meydan). Son bac à sable garde les métadonnées git en lecture seule, même déclarées inscriptibles (essai réel du
 // 10/11 : « index.lock » refusé) : il ne peut pas commiter, c'est Meydan qui commite à son « done » (voir declare).
@@ -1321,6 +1373,22 @@ const configCodex = () => {
     return '' // pas de configuration lisible : rien à couper, rien à approuver
   }
 }
+// Membre d'une équipe locale (capitaine compris) : Claude Code sur le modèle du Mac. Mêmes bornes de fichiers qu'un membre
+// Claude (`--restricted`, ses dossiers seulement), mêmes refus et même garde des commandes (memberSettings). Différences,
+// toutes voulues :
+//  - modèle local d'oMLX (MEYDAN_LOCAL_MODELE) ; ni le modèle, ni l'effort, ni le conseiller (`--advisor`), ni les outils en plus du rôle
+//    (WebSearch tourne chez Anthropic ; des sous-agents passeraient le plafond de consoles locales) ;
+//  - aucun serveur MCP (`--strict-mcp-config` sans `--mcp-config`) ni `--chrome` : le Chrome d'Orkun, connecté à ses
+//    comptes, piloté par un modèle sans censure, reste sa décision (docs/volets/locale.md) ;
+//  - `--permission-mode acceptEdits` + Bash permis (memberSettings) AU LIEU de « auto » : la vérification du mode auto
+//    tourne chez Anthropic et ne passe pas par oMLX. Sondé le 17/11 (2.1.326), l'écran l'a dit : « Auto mode can't check
+//    actions in this session. Auto mode's safety check runs on the server. Your requests go through 127.0.0.1:18000, and
+//    the check isn't getting through. » — chaque commande à vérifier attendait Orkun. Sur une commande, il reste donc la
+//    garde lib/garde-bash.mjs (pm2, sudo, systemctl, push) et les refus de `--settings`, pas le classifieur d'Anthropic.
+//  - pas de `--cross-session` (il réactiverait des envois vers Anthropic).
+// `--permission-mode` vient en dernier (`--add-dir` prend plusieurs valeurs et avalerait le brief).
+const ligneLocale = (c) =>
+  `env -u ANTHROPIC_API_KEY -u ANTHROPIC_AUTH_TOKEN -u CLAUDE_CODE_OAUTH_TOKEN ${CLAUDE_BIN} --model ${equipage.sur(locale.MODELE)} --settings ${memberSettings(c)} --restricted --strict-mcp-config --tools ${OUTILS_MEMBRE} --add-dir ${envois.dirOf(DATA, c.id)} ${equipage.sur(c.chief ? teamDir(c.team) : memberDir(c))} --permission-mode acceptEdits`
 const codexSansMcp = () => equipage.sansMcpCodex(configCodex())
 const codexTeamArgs = (c) =>
   ` -s workspace-write -c sandbox_workspace_write.network_access=true${codexSansMcp()}${equipage.navigateurCodexApprouve(configCodex())} --add-dir ${equipage.sur(c.chief ? teamDir(c.team) : memberDir(c))}${c.modele ? ` -m ${equipage.sur(c.modele)}` : ''}`
@@ -1468,12 +1536,15 @@ function afterHook(c, avant, state, raw = '') {
 }
 
 async function openMember(team, role, m) {
-  const plus = { id: m.id, team: team.id, role: role.nom, nom: m.nom, chief: !!m.chief, ecrit: role.ecrit, modele: role.modele, effort: role.effort, ...(role.conseiller && { conseiller: role.conseiller }), ...(role.outils?.length && { outils: role.outils }), branch: m.branch || '', base: m.base || '', etat: null, tour: '' }
+  // Équipe locale : tout membre est une console Claude sur le Mac, quel que soit l'agent de son rôle (`agent: codex` du
+  // constructeur compris) ; modèle, effort, conseiller et outils du rôle ne s'appliquent pas (ligneLocale).
+  const agent = team.locale ? { local: true } : { modele: role.modele, effort: role.effort, ...(role.conseiller && { conseiller: role.conseiller }), ...(role.outils?.length && { outils: role.outils }) }
+  const plus = { id: m.id, team: team.id, role: role.nom, nom: m.nom, chief: !!m.chief, ecrit: role.ecrit, ...agent, branch: m.branch || '', base: m.base || '', etat: null, tour: '' }
   const dossier = path.join(TEAMS_DATA, team.id, m.id)
   fs.mkdirSync(dossier, { recursive: true, mode: 0o700 })
   const texte = equipage.brief({ role, tache: m.tache || '', membre: { ...plus, cwd: m.cwd, baseRef: m.baseRef || '' }, equipe: team, cli: CLI, dossier: m.chief ? teamDir(team.id) : dossier, memoire: memoireEquipe(team) })
   fs.writeFileSync(path.join(dossier, 'brief.md'), texte, { mode: 0o600 })
-  return createConsole({ kind: role.agent, cwd: m.cwd, name: m.chief ? `Capitaine · ${team.nom}` : `${role.titre} · ${m.nom}`, plus, attendu: m.attendu })
+  return createConsole({ kind: team.locale ? 'claude' : role.agent, cwd: m.cwd, name: m.chief ? `Capitaine · ${team.nom}` : `${role.titre} · ${m.nom}`, plus, attendu: m.attendu })
 }
 
 // Une console qui tourne déjà devient capitaine, sur l'ordre d'Orkun donné dans la console elle-même (11/11 : « quand je
@@ -1486,7 +1557,7 @@ async function promouvoir(me, mission) {
   if (me.status === 'closed') throw refus('console terminée', 409)
   const role = equipage.loadRoles(ROLES_DIR).capitaine
   if (!role) throw refus('rôle « capitaine » introuvable dans agents/', 500)
-  mission = String(mission ?? '').replace(/\r/g, '').trim() || 'Mission donnée par Orkun dans la console du capitaine.'
+  mission = String(mission ?? '').replace(/\r/g, '').trim() || `Mission donnée par ${NOM} dans la console du capitaine.`
   if (mission.length > equipage.MAX_TASK) throw refus(`mission trop longue (${equipage.MAX_TASK} caractères au plus)`)
   const projet = safeDir(me.cwd)
   const id = 'e' + crypto.randomBytes(3).toString('hex')
@@ -1510,7 +1581,7 @@ async function promouvoir(me, mission) {
 
 // Une mission d'Orkun → une équipe et son capitaine. Sous git : le capitaine reçoit un worktree sur la branche
 // d'intégration, partie de la tête du projet ; le dossier en service n'est pas touché.
-async function createTeam({ cwd, mission, nom, verifierFin = false }) {
+async function createTeam({ cwd, mission, nom, verifierFin = false, locale: local = false }) {
   const role = equipage.loadRoles(ROLES_DIR).capitaine
   if (!role) throw refus('rôle « capitaine » introuvable dans agents/', 500)
   mission = String(mission ?? '').replace(/\r/g, '').trim()
@@ -1521,8 +1592,27 @@ async function createTeam({ cwd, mission, nom, verifierFin = false }) {
   const id = 'e' + crypto.randomBytes(3).toString('hex')
   const projet = d ? safeDir(d.top) : dir
   if (typeof verifierFin !== 'boolean') throw refus('réglage Vérifier à la fin invalide')
+  if (typeof local !== 'boolean') throw refus('réglage « équipe locale » invalide')
+  // Équipe locale sans git : le capitaine travaille dans le dossier du projet même. Posé sur ~ (ou sur un dossier qui
+  // contient les données de Meydan), ses outils de fichiers liraient tout le dossier personnel (identifiants de Claude, clé
+  // d'oMLX) : refusé, comme pour un équipier (règle M4 du 13/11, dans `lancer`).
+  // `fichierPermis` (relecture du 17/11) : ni ~, ni un dossier caché (~/.config porte la clé d'oMLX, ~/.claude, ~/.ssh),
+  // ni le compte 2, ni les données de Meydan ; plus un dossier qui CONTIENT ces données.
+  const zone = fs.realpathSync(projet)
+  if (local && !d && (fichierPermis(zone) || DATA_REEL.startsWith(zone + path.sep)))
+    throw refus(`dossier trop large pour une équipe locale (${projet}) : choisis le dossier du projet, pas ton dossier personnel`, 409)
   plafond.verifie() // décision d'Orkun du 17/11, raccourcis-3 : « refuser sous 4 Go de mémoire disponible » : avant le worktree du capitaine (lib/plafond.mjs)
-  const team = { verifierFin, id, nom: cleanName(nom) || equipage.ligne(mission, 48), mission, projet, git: !!d, branche: d?.branche || '', base: d?.head || '', integration: d ? `meydan/${id}/integration` : '', createdAt: Date.now(), pret: null, livre: null }
+  // Équipe locale : une place de console locale pour le capitaine et le Mac joignable, AVANT le worktree (lib/locale.mjs).
+  const libere = local ? await locale.prend(consoles) : () => {}
+  const team = { verifierFin, id, nom: cleanName(nom) || equipage.ligne(mission, 48), mission, projet, git: !!d, branche: d?.branche || '', base: d?.head || '', integration: d ? `meydan/${id}/integration` : '', createdAt: Date.now(), pret: null, livre: null, ...(local && { locale: true, mac: macVue() }) }
+  try {
+    return await ouvreEquipe(team, role, d)
+  } finally {
+    libere()
+  }
+}
+async function ouvreEquipe(team, role, d) {
+  const { id, projet } = team
   // 17/11 (chasse, n°11) : le travail non commité d'Orkun n'entre pas dans l'équipe (les worktrees partent du dernier
   // commit), et une tête détachée rend la livraison impossible : ni le brief ni l'écran ne le disaient, la livraison
   // l'apprenait à la fin, après tout le travail. Mesuré au départ, dit au capitaine (brief) et à Orkun (liste).
@@ -1534,7 +1624,7 @@ async function createTeam({ cwd, mission, nom, verifierFin = false }) {
   const wt = d ? path.join(TEAMS_DIR, slug(path.basename(projet)), id, 'capitaine') : projet
   if (d) await equipage.addWorktree(projet, wt, { branche: team.integration, base: d.head, prive: TEAMS_LOG })
   fs.mkdirSync(teamDir(id), { recursive: true, mode: 0o700 })
-  fs.writeFileSync(path.join(teamDir(id), 'mission.md'), mission + '\n', { mode: 0o600 })
+  fs.writeFileSync(path.join(teamDir(id), 'mission.md'), team.mission + '\n', { mode: 0o600 })
   teams.push(team)
   try {
     team.chief = (await openMember(team, role, { id: newId(), nom: 'capitaine', chief: true, cwd: wt, branch: team.integration, base: team.base })).id
@@ -1570,7 +1660,7 @@ async function lancer(chief, body) {
   const team = findTeam(chief.team)
   if (!team || arrets.has(team.id)) throw refus('équipe arrêtée', 409)
   if ((team.lances || 0) >= equipage.MAX_LAUNCHES)
-    throw refus(`${equipage.MAX_LAUNCHES} lancements au plus par équipe : rends compte à Orkun (statut needs-decision) au lieu de relancer`, 409)
+    throw refus(`${equipage.MAX_LAUNCHES} lancements au plus par équipe : rends compte à ${NOM} (statut needs-decision) au lieu de relancer`, 409)
   const role = equipage.loadRoles(ROLES_DIR)[String(body.role)]
   if (!role || role.nom === 'capitaine') throw refus(`rôle inconnu : ${equipage.ligne(body.role, 40)} (voir « meydan roles »)`)
   const nom = cleanName(typeof body.nom === 'string' ? equipage.ligne(body.nom, 48) : '') // choisi par un agent : sans invisible (n°2), il revient dans chaque réveil
@@ -1600,7 +1690,7 @@ async function lancer(chief, body) {
     identDossier = `${st.dev}:${st.ino}`
     // Volet quota : un lancement validé par Orkun porte l'identité (dev:ino) du dossier qu'il a lu ; si le dossier a changé
     // pendant que ce lancement attendait son tour dans la file de l'équipe, rien ne part (relecture du 17/11).
-    if (body.dossierIdent !== undefined && identDossier !== String(body.dossierIdent)) throw refus('le dossier a changé depuis la validation d’Orkun : rien n’a été lancé', 409)
+    if (body.dossierIdent !== undefined && identDossier !== String(body.dossierIdent)) throw refus(`le dossier a changé depuis la validation ${deNom('’')} : rien n’a été lancé`, 409)
     cwd = d
   }
   const reel = (p) => {
@@ -1638,7 +1728,11 @@ async function lancer(chief, body) {
     branch = role.ecrit ? `meydan/${team.id}/${role.nom}-${id}` : ''
     await equipage.addWorktree(team.projet, cwd, { branche: branch, base, prive: TEAMS_LOG })
   }
+  let libere = () => {}
   try {
+    // Équipe locale (lib/locale.mjs) : une place de console locale (plafond commun à toutes les équipes, réservée tout
+    // de suite) et le Mac joignable ; sinon le capitaine reçoit la phrase de refus, et le worktree créé à l'instant part.
+    if (team.locale) libere = await locale.prend(consoles)
     const c = await openMember(team, role, { id, nom, cwd, branch, base, baseRef, tache, attendu })
     team.lances = (team.lances || 0) + 1
     save()
@@ -1651,6 +1745,8 @@ async function lancer(chief, body) {
     }
     for (const x of [path.join(TEAMS_DATA, team.id, id), path.join(TEAMS_LOG, team.id, id)]) fs.rmSync(x, { recursive: true, force: true })
     throw e
+  } finally {
+    libere()
   }
 }
 function memberOf(chief, id) {
@@ -1745,7 +1841,7 @@ function vuParOrkun(c) {
 async function closeMember(c, strict = true) {
   const team = findTeam(c.team)
   const wt = team?.git && c.cwd !== team.projet && fs.existsSync(c.cwd) ? c.cwd : ''
-  if (wt && c.branch && strict && !(await equipage.propre(wt))) throw refus('son dossier de travail porte un travail non commité : fais-le commiter, ou demande à Orkun de fermer cet équipier', 409)
+  if (wt && c.branch && strict && !(await equipage.propre(wt))) throw refus(`son dossier de travail porte un travail non commité : fais-le commiter, ou demande à ${NOM} de fermer cet équipier`, 409)
   c.fermeture = true
   await tmux('kill-session', '-t', c.id).catch(() => {}) // déjà morte : rien à tuer
   navs.ferme(c.id) // son navigateur part avec elle (volet copies)
@@ -1759,7 +1855,7 @@ async function closeMember(c, strict = true) {
   }
   await envois.forget(DATA, c.id)
   // `garde` : son dossier de travail laissé sur le disque (travail non commité) ; l'arrêt de l'équipe le redit (17/11, n°9).
-  if (team) (team.membresClos ||= []).push({ id: c.id, name: c.name, kind: c.kind, agent: c.agent, cwd: c.cwd, team: c.team, etat: c.etat, ferme: true, ...(garde && { garde }) })
+  if (team) (team.membresClos ||= []).push({ id: c.id, name: c.name, kind: c.kind, agent: c.agent, cwd: c.cwd, team: c.team, etat: c.etat, ferme: true, ...(c.local && { local: true }), ...(garde && { garde }) })
   consoles = consoles.filter((x) => x.id !== c.id)
   lacheFil(c.id)
   save()
@@ -1782,7 +1878,7 @@ function stopTeam(team) {
 }
 async function arreteEquipe(team) {
   await (lancements.get(team.id) || Promise.resolve()).catch(() => {}) // le lancement en cours finit, sa console sera fermée avec les autres
-  if (team.verification?.etat === 'active') finVerification(team, 'refusee', 'Équipe arrêtée par Orkun : la vérification est terminée sans validation.')
+  if (team.verification?.etat === 'active') finVerification(team, 'refusee', `Équipe arrêtée par ${NOM} : la vérification est terminée sans validation.`)
   const gardes = []
   for (const c of membersOf(team.id).sort((a, b) => Number(!!a.chief) - Number(!!b.chief))) {
     // Capitaine promu (une console d'Orkun devenue capitaine sur son ordre) : il perd son rôle, sa console reste ouverte.
@@ -1835,7 +1931,7 @@ function teamView(me) {
 const verificationsEnCours = new Set()
 function preuvesEquipe(team) {
   return [...membersOf(team.id), ...(team.membresClos || [])].map((c) => {
-    const journal = c.kind === 'claude' ? fil.journalClaude(CLAUDE_PROJECTS, c.agent) : c.kind === 'codex' ? fil.journalCodex(CODEX_SESSIONS, c.agent) : null
+    const journal = c.kind === 'claude' ? fil.journalClaude(c.local ? locale.journaux(c.id) : CLAUDE_PROJECTS, c.agent) : c.kind === 'codex' ? fil.journalCodex(CODEX_SESSIONS, c.agent) : null
     const lu = journal ? fil.lireFil(c.kind, journal) : []
     return { id: c.id, nom: c.name, dossier: c.cwd, statut: c.ferme ? 'closed' : c.status, affirmation: c.etat, rapport: path.join(memberDir(c), 'rapport.md'), derniereReponse: relais.derniereReponse(lu).slice(-16000) }
   })
@@ -1845,7 +1941,7 @@ async function verifieFin(team) {
     const v = team.verification, c = find(v.console)
     const ids = membersOf(team.id).map((m) => m.id)
     if (!c || ['closed', 'shell', 'error'].includes(c.status) || ids.length !== v.membres.length || ids.some((id) => !v.membres.includes(id))) {
-      finVerification(team, 'refusee', 'Vérificateur interrompu ou composition de l’équipe modifiée. Les preuves doivent être relues par Orkun.')
+      finVerification(team, 'refusee', `Vérificateur interrompu ou composition de l’équipe modifiée. Les preuves doivent être relues par ${NOM}.`)
       return
     }
   }
@@ -1897,7 +1993,7 @@ async function verifierApi(req, res, url, c) {
     if (v.attend[m.id]) throw refus('attends le retour du membre avant un autre relais', 409)
     if ((v.relances[m.id] || 0) >= 2) {
       finVerification(team, 'refusee', `Deux relances épuisées pour ${m.name}. Dernier défaut signalé : ${equipage.ligne(b.texte, 1500)}`)
-      throw refus('deux relances épuisées : verdict transmis à Orkun', 409)
+      throw refus(`deux relances épuisées : verdict transmis à ${NOM}`, 409)
     }
     // Le texte du vérificateur part dans la console d'un équipier : sans invisible (n°2, relecture du volet).
     const message = verification.relancerMembre(v, m, typeof b.texte === 'string' ? equipage.ligne(b.texte, 2000) : b.texte)
@@ -1922,7 +2018,9 @@ async function agentApi(req, res, url, me) {
   if (action === 'etat' && m === 'GET') return send(res, 200, teamView(me))
   if (action === 'roles' && m === 'GET') {
     chef()
-    return send(res, 200, { roles: Object.values(equipage.loadRoles(ROLES_DIR)).filter((r) => r.nom !== 'capitaine').map(({ texte, ...r }) => r) })
+    // Équipe locale : chaque rôle tourne sur le modèle du Mac (openMember), c'est ce que le capitaine lit.
+    const local = findTeam(me.team)?.locale ? { agent: 'local', modele: locale.MODELE, effort: '', conseiller: '', outils: [] } : {}
+    return send(res, 200, { roles: Object.values(equipage.loadRoles(ROLES_DIR)).filter((r) => r.nom !== 'capitaine').map(({ texte, ...r }) => ({ ...r, ...local })) })
   }
   if (action === 'voir' && m === 'GET') {
     chef()
@@ -2128,7 +2226,7 @@ async function gardeSaisie(id) {
     s.alerte = true
     alerte({ title: `${c.name} : message en attente`, body: 'Un texte que tu n’as pas envoyé est dans son champ : Meydan lui remettra ses messages quand tu l’auras envoyé ou effacé (Entrée, Ctrl+C).', tag: `saisie-${id}`, ouvre: id })
   }
-  throw Object.assign(new Error('Orkun écrit dans cette console : message gardé jusqu’à ce que son texte soit envoyé ou effacé'), { code: 409 })
+  throw Object.assign(new Error(`${NOM} écrit dans cette console : message gardé jusqu’à ce que son texte soit envoyé ou effacé`), { code: 409 })
 }
 
 // Dépose un texte dans la console comme un collage (encadré si le programme le demande : les retours à la ligne ne
@@ -2184,7 +2282,7 @@ async function pasteMessage(id, text, { vuAvantEntree = false } = {}) {
   if (AWAITS.has(find(id)?.status)) throw pasEnvoye('message collé mais pas envoyé : l’agent vient de poser une question')
   // Orkun s'est mis à écrire pendant le collage (relecture du volet, n°15) : Entrée enverrait son texte avec. Le message
   // reste dans le champ, hors de la file (suspens) ; son Entrée à lui l'enverra, ou acheve quand il aura fini.
-  if (vuAvantEntree && saisies.has(id)) throw pasEnvoye('message collé mais pas envoyé : Orkun écrit dans cette console')
+  if (vuAvantEntree && saisies.has(id)) throw pasEnvoye(`message collé mais pas envoyé : ${NOM} écrit dans cette console`)
   await tmux('send-keys', '-t', id, 'Enter').catch((e) => {
     throw pasEnvoye(e.message)
   })
@@ -2250,7 +2348,9 @@ const espacesWeb = ouvreEspaces({ DATA, send, readJson })
 // part (5 s), hors de reconcile ; rien n'est écrit dans l'objet console. docs/volets/quota.md, lib/budget.mjs.
 const budget = ouvreBudget({
   data: DATA,
-  consoles: () => consoles,
+  // Console locale (lib/locale.mjs) : le Qwen du Mac ne prend rien sur l'abonnement ni sur l'API d'Anthropic, et ses
+  // journaux sont dans son propre dossier (pas sous `journaux(kind, compte)`) : ni usage ni budget pour elle.
+  consoles: () => consoles.filter((c) => !c.local),
   equipes: () => teams,
   journaux: (kind, compte) => comptes.journaux(kind, compte),
   alerte,
@@ -2527,7 +2627,7 @@ async function api(req, res, url) {
       // Membre d'une équipe : son dossier de travail part avec lui s'il est propre ; le capitaine ne se ferme qu'avec l'équipe.
       if (c.chief) return send(res, 409, { error: 'c’est le capitaine : arrête l’équipe entière' })
       const r = await closeMember(c, false)
-      wake(c.team, `Orkun a fermé ${who(c)}.`)
+      wake(c.team, `${NOM} a fermé ${who(c)}.`)
       return send(res, 200, { ok: true, ...r })
     }
     if (parts.length === 3 && m === 'DELETE') {
@@ -2631,7 +2731,7 @@ async function api(req, res, url) {
       const b = await readJson(req)
       if (typeof b.active !== 'boolean') throw refus('réglage invalide')
       team.verifierFin = b.active
-      if (!b.active && team.verification?.etat === 'active') finVerification(team, 'refusee', 'Vérification désactivée par Orkun : aucun autre relais automatique.')
+      if (!b.active && team.verification?.etat === 'active') finVerification(team, 'refusee', `Vérification désactivée par ${NOM} : aucun autre relais automatique.`)
       save(); broadcast({ type: 'team', team })
       return send(res, 200, { team })
     }
@@ -2703,6 +2803,12 @@ async function api(req, res, url) {
     if (parts.length === 3 && parts[2] === 'usage') return send(res, 200, await comptes.usage())
   }
   if (parts[1] === 'projects' && m === 'GET') return send(res, 200, { projects: projects(), kinds: Object.entries(KINDS).map(([id, k]) => ({ id, label: k.label })) })
+  // Équipe locale : le Mac est-il joignable, et combien de consoles locales sont ouvertes (formulaire « Nouvelle équipe »).
+  // Sondé à la demande (au plus une fois par 5 s), seulement quand le formulaire le demande.
+  if (parts[1] === 'locale' && parts.length === 2 && m === 'GET') {
+    await locale.sonde()
+    return send(res, 200, { locale: { ...locale.etat(), ouvertes: consoles.filter((c) => c.local && c.status !== 'closed').length } })
+  }
   // Mémoire du projet : les faits de chaque projet, qu'Orkun voit, écrit, valide et supprime (voir memoireApi).
   if (parts[1] === 'memoire' && parts.length >= 2 && parts.length <= 4) return await memoireApi(req, res, parts, m)
   // Barre de commande : { texte } rend le plan sans rien toucher ; { texte, executer: true } l'exécute (un plan « à
@@ -2790,7 +2896,7 @@ async function executeOrdre(plan) {
         if (c.chief) fait.push(`${c.name} : capitaine, laissé`)
         else if (c.team) {
           const { garde } = await closeMember(c, false)
-          wake(c.team, `Orkun a fermé ${who(c)}.`)
+          wake(c.team, `${NOM} a fermé ${who(c)}.`)
           fait.push(`${c.name} : fermée${garde ? ` — travail non commité, dossier gardé : ${garde}` : ''}`)
         } else {
           await fermeEnHistorique(c) // dans l'historique, comme le × (16/11)
@@ -2944,7 +3050,7 @@ const server = http.createServer(async (req, res) => {
       if (url.pathname === '/agent/faits' && req.method === 'GET') return agentFaits(res, me)
       // Navigateur de l'agent (volet copies) : toute console Meydan, équipe ou pas (lib/navigateur.mjs).
       if (url.pathname === '/agent/nav' || url.pathname.startsWith('/agent/nav/')) return await navs.agent(req, res, url, me)
-      if (!me.team || !findTeam(me.team)) return send(res, 403, { error: 'cette console n’est capitaine d’aucune équipe. Sur l’ordre d’Orkun, elle le devient avec : meydan capitaine "<la mission en une ligne>"' })
+      if (!me.team || !findTeam(me.team)) return send(res, 403, { error: `cette console n’est capitaine d’aucune équipe. Sur l’ordre ${deNom('’')}, elle le devient avec : meydan capitaine "<la mission en une ligne>"` })
       return await agentApi(req, res, url, me)
     }
 

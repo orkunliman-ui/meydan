@@ -122,10 +122,11 @@ function Equipe({ team, membres, tuile }) {
   return (
     <section className={cls('ve-equipe', equipeAttend(team) && 'est-prete')}>
       <header>
-        <i>{team.pret ? 'ÉQUIPE PRÊTE' : appelAVoir(team) ? 'ÉQUIPE · T’ATTEND' : 'ÉQUIPE'}</i>
+        <i>{team.pret ? 'ÉQUIPE PRÊTE' : appelAVoir(team) ? 'ÉQUIPE · T’ATTEND' : team.locale ? 'ÉQUIPE LOCALE' : 'ÉQUIPE'}</i>
         <b>{team.nom}</b>
         <span>
           {equipiers.length} équipier{equipiers.length > 1 ? 's' : ''}
+          {team.locale && team.mac?.enLigne === false ? ' · Mac hors ligne' : ''}
         </span>
       </header>
       <div className={cls('ve-arbre', !equipiers.length && 'est-seul')} ref={corps}>
