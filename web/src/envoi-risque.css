@@ -1,0 +1,64 @@
+/* Garde du texte risqué de la barre d'envoi (EnvoiRisque.jsx) : les passages cités au-dessus de la barre, et le bouton
+   d'envoi devenu « Confirmer : <motif> ». Mêmes couleurs que les passages risqués de la barre d'ordres (ordres.css). */
+.envoi .envoi-risque {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding: 7px 9px;
+  background: color-mix(in srgb, var(--error, #ff5d6c) 9%, transparent);
+  border: 1px solid color-mix(in srgb, var(--error, #ff5d6c) 55%, transparent);
+  border-radius: 8px;
+}
+.envoi .envoi-risque-titre,
+.envoi .envoi-risque-reste {
+  margin: 0;
+  font: 600 12.5px/1.35 var(--ui, inherit);
+  color: var(--error, #ff5d6c);
+}
+.envoi .envoi-risque-reste {
+  font-weight: 500;
+}
+.envoi .envoi-risque-liste {
+  display: grid;
+  gap: 3px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.envoi .envoi-risque-liste li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: 2px 8px;
+}
+.envoi .envoi-risque-liste b {
+  font: 700 10.5px/1.25 var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--error, #ff5d6c);
+  overflow-wrap: anywhere;
+}
+.envoi .envoi-risque-liste q {
+  font: 500 12.5px/1.35 var(--mono);
+  overflow-wrap: anywhere;
+  color: var(--paper, #e6e8f0);
+}
+/* Le bouton d'envoi armé : un mot au lieu de la flèche, couleur d'alerte, 13 em au plus (le champ garde sa place) ; le
+   motif passe à la ligne entre deux mots s'il est long (« Confirmer : git push --force »). Pas de largeur en % ni de
+   coupure n'importe où : dans la grille de la discussion (colonne « auto »), l'une ou l'autre écrasait le bouton à 52 px
+   (« Con / firm / er », banc du 17/11). */
+.envoi .envoi-rang .envoi-b.pret.est-risque {
+  width: auto;
+  max-width: 13em;
+  height: auto;
+  min-height: 44px;
+  padding: 4px 12px;
+  border-radius: 8px;
+  background: var(--error, #ff5d6c);
+  border-color: var(--error, #ff5d6c);
+  color: #fff;
+  font: 700 12.5px/1.15 var(--ui, inherit);
+  white-space: normal;
+  text-align: center;
+  overflow-wrap: normal;
+}

@@ -1,0 +1,690 @@
+/* Reel « 3 règles » (11/11) — les trois règles du reel @ayoships, adaptées au téléphone de Meydan.
+   Ajustements retenus le 11/11 : pas de nom géant sur l'écran du terminal (il s'y lisait comme un défaut d'affichage),
+   rouge des erreurs gardé, FINI (lot 6, vert) gardé tel quel.
+   1. Trois plans : le nom du projet en très grand au fond, le sujet (la question, le terminal) au milieu, ce qui se touche
+      par-dessus, à cheval sur le bord du plan du milieu.
+   2. Une seule couleur signal : le jaune ne veut plus dire que « à toi de toucher » (Répondre, Entrée, ce qui t'attend).
+      Les états (travaille, prêt, shell…) passent à l'encre et au papier ; leur forme (Signe.jsx) les dit déjà.
+      Exceptions : ERREUR garde son rouge, FINI garde son vert (lot6-fini.css).
+   3. Une chose énorme par écran, tout le reste petit : 10,5 px (étiquettes) et 13 px (texte), rien entre les deux.
+      Les champs gardent 16 px (sous 16, l'iPhone zoome au toucher) et toutes les cibles gardent 44 points.
+   Tout vit sous [data-reel='oui'] et .is-mobile : l'ordinateur et `?reel=non` ne changent pas. */
+
+
+/* Téléphone debout seulement : couché, l'accueil (plateau, tuiles, liste) et la console restent ceux du lot 6. Même
+   condition que `couche` dans Rail.jsx et MobileConsole.jsx. */
+@media not all and (orientation: landscape) and (max-height: 520px) {
+
+[data-theme='reverbere'][data-reel='oui'] .app.is-mobile {
+  --papier: #e8ebf4;
+  --papier-2: rgba(232, 235, 244, 0.64);
+  --papier-3: rgba(232, 235, 244, 0.42);
+  --filet: rgba(214, 224, 255, 0.1);
+  --t-et: 600 10.5px/1 var(--mono); /* étiquette : mono, capitales espacées */
+  --t-tx: 13px; /* texte */
+  /* Règle 2 : les états à l'encre et au papier ; le jaune reste à « t'attend » (needs) seulement. */
+  --working: var(--papier);
+  --starting: var(--papier-2);
+  --running: var(--papier-2);
+  --ready: var(--papier-2);
+  --shell: var(--papier-3);
+  --closed: var(--papier-3);
+  /* Matière du jaune touché : un léger relief, jamais un aplat sec (retour du 10/11). */
+  --jaune-haut: color-mix(in srgb, var(--appel) 78%, #fff);
+  --jaune-bas: color-mix(in srgb, var(--appel) 86%, #8a7a00);
+  --bouton-jaune: linear-gradient(180deg, var(--jaune-haut) 0%, var(--appel) 46%, var(--jaune-bas) 100%);
+  --ombre-jaune: inset 0 1px 0 rgba(255, 255, 255, 0.62), inset 0 -1px 0 rgba(90, 80, 0, 0.28), 0 14px 26px -12px color-mix(in srgb, var(--appel) 60%, transparent), 0 6px 14px rgba(0, 0, 0, 0.55);
+  /* Le verre du plan du milieu. */
+  --verre: linear-gradient(180deg, rgba(24, 31, 58, 0.72), rgba(10, 13, 27, 0.9));
+  --verre-bord: rgba(214, 224, 255, 0.13);
+  --verre-haut: rgba(214, 224, 255, 0.26);
+}
+
+/* ───────── Le mot géant (règle 1, plan du fond) ───────── */
+[data-theme='reverbere'][data-reel='oui'] .app.is-mobile .grand-mot .grand-mot-sonde {
+  position: absolute;
+  left: 0;
+  top: 0;
+  visibility: hidden;
+  white-space: nowrap;
+  font: 800 100px/1 var(--ui);
+  font-style: normal;
+  letter-spacing: -0.05em;
+  pointer-events: none;
+}
+[data-theme='reverbere'][data-reel='oui'] .app.is-mobile .grand-mot {
+  position: relative;
+  z-index: 0;
+  pointer-events: none;
+  user-select: none;
+}
+[data-theme='reverbere'][data-reel='oui'] .app.is-mobile .grand-mot span {
+  display: block;
+  width: max-content;
+  padding-right: 0.06em; /* l'approche négative rogne la dernière lettre sinon */
+  font: 800 var(--gm, 64px) / 0.8 var(--ui);
+  letter-spacing: -0.05em;
+  white-space: nowrap;
+  /* Papier qui s'éteint vers le bas : la lettre recule, la carte qui la chevauche avance. */
+  color: transparent;
+  background: linear-gradient(180deg, rgba(232, 235, 244, 0.58) 0%, rgba(232, 235, 244, 0.26) 52%, rgba(232, 235, 244, 0.08) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+/* ───────── Accueil : en-tête ───────── */
+[data-theme='reverbere'][data-reel='oui'] .app.is-mobile {
+  & .rail {
+    background: radial-gradient(120% 38% at 20% 0%, #141c3c, rgba(8, 11, 24, 0) 70%), var(--sol-bas);
+  }
+  & .marque {
+    height: 52px;
+    padding: 0 8px 0 16px;
+    gap: 9px;
+    border-bottom: 0;
+  }
+  & .marque-signe {
+    width: 16px;
+    height: 16px;
+    border-color: var(--papier-3);
+    border-radius: 3px;
+  }
+  & .marque-signe::after {
+    left: 3px;
+    bottom: 3px;
+    width: 5px;
+    height: 5px;
+    background: var(--papier); /* plus de jaune décoratif */
+  }
+  & .marque b {
+    font: 700 var(--t-tx) / 1 var(--ui);
+    letter-spacing: 0.02em;
+  }
+  & .liaison {
+    font: var(--t-et);
+    letter-spacing: 0.08em;
+    color: var(--papier-3);
+  }
+  & .liaison::before {
+    width: 5px;
+    height: 5px;
+    background: var(--papier-2);
+  }
+  & .ordre-ouvre i {
+    color: var(--papier-2); /* plus de jaune décoratif */
+  }
+  & .ordre-ouvre {
+    height: 44px;
+    padding: 0 12px;
+    background: none;
+    border: 0;
+    font: var(--t-et);
+    letter-spacing: 0.14em;
+    color: var(--papier-2);
+  }
+
+  /* ───────── La scène : la plus ancienne attente (règles 1 et 3) ───────── */
+  & .scene {
+    position: relative;
+    padding: 0 16px 34px;
+  }
+  & .scene-sur {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 44px;
+    margin: 0;
+    font: var(--t-et);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--papier-2);
+  }
+  & .scene-plus {
+    position: static;
+    width: 44px;
+    height: 44px;
+    margin: 0 -12px 0 0;
+    background: none;
+    border: 0;
+    color: var(--papier-2);
+  }
+  & .scene .grand-mot {
+    margin: 2px -1px calc(var(--gm, 64px) * -0.3) -2px;
+  }
+  /* Nom d'une seule ligne (« UNTRESLONGMOT ») : la carte en recouvrait la moitié basse (bas du mot à 134 px, haut de la
+     carte à 120 ; relevé du volet design-3-plans, 11/11). Elle ne mord plus que sur le pied des lettres. */
+  & .scene .grand-mot:not(:has(span + span)) {
+    margin-bottom: calc(var(--gm, 64px) * -0.15);
+  }
+  & .scene-carte {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 9px;
+    width: 100%;
+    margin: 0;
+    padding: 14px 16px 30px;
+    background: var(--verre);
+    -webkit-backdrop-filter: blur(16px) saturate(130%);
+    backdrop-filter: blur(16px) saturate(130%);
+    border: 1px solid var(--verre-bord);
+    border-top-color: var(--verre-haut);
+    border-radius: 4px;
+    box-shadow: 0 34px 56px -26px rgba(0, 0, 0, 0.95), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    text-align: left;
+    color: var(--papier);
+    cursor: pointer;
+    -webkit-touch-callout: none;
+    user-select: none;
+  }
+  & .scene-qui {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    font: var(--t-et);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--papier-2);
+  }
+  & .scene-qui .signe {
+    font-size: 11px;
+  }
+  & .scene-qui b {
+    min-width: 0;
+    font: inherit;
+    line-height: 1.3; /* capitales mono : à 1, le haut des lettres était rogné */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  & .scene-q {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+    font: 600 16px/1.28 var(--ui);
+    letter-spacing: -0.01em;
+    text-wrap: pretty;
+    overflow-wrap: anywhere;
+  }
+  & .scene-sujet {
+    font: 400 10.5px/1.3 var(--mono);
+    color: var(--papier-3);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  /* Plan de devant : le seul bouton jaune de l'écran, à cheval sur le bord bas de la carte. */
+  & .scene-go {
+    position: absolute;
+    right: 14px;
+    bottom: -22px;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    height: 44px;
+    padding: 0 16px 0 20px;
+    background: var(--bouton-jaune);
+    border-radius: 3px;
+    box-shadow: var(--ombre-jaune);
+    font: 700 var(--t-tx) / 1 var(--ui);
+    letter-spacing: 0.02em;
+    color: var(--encre);
+  }
+  & .scene-go i {
+    font: 400 22px/0.8 var(--ui);
+    font-style: normal;
+    transform: translateY(-1px);
+  }
+  & .scene-carte:active .scene-go {
+    background: color-mix(in srgb, var(--appel) 84%, #fff);
+  }
+
+  /* ───────── Filtres : petits, papier ───────── */
+  & .tri {
+    gap: 6px;
+    padding: 6px 16px 4px;
+    border-bottom: 0;
+  }
+  /* 44 points au doigt, mais une pastille de 30 à l'œil : la cible ne grossit pas l'écran. */
+  & .tri button {
+    position: relative;
+    height: 44px;
+    padding: 0 12px;
+    background: none;
+    border: 0;
+    border-radius: 0;
+    font: var(--t-et);
+    letter-spacing: 0.1em;
+    color: var(--papier-3);
+  }
+  & .tri button::before {
+    content: '';
+    position: absolute;
+    inset: 7px 0;
+    z-index: -1;
+    border: 1px solid var(--filet);
+    border-radius: 15px;
+  }
+  & .tri button b,
+  & .tri button.tri-attend b {
+    color: var(--papier-2);
+  }
+  & .tri {
+    isolation: isolate; /* les pastilles (z-index -1) restent au-dessus du fond de la colonne */
+  }
+  & .tri button[aria-pressed='true'],
+  & .tri button.tri-attend[aria-pressed='true'] {
+    background: none;
+    color: var(--papier);
+  }
+  & .tri button[aria-pressed='true']::before {
+    background: rgba(232, 235, 244, 0.1);
+    border-color: rgba(232, 235, 244, 0.3);
+  }
+  & .tri button[aria-pressed='true'] b {
+    color: var(--papier);
+  }
+
+  /* ───────── Liste rangée par projet ───────── */
+  & .roll.par-projet {
+    padding-bottom: 8px;
+  }
+  & .projet-tete {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding: 16px 18px 6px;
+    font: var(--t-et);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--papier-3);
+  }
+  & .projet-tete i {
+    font-style: normal;
+    letter-spacing: 0;
+  }
+  & .projet-tete + li > .rang {
+    box-shadow: none;
+  }
+  & .projet-tete + li > .carte {
+    box-shadow: inset 2px 0 0 var(--appel);
+  }
+  /* Côté droit : la place du « ⋯ » réservée par lot3-menus.css reste (padding-right non touché). */
+  & .rang {
+    height: 50px;
+    gap: 12px;
+    padding-left: 18px;
+  }
+  & .rang-nom {
+    gap: 5px;
+  }
+  & .rang b {
+    font: 600 var(--t-tx) / 1 var(--ui);
+  }
+  & .rang small {
+    font: 400 10.5px/1.25 var(--mono);
+    color: var(--papier-3);
+  }
+  & .rang .signe {
+    font-size: 11px;
+  }
+  & .rang .etat {
+    font: var(--t-et);
+    letter-spacing: 0.1em;
+  }
+  & .rang .age {
+    min-width: 36px;
+    font: 400 10.5px/1 var(--mono);
+    color: var(--papier-3);
+  }
+  & li + li > .rang {
+    box-shadow: inset 0 1px 0 var(--filet);
+  }
+  /* FINI (lot 6) : son filet vert à gauche reste, quelle que soit la place de la ligne. */
+  & :is(li, li + li, .projet-tete + li) > .rang.is-fini {
+    box-shadow: inset 3px 0 0 var(--fini);
+  }
+  & .rail .ligne-plus {
+    color: var(--papier-3);
+  }
+
+  /* Une autre console qui t'attend : une ligne, le jaune seulement sur son repère et sa flèche (ce qui se touche). */
+  & .carte {
+    gap: 6px;
+    padding-block: 12px;
+    padding-left: 18px;
+    background: none;
+    box-shadow: inset 2px 0 0 var(--appel);
+    color: var(--papier);
+  }
+  & li + li > .carte {
+    box-shadow: inset 2px 0 0 var(--appel), inset 0 1px 0 var(--filet);
+  }
+  & .carte-haut b {
+    font: 600 var(--t-tx) / 1 var(--ui);
+  }
+  & .carte .signe {
+    font-size: 11px;
+    color: var(--appel);
+  }
+  & .carte .age {
+    font: 400 10.5px/1 var(--mono);
+    color: var(--papier-2);
+  }
+  & .carte-q {
+    -webkit-line-clamp: 2;
+    font: 500 var(--t-tx) / 1.3 var(--ui);
+    letter-spacing: 0;
+    color: var(--papier-2);
+  }
+  & .carte-bas {
+    margin-top: 0;
+    font: 400 10.5px/1 var(--mono);
+    color: var(--papier-3);
+  }
+  & .va {
+    font: 400 22px/0.6 var(--ui);
+    color: var(--appel);
+  }
+  & .carte + .ligne-plus {
+    color: var(--papier-2);
+    background: none;
+  }
+
+  /* Équipe : son en-tête en petites capitales ; « prête à livrer » garde le jaune sur Livrer seulement. */
+  & .equipe {
+    box-shadow: none;
+  }
+  & .equipe-tete {
+    padding: 16px 18px 6px;
+  }
+  & .equipe-titre i {
+    font: var(--t-et);
+    letter-spacing: 0.16em;
+    color: var(--papier-3);
+  }
+  & .equipe-titre b {
+    font: 600 var(--t-tx) / 1.1 var(--ui);
+    color: var(--papier);
+  }
+  & .equipe-bas {
+    font: 400 10.5px/1.3 var(--mono);
+    color: var(--papier-3);
+  }
+  & .arreter {
+    font: var(--t-et);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--papier-3);
+  }
+  & .equipe.is-prete .equipe-tete {
+    background: linear-gradient(90deg, color-mix(in srgb, var(--appel) 9%, transparent), transparent 70%);
+    box-shadow: inset 2px 0 0 var(--appel);
+    color: var(--papier);
+  }
+  & .equipe.is-prete .equipe-titre i {
+    color: var(--appel);
+  }
+  & .equipe.is-prete :is(.equipe-bas, .arreter, .equipe-q) {
+    color: var(--papier-2);
+  }
+  & .livrer {
+    background: var(--bouton-jaune);
+    box-shadow: var(--ombre-jaune);
+    color: var(--encre);
+  }
+
+  & .roll-suite {
+    padding: 8px 18px 9px;
+    border-top-color: var(--filet);
+    font: var(--t-et);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--papier-3);
+  }
+  & .roll-suite b {
+    color: var(--papier);
+  }
+  & .mus-mini {
+    border-top-color: var(--filet);
+  }
+  & .mus-nom {
+    font: var(--t-et);
+    letter-spacing: 0.16em;
+    color: var(--papier-3);
+  }
+  & .pli-boite {
+    padding: 8px 12px calc(12px + env(safe-area-inset-bottom));
+    border-top-color: var(--filet);
+  }
+  & .pli {
+    height: 48px;
+    background: linear-gradient(180deg, rgba(190, 205, 255, 0.08), rgba(190, 205, 255, 0.03));
+    border: 1px solid var(--verre-bord);
+    border-top-color: var(--verre-haut);
+    border-radius: 3px;
+    font: 600 var(--t-tx) / 1 var(--ui);
+    letter-spacing: 0.02em;
+    color: var(--papier);
+  }
+  & .pli::before {
+    font: 400 16px/1 var(--mono);
+    color: var(--papier-2);
+  }
+}
+
+/* ───────── Console ouverte, téléphone debout : trois plans (règle 1) ─────────
+   `.reel` n'est posée que debout (MobileConsole.jsx) : couché, la console reste celle du lot 6, inchangée. */
+[data-theme='reverbere'][data-reel='oui'] .app.is-mobile .sheet.reel {
+  background: radial-gradient(130% 30% at 15% 0%, #141c3c, rgba(8, 11, 24, 0) 70%), var(--sol-bas);
+  /* L'état et la question sont dans le bandeau : la barre du haut ne les répète pas. */
+  & .sheet-bar > :is(.signe, .etat, .age) {
+    display: none;
+  }
+  & .suite-q {
+    visibility: hidden;
+  }
+  /* En-tête : petit, à l'encre, même quand l'agent attend (le jaune n'est plus un fond : il est sur Entrée). */
+  & .sheet-bar,
+  &.is-needs .sheet-bar {
+    height: 48px;
+    gap: 6px;
+    padding: 0 10px 0 2px;
+    background: none;
+    border-bottom: 0;
+    color: var(--papier);
+  }
+  & .sheet-back {
+    gap: 4px;
+    padding: 0 8px 0 8px;
+    font: 600 var(--t-tx) / 1 var(--ui);
+    color: var(--papier-2);
+  }
+  & .sheet-back i {
+    font: 400 22px/1 var(--ui);
+  }
+  & .sheet-titre {
+    flex: 1;
+    min-width: 0;
+    gap: 4px;
+  }
+  & .sheet-titre b,
+  & .sheet-bar > b {
+    font: 600 var(--t-tx) / 1.05 var(--ui);
+    color: var(--papier);
+  }
+  & .sheet-titre small {
+    font: 400 10.5px/1.1 var(--mono);
+    color: var(--papier-3);
+  }
+  & .sheet-titre small em {
+    font-style: normal;
+  }
+  & .sheet-vue,
+  &.is-needs .sheet-vue {
+    height: 44px;
+    margin-block: 0;
+    padding: 0 12px;
+    background: none;
+    border: 1px solid var(--filet);
+    border-radius: 16px;
+    font: var(--t-et);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--papier-2);
+  }
+  & .sheet-plus,
+  &.is-needs .sheet-plus {
+    color: var(--papier-2);
+    background: none;
+  }
+
+  /* Le bandeau : état en petit, la question, puis le nom du projet en très grand (fond). */
+  & .bande {
+    position: relative;
+    z-index: 0;
+    padding: 2px 14px 0;
+  }
+  & .bande-sur {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    font: var(--t-et);
+    letter-spacing: 0.14em;
+    color: var(--papier-2);
+  }
+  & .bande-sur .signe {
+    font-size: 11px;
+  }
+  & .bande-sur .age {
+    margin-left: auto;
+    font: 400 10.5px/1 var(--mono);
+    color: var(--papier-3);
+  }
+  & .bande.attend .bande-sur span:not(.age) {
+    color: var(--papier);
+  }
+  & .bande-q {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    margin: 8px 0 0;
+    font: 600 var(--t-tx) / 1.32 var(--ui);
+    color: var(--papier);
+    overflow-wrap: anywhere;
+  }
+  & .bande {
+    padding-bottom: 10px;
+  }
+
+  /* Plan du milieu : le terminal, sur une carte qui recouvre le bas du nom du projet. */
+  & > :is(.sheet-zone, .fil, .boucle-puce) {
+    position: relative;
+    z-index: 1;
+  }
+  & .sheet-zone {
+    margin: 0 6px;
+    padding-bottom: 12px;
+    background: var(--dalle);
+    border: 1px solid var(--verre-bord);
+    border-top-color: var(--verre-haut);
+    border-bottom: 0;
+    border-radius: 4px 4px 0 0;
+    box-shadow: 0 -20px 34px -18px rgba(0, 0, 0, 0.9);
+  }
+  & .sheet-zone .sheet-term {
+    margin: 8px 8px 0;
+  }
+  /* Discussion : même carte au milieu ; la question y a déjà sa carte de réponse, le bandeau ne la répète pas. */
+  &.en-fil .bande-q {
+    display: none;
+  }
+  &.en-fil > .fil {
+    margin: 0 6px;
+    border: 1px solid var(--verre-bord);
+    border-top-color: var(--verre-haut);
+    border-bottom: 0;
+    border-radius: 4px 4px 0 0;
+    box-shadow: 0 -20px 34px -18px rgba(0, 0, 0, 0.9);
+  }
+
+  /* Plan de devant : barre d'envoi, suite et touches sur un plateau qui chevauche le bas de la carte. */
+  & > :is(.envoi, .suite, .keys) {
+    position: relative;
+    z-index: 2;
+    background: linear-gradient(180deg, #141a31, #0d1123);
+  }
+  & > .envoi {
+    margin-top: -10px;
+    border-top: 0;
+    border-radius: 6px 6px 0 0;
+    box-shadow: 0 -16px 30px -14px rgba(0, 0, 0, 0.95), inset 0 1px 0 rgba(214, 224, 255, 0.16);
+  }
+  & .envoi-avis {
+    font: 400 11px/1.4 var(--ui);
+    color: var(--papier-3);
+  }
+  & .suite {
+    height: 40px;
+    border-top: 1px solid var(--filet);
+    font: var(--t-et);
+    color: var(--papier-3);
+  }
+  & .suite button {
+    height: 44px;
+    font: var(--t-et);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--papier-2);
+  }
+  & .suite i {
+    font: var(--t-et);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  & .keys {
+    gap: 6px;
+    padding: 4px 8px calc(12px + env(safe-area-inset-bottom));
+  }
+  & .keys button {
+    height: 44px;
+    background: linear-gradient(180deg, rgba(190, 205, 255, 0.1), rgba(190, 205, 255, 0.045));
+    border: 1px solid rgba(214, 224, 255, 0.1);
+    border-top-color: rgba(214, 224, 255, 0.2);
+    border-radius: 3px;
+    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.4);
+    font: 600 12px/1 var(--ui);
+    color: var(--papier);
+  }
+  /* Entrée, quand l'agent attend : la touche qui répond. Le seul jaune de l'écran. */
+  & .keys button.allume {
+    background: var(--bouton-jaune);
+    border-color: transparent;
+    box-shadow: var(--ombre-jaune);
+    font-weight: 700;
+    color: var(--encre);
+  }
+  & .keys button:active {
+    background: rgba(190, 205, 255, 0.22);
+  }
+}
+
+}
+
+/* ───────── Écran d'accueil d'iOS : l'en-tête de la console sous l'heure (11/11, 23:12) ─────────
+   Orkun : « Meydan est bug. Et d'autres conversation s'affichent meme plus correctement » (capture : nom et « ‹ Meydan »
+   cachés sous l'heure, la carte de la conversation par-dessus). En plein écran (display-mode: standalone, barre d'état
+   translucide), lot3-tel.css §3 fait grandir la barre du haut de la zone sûre ; la règle « reel » ci-dessus (height 48px,
+   padding 0, sélecteur plus fort) l'écrasait depuis 20:02. Même zone sûre ici, pour les deux états (repos et attente). */
+@media (display-mode: standalone) and (orientation: portrait) {
+  [data-theme='reverbere'][data-reel='oui'] .app.is-mobile .sheet.reel .sheet-bar,
+  [data-theme='reverbere'][data-reel='oui'] .app.is-mobile .sheet.reel.is-needs .sheet-bar {
+    height: calc(48px + env(safe-area-inset-top));
+    padding-top: env(safe-area-inset-top);
+  }
+}

@@ -1,0 +1,565 @@
+/* Volet « comptes » (11/11) : choix du compte, usage par compte, limite d'usage atteinte.
+   Demande d'Orkun : « Plusieurs comptes Claude / Codex ». Composants : Comptes.jsx (Comptes, QuotaRelais, CompteBadge).
+   Toutes les classes commencent par `cpt-` (aucune n'existe dans une autre feuille, vérifié le 11/11).
+   Les deux looks par leurs jetons : Réverbère redéfinit --paper, --dim, --slab-bar, --mat-line sur les siens (--texte,
+   --texte-2, --barre, --trait), « Tapis » garde ceux de styles.css ; un jeton propre à Réverbère a toujours son repli.
+   Couleurs (reel.css) : encre et papier ; le jaune seulement sur « Relancer sur le compte N » (à toi de toucher) ; le
+   rouge seulement pour un relais qui échoue. Aucune animation, aucun défilement interne, rien sur le plateau du
+   téléphone ni dans les tuiles vues de loin. */
+
+/* ═══ Pastille « C2 » à côté du nom (rien pour le compte 1) ═══
+   Posée APRÈS l'élément du nom, partout dans une rangée flexible à écart (barre de la dalle, ruban « Tapis », en-tête
+   du téléphone, lignes du rail de C1) : elle ne rétrécit pas, seul le nom se coupe (points de suspension). Elle prend
+   la couleur de la rangée (encre sur la barre jaune d'une console qui attend, encre sur le ruban de « Tapis »). */
+.cpt-badge {
+  flex: none;
+  display: inline-block;
+  margin: 0;
+  padding: 2px 4px 1px;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  font: 700 9.5px/1 var(--mono);
+  font-stretch: normal;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  vertical-align: 1px;
+  white-space: nowrap;
+}
+/* De loin (ordinateur et plateau du téléphone) : la tuile ne change pas. */
+.slab.is-far .cpt-badge {
+  display: none;
+}
+.app.is-mobile .sheet-bar .cpt-badge {
+  font-size: 10.5px;
+}
+
+/* ═══ Panneau « Usage des comptes » ═══
+   Ordinateur : dans la colonne, comme le choix de l'apparence (mono, petit, un filet au-dessus). La colonne fait 304 px
+   (292 en « Tapis ») ; Iosevka avance de 0,5 em : en 10,5 px, « Aujourd'hui · Claude 312,40 $ · Codex 42 M jetons »
+   (51 signes) fait ≈ 268 px et tient dans les 275 px utiles (le chevron pend dans la marge de gauche, comme un
+   <details>). Au-delà (montant du jour à 4 chiffres), des points de suspension, la ligne entière en infobulle. */
+.cpt-comptes {
+  flex: none;
+  margin: 0;
+  padding: 3px 12px 5px 16px;
+  border-top: 1px solid var(--trait-fin, var(--mat-line));
+  font: 400 10.5px/1.35 var(--mono);
+  color: var(--dim);
+}
+.cpt-comptes p {
+  margin: 0;
+}
+/* Pas encore de chiffres (premier calcul) ou route absente : une ligne, rien d'autre. */
+.cpt-comptes.cpt-muet {
+  padding-block: 9px 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cpt-ligne {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 32px;
+  padding: 4px 0;
+  background: none;
+  border: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+}
+.cpt-ligne:hover,
+.cpt-ligne[aria-expanded='true'] {
+  color: var(--paper);
+}
+.cpt-resume {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cpt-val {
+  font-weight: 700;
+  color: var(--paper);
+}
+/* Replié : pointe à droite ; déplié : vers le bas. Hors du flux, dans la marge de gauche : il ne prend rien à la ligne. */
+.cpt-chevron {
+  position: absolute;
+  left: -11px;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  margin-top: -3px;
+  border: solid currentColor;
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(-45deg);
+}
+.cpt-ligne[aria-expanded='true'] .cpt-chevron {
+  margin-top: -4px;
+  transform: rotate(45deg);
+}
+
+.cpt-detail {
+  padding: 2px 0 6px;
+}
+/* Trois colonnes fixes (le compte, aujourd'hui, 7 j) : un libellé trop long se coupe dans sa case, la table ne déborde
+   jamais de la colonne. */
+.cpt-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+.cpt-table th,
+.cpt-table td {
+  padding: 0 6px 6px 0;
+  font-weight: inherit;
+  text-align: left;
+  vertical-align: top;
+}
+.cpt-table tr > :first-child {
+  width: 34%;
+}
+.cpt-table thead th {
+  padding-bottom: 5px;
+  font: 600 9.5px/1 var(--mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--texte-3, var(--dim));
+}
+.cpt-compte > tr:first-child > * {
+  padding-top: 6px;
+  border-top: 1px solid var(--trait-fin, var(--mat-line));
+}
+.cpt-nom,
+.cpt-modele,
+.cpt-somme,
+.cpt-jetons,
+.cpt-cache {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cpt-nom {
+  font: 600 12px/1.25 var(--ui);
+  color: var(--paper);
+}
+.cpt-modele {
+  margin-top: 2px;
+  font: 400 10px/1.25 var(--mono);
+  color: var(--texte-3, var(--dim));
+}
+.cpt-somme {
+  font: 600 12px/1.25 var(--ui);
+  font-variant-numeric: tabular-nums;
+  color: var(--paper);
+}
+.cpt-jetons {
+  margin-top: 1px;
+  font: 400 10.5px/1.3 var(--mono);
+  color: var(--dim);
+}
+.cpt-cache {
+  font: 400 9.5px/1.3 var(--mono);
+  color: var(--texte-3, var(--dim));
+}
+.cpt-absent {
+  font: 400 11.5px/1.25 var(--ui);
+  color: var(--texte-3, var(--dim));
+}
+.cpt-limites td {
+  padding-top: 0;
+}
+.cpt-limites span {
+  display: block;
+  font: 400 10.5px/1.35 var(--mono);
+  color: var(--dim);
+  overflow-wrap: anywhere;
+}
+/* Une ligne : 51 signes en Iosevka 10,5 px ≈ 268 px (au téléphone : 13 px, plus bas). */
+.cpt-rappel {
+  padding: 0 0 6px;
+  font: 400 10.5px/1.35 var(--mono);
+  color: var(--paper);
+}
+.cpt-pied {
+  padding-top: 6px;
+  border-top: 1px solid var(--trait-fin, var(--mat-line));
+  font: 400 9.5px/1.45 var(--mono);
+  color: var(--texte-3, var(--dim));
+}
+
+/* Téléphone (`compact`, pli « Nouvelle console ») : 390 px de large, 16 px de marge. Deux tailles seulement (reel.css,
+   règle 3) : 10,5 px pour les étiquettes et les petits chiffres, 13 px pour le texte ; la ligne repliée est une cible
+   de 44 px. */
+.cpt-compact {
+  padding: 2px 16px 8px;
+}
+.cpt-compact .cpt-ligne {
+  min-height: 44px;
+  font: 400 13px/1.2 var(--ui);
+}
+.cpt-compact .cpt-val {
+  font-weight: 650;
+}
+.cpt-compact .cpt-table tr > :first-child {
+  width: 30%;
+}
+.cpt-compact .cpt-table thead th,
+.cpt-compact .cpt-modele,
+.cpt-compact .cpt-jetons,
+.cpt-compact .cpt-cache,
+.cpt-compact .cpt-limites span,
+.cpt-compact .cpt-pied {
+  font-size: 10.5px;
+}
+.cpt-compact :is(.cpt-nom, .cpt-somme, .cpt-absent) {
+  font-size: 13px;
+}
+.cpt-compact .cpt-rappel {
+  font: 400 13px/1.35 var(--ui);
+}
+/* Dans le pli de Réverbère (« Nouvelle console » plié : téléphone, ou écran bas de l'ordinateur ; déjà 12 px de
+   marge) : 4 px de plus font les 16, sans second filet (comme `.pli-boite .apparence`). */
+[data-theme='reverbere'] .pli-boite .cpt-comptes {
+  padding: 0 4px 8px;
+  border-top: 0;
+}
+/* « Tapis » : colonne plus étroite (292 px) : la ligne repliée en 10 px ; au téléphone, Archivo resserré en 13 px. */
+[data-theme='tapis'] .cpt-ligne {
+  font-size: 10px;
+}
+[data-theme='tapis'] .cpt-compact .cpt-ligne {
+  font-size: 13px;
+  font-stretch: 87.5%;
+}
+
+/* ═══ Bandeau « Limite d'usage atteinte » (QuotaRelais) ═══
+   L'agent est bloqué par son forfait, pas en panne : ni rouge, ni jaune pour le bandeau. Un fond de barre, un filet de
+   papier à gauche, le texte à l'encre et au papier ; seul le bouton est jaune. Texte et bouton côte à côte quand la
+   place le permet, l'un sous l'autre sinon (retour à la ligne, aucune mesure). */
+.cpt-quota {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 20px;
+  margin: 0;
+  padding: 10px 14px 11px 17px;
+  background: var(--slab-bar);
+  border-bottom: 1px solid var(--trait, var(--mat-line));
+  box-shadow: inset 3px 0 0 var(--paper);
+  color: var(--paper);
+  text-align: left;
+  cursor: default;
+}
+[data-theme='reverbere'] .cpt-quota {
+  background: linear-gradient(180deg, #161b30, var(--barre));
+}
+.cpt-quota p {
+  margin: 0;
+}
+.cpt-quota-texte {
+  flex: 1 1 240px;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 4px;
+}
+.cpt-quota-titre {
+  font: 600 10.5px/1.2 var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+/* La ligne lue sur l'écran (≤ 160 signes) : deux lignes au plus, coupées proprement, entière en infobulle. */
+.cpt-quota-lu {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  font: 400 12.5px/1.35 var(--mono);
+  overflow-wrap: anywhere;
+}
+.cpt-quota-dit {
+  font: 400 12px/1.35 var(--ui);
+  color: var(--texte-3, var(--dim));
+}
+.cpt-quota-geste {
+  flex: 0 1 auto;
+  max-width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: start;
+  gap: 6px;
+}
+.cpt-relance {
+  min-height: 32px;
+  padding: 0 14px;
+  background: var(--appel, var(--tape));
+  border: 0;
+  border-radius: 2px;
+  font: 600 13px/1.1 var(--ui);
+  color: var(--encre, var(--ink));
+  white-space: nowrap;
+}
+.cpt-relance:hover {
+  filter: brightness(1.06);
+}
+.cpt-relance:disabled {
+  opacity: 0.62;
+  cursor: progress;
+}
+.cpt-quota-erreur {
+  max-width: 34ch;
+  font: 600 12px/1.35 var(--ui);
+  color: var(--error);
+  overflow-wrap: anywhere;
+}
+
+/* Ordinateur, dalle vue de près : posé sur le haut du terminal, sous la barre (comme la plaque), contre-zoomé pour
+   rester lisible (--zb, Board.jsx). Le terminal ne perd aucune ligne. */
+.slab > .cpt-quota {
+  position: absolute;
+  left: 0;
+  top: 40px;
+  z-index: 2;
+  width: calc(100% * var(--zb, 1));
+  box-shadow: inset 3px 0 0 var(--paper), 0 10px 18px -8px rgba(0, 0, 0, 0.7);
+  transform: scale(calc(1 / var(--zb, 1)));
+  transform-origin: 0 0;
+}
+/* Une question t'attend sur la plaque (Réverbère, console sans le clavier) : elle passe d'abord ; le bandeau revient dès
+   que la console prend le clavier. */
+.slab:has(> .plaque) > .cpt-quota {
+  display: none;
+}
+
+/* Téléphone debout : sous la barre du haut (et le bandeau d'état), avant le terminal ou la discussion ; le bouton sur
+   toute la largeur, 44 px. Le clavier ouvert, il se retire comme les touches (la place va au terminal). */
+.sheet > .cpt-quota {
+  flex: none;
+  position: relative;
+  z-index: 2;
+}
+.sheet > .cpt-quota .cpt-quota-geste {
+  flex: 1 1 100%;
+  justify-items: stretch;
+}
+.sheet > .cpt-quota .cpt-relance {
+  min-height: 44px;
+}
+.sheet > .cpt-quota .cpt-quota-erreur {
+  max-width: none;
+}
+.sheet.ecrit > .cpt-quota {
+  display: none;
+}
+/* Reel « 3 règles » (debout, Réverbère) : une carte de verre comme le terminal, deux tailles (10,5 / 13), bouton jaune
+   en relief. */
+[data-theme='reverbere'][data-reel='oui'] .app.is-mobile .sheet.reel > .cpt-quota {
+  margin: 0 6px 8px;
+  padding: 10px 14px 12px 16px;
+  background: var(--verre, var(--barre));
+  border: 1px solid var(--verre-bord, var(--trait));
+  border-top-color: var(--verre-haut, var(--trait));
+  border-radius: 4px;
+  box-shadow: inset 3px 0 0 var(--papier, var(--paper));
+  & .cpt-quota-titre {
+    font: var(--t-et);
+    letter-spacing: 0.14em;
+    color: var(--papier);
+  }
+  & .cpt-quota-lu {
+    font: 400 var(--t-tx) / 1.35 var(--mono);
+    color: var(--papier);
+  }
+  & .cpt-quota-dit {
+    font: 400 var(--t-tx) / 1.35 var(--ui);
+    color: var(--papier-3);
+  }
+  & .cpt-relance {
+    background: var(--bouton-jaune, var(--appel));
+    box-shadow: var(--ombre-jaune, none);
+    font: 600 var(--t-tx) / 1 var(--ui);
+  }
+  & .cpt-quota-erreur {
+    font-size: var(--t-tx);
+  }
+}
+
+/* Téléphone couché : la console est une grille (styles.css). Le bandeau ne prend pas de case (sinon la discussion, placée
+   d'office, glisserait dans la colonne des touches) : il est posé en absolu SUR la case du terminal (ligne 2, colonne 1),
+   en haut, texte et bouton côte à côte, la ligne lue sur une ligne. */
+@media (orientation: landscape) and (max-height: 520px) {
+  .app.is-mobile .sheet:has(> .cpt-quota) {
+    position: relative;
+  }
+  .app.is-mobile .sheet > .cpt-quota {
+    position: absolute;
+    grid-column: 1;
+    grid-row: 2;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 3;
+    gap: 6px 16px;
+    padding: 7px 12px 8px 15px;
+    box-shadow: inset 3px 0 0 var(--paper), 0 10px 18px -8px rgba(0, 0, 0, 0.7);
+  }
+  .app.is-mobile .sheet > .cpt-quota .cpt-quota-texte {
+    gap: 3px;
+  }
+  .app.is-mobile .sheet > .cpt-quota .cpt-quota-lu {
+    -webkit-line-clamp: 1;
+  }
+  .app.is-mobile .sheet > .cpt-quota .cpt-quota-geste {
+    flex: 0 1 auto;
+    justify-items: start;
+  }
+  .app.is-mobile .sheet > .cpt-quota .cpt-quota-erreur {
+    max-width: 34ch;
+  }
+}
+
+/* ═══ Choix du compte dans « Nouvelle console » (Rail.jsx, Composer) ═══
+   Réverbère range le formulaire par `order` : le sélecteur prend la rangée du bouton « Faire entrer » (order 4, seul
+   jusque-là sur sa rangée), à sa gauche ; aucune rangée de plus (intégration du 11/11 : la liste de la colonne et le
+   bouton de lancement d'un petit téléphone gardent leur place). L'avertissement vient sous le bouton, quand il sert. */
+[data-theme='reverbere'] .composer .field.compte {
+  order: 4;
+  flex: 1 1 0;
+  min-width: 0;
+}
+[data-theme='reverbere'] .composer .compte-avis {
+  order: 5;
+  flex: 1 1 100%;
+}
+/* Une note, pas une alerte : petite, atténuée ; la commande à taper garde la police mono du thème. */
+.compte-avis {
+  display: block;
+  margin: 0;
+  font: 400 11px/1.35 var(--mono);
+  color: var(--dim);
+}
+.compte-avis code {
+  font: inherit;
+  color: var(--paper);
+}
+
+/* ═══ Ordinateur : le panneau d'usage sur le plateau (Board.jsx, <Panel position="bottom-left">) ═══
+   Intégration du 11/11 : hors de la colonne, dont la liste n'avait plus la place. En bas à gauche (la mini-carte est à
+   droite), replié sur une ligne ; déplié VERS LE HAUT (column-reverse) : la ligne reste où on l'a touchée. Mêmes jetons
+   que la barre des dalles, dans les deux looks. Aucune animation. */
+/* Le pied du plateau (intégration du 12/11) : l'usage, puis la barre « Ajouter » des cartes à sa droite, alignés en bas. */
+.react-flow__panel.pied-plateau {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  margin: 0 0 14px 14px;
+  max-width: calc(100% - 28px);
+}
+.pied-plateau .cpt-panneau {
+  flex: none;
+  width: 300px;
+}
+.cpt-panneau .cpt-comptes {
+  display: flex;
+  flex-direction: column-reverse;
+  padding: 4px 12px 5px 16px;
+  border: 1px solid var(--mat-line);
+  border-radius: 3px;
+  background: var(--slab-bar);
+}
+
+/* ═══ Noms des comptes (décision d'Orkun du 17/11, comptes-3 : « Donner des noms ») ═══
+   Le nom est un bouton : un clic (ou un toucher) le change en champ, sur toute la largeur du tableau. Un nom long (24
+   caractères) se coupe dans sa case (points de suspension), entier dans l'infobulle ; rien ne déborde du panneau. */
+button.cpt-nom {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  background: none;
+  border: 0;
+  text-align: left;
+  cursor: pointer;
+}
+button.cpt-nom:hover,
+button.cpt-nom:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.cpt-renomme {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.cpt-renomme input {
+  flex: 1;
+  min-width: 0;
+  height: 26px;
+  padding: 0 6px;
+  background: none;
+  border: 1px solid var(--trait-fin, var(--mat-line));
+  border-radius: 3px;
+  outline: none;
+  font: 600 12px/1 var(--ui);
+  color: var(--paper);
+}
+.cpt-renomme input:focus {
+  border-color: var(--paper);
+}
+.cpt-renomme button {
+  flex: none;
+  height: 26px;
+  padding: 0 8px;
+  background: none;
+  border: 1px solid var(--trait-fin, var(--mat-line));
+  border-radius: 3px;
+  font: 600 10.5px/1 var(--mono);
+  color: var(--paper);
+  cursor: pointer;
+}
+.cpt-renomme .cpt-renomme-non {
+  border-color: transparent;
+  color: var(--dim);
+}
+.cpt-renomme-erreur {
+  padding-top: 4px;
+  font: 400 10.5px/1.35 var(--mono);
+  color: var(--paper);
+  overflow-wrap: anywhere;
+}
+/* Téléphone : cibles de 44 px, 16 px dans le champ (en dessous, l'iPhone zoome la page quand le clavier vient). */
+.cpt-compact .cpt-renomme input,
+.cpt-compact .cpt-renomme button {
+  height: 44px;
+}
+.cpt-compact .cpt-renomme input {
+  font-size: 16px;
+}
+.cpt-compact .cpt-renomme button {
+  font-size: 13px;
+}
+.cpt-compact button.cpt-nom {
+  min-height: 32px;
+}
+/* Bandeau « Limite d'usage atteinte » avec un nom donné : « Relancer sur « … » » ne déborde pas (le nom se coupe), le
+   titre passe à la ligne au besoin. */
+.cpt-relance:has(.cpt-relance-nom) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center; /* sur toute la largeur (téléphone) : le texte reste au milieu, comme sans nom */
+  max-width: 100%;
+  min-width: 0;
+}
+.cpt-relance-nom {
+  min-width: 0;
+  margin-left: 0.3em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cpt-quota-titre {
+  overflow-wrap: anywhere;
+}

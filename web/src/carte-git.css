@@ -1,0 +1,639 @@
+/* Panneau Git (plateau étendu, volet du 11/11 ; GitPanneau.jsx). Préfixe « et-git- » partout ; la racine de la carte est
+   `.et-carte.et-git` (Carte.jsx). Couleurs par les jetons des deux thèmes : --slab, --slab-bar, --paper, --dim,
+   --mat-line, --mono, --ui, --error, et --ready / --working / --running pour les badges et les lignes ajoutées. */
+
+/* ── Barre : outils (rafraîchir, projet) ── */
+.et-git-outil {
+  flex: none;
+  min-width: 26px;
+  height: 24px;
+  padding: 0 8px;
+  border: 1px solid var(--mat-line);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--dim);
+  font-size: 12px;
+  line-height: 1;
+}
+.et-git-outil:hover,
+.et-git-outil.est-active {
+  color: var(--paper);
+  border-color: var(--paper);
+}
+
+/* ── Corps ── */
+.et-git-defile {
+  height: 100%;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 10px 14px 16px;
+  font-size: 13px;
+}
+.et-git-defile section {
+  margin-top: 16px;
+}
+.et-git-h {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 6px;
+  font: 700 10px/1.2 var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+.et-git-h span {
+  color: var(--paper);
+}
+.et-git-aide {
+  margin: 4px 0;
+  color: var(--dim);
+  font-size: 12.5px;
+}
+.et-git-marge {
+  margin: 0;
+  padding: 12px 14px;
+}
+.et-git-erreur {
+  margin: 6px 0;
+  color: var(--error);
+  font-size: 12.5px;
+  overflow-wrap: anywhere;
+}
+.et-git-bloc {
+  padding: 10px 12px;
+  border: 1px solid var(--error);
+  border-radius: 6px;
+}
+.et-git-bloc p {
+  margin: 0 0 10px;
+}
+.et-git-fait {
+  margin: 8px 0 0;
+  color: var(--ready);
+  font-size: 12.5px;
+}
+.et-git-bouton {
+  height: 28px;
+  padding: 0 12px;
+  border: 1px solid var(--mat-line);
+  border-radius: 6px;
+  background: var(--slab-bar);
+  color: var(--paper);
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+.et-git-bouton:hover:not(:disabled) {
+  border-color: var(--paper);
+}
+.et-git-bouton.est-fort {
+  border-color: var(--paper);
+  font-weight: 700;
+}
+.et-git-bouton:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* Ligne de branche */
+.et-git-branche {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  margin: 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--mat-line);
+}
+.et-git-branche b {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font: 700 15px/1.3 var(--mono);
+}
+.et-git-branche span {
+  color: var(--dim);
+}
+.et-git-branche span.est-change {
+  color: var(--paper);
+  font-weight: 600;
+}
+
+/* Listes */
+.et-git-projets,
+.et-git-fichiers,
+.et-git-commits {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.et-git-projets {
+  display: grid;
+  gap: 4px;
+  margin: 10px 0;
+}
+.et-git-projet {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--mat-line);
+  border-radius: 6px;
+  background: transparent;
+  text-align: left;
+}
+.et-git-projet:hover,
+.et-git-projet.est-actuel {
+  border-color: var(--paper);
+}
+.et-git-projet b {
+  font-weight: 700;
+}
+.et-git-projet span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--dim);
+  font: 400 11.5px/1.3 var(--mono);
+}
+
+.et-git-fichier {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+  min-height: 26px;
+}
+.et-git-fichier input {
+  margin: 0;
+  accent-color: var(--paper);
+}
+.et-git-lien {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 3px 6px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  text-align: left;
+}
+.et-git-lien:hover {
+  background: var(--slab-bar);
+}
+.et-git-chemin {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 400 12.5px/1.3 var(--mono);
+}
+.et-git-badge {
+  flex: none;
+  padding: 2px 5px;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  font: 700 9.5px/1 var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.et-git-badge.est-mod {
+  color: var(--working);
+}
+.et-git-badge.est-aj,
+.et-git-badge.est-ns {
+  color: var(--ready);
+}
+.et-git-badge.est-sup,
+.et-git-badge.est-cf {
+  color: var(--error);
+}
+.et-git-badge.est-ren {
+  color: var(--running);
+}
+
+/* Formulaire de commit */
+.et-git-form {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+  margin-top: 10px;
+}
+.et-git-message-saisie {
+  width: 100%;
+  min-height: 62px;
+  padding: 7px 9px;
+  resize: vertical;
+  border: 1px solid var(--mat-line);
+  border-radius: 6px;
+  background: var(--slab-bar);
+  color: var(--paper);
+  font: 400 13px/1.4 var(--ui);
+}
+.et-git-message-saisie:focus {
+  border-color: var(--paper);
+  outline: none;
+}
+.et-git-message-saisie::placeholder {
+  color: var(--dim);
+}
+.et-git-confirme {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.et-git-confirme b {
+  font-family: var(--mono);
+}
+
+/* Commits */
+.et-git-commit {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: 10px;
+  width: 100%;
+  padding: 5px 6px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  text-align: left;
+}
+.et-git-commit:hover {
+  background: var(--slab-bar);
+}
+.et-git-commit code,
+.et-git-court {
+  font: 700 12px/1.3 var(--mono);
+  color: var(--dim);
+}
+.et-git-sujet {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.et-git-meta {
+  grid-column: 2;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--dim);
+  font-size: 11.5px;
+}
+p.et-git-meta {
+  margin: 0 0 8px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* ── Visionneuse de différences ── */
+.et-git-vue {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
+  height: 100%;
+}
+.et-git-vue-tete {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--mat-line);
+}
+.et-git-vue-tete .et-git-chemin,
+.et-git-vue-tete .et-git-sujet {
+  flex: 1 1 auto;
+}
+.et-git-cotes {
+  display: flex;
+  flex: none;
+  gap: 4px;
+}
+.et-git-cote {
+  height: 24px;
+  padding: 0 8px;
+  border: 1px solid var(--mat-line);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--dim);
+  font-size: 12px;
+}
+.et-git-cote.est-active {
+  border-color: var(--paper);
+  color: var(--paper);
+}
+.et-git-diff {
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 8px 0 14px;
+}
+.et-git-diff > .et-git-aide,
+.et-git-coupe {
+  margin: 6px 12px;
+}
+.et-git-coupe {
+  color: var(--dim);
+  font-size: 12px;
+}
+.et-git-commit-tete {
+  padding: 0 12px 8px;
+  border-bottom: 1px solid var(--mat-line);
+}
+.et-git-message,
+.et-git-stat {
+  margin: 0 0 8px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.et-git-message {
+  font: 400 13px/1.45 var(--ui);
+}
+.et-git-stat {
+  color: var(--dim);
+  font: 400 12px/1.4 var(--mono);
+}
+.et-git-lignes {
+  width: max-content;
+  min-width: 100%;
+  margin: 0;
+  font: 400 12px/1.45 var(--mono);
+  tab-size: 4;
+}
+.et-git-lignes span {
+  display: block;
+  padding: 0 12px;
+  white-space: pre;
+}
+.et-git-lignes .est-plus {
+  color: var(--ready);
+  background: color-mix(in srgb, var(--ready) 10%, transparent);
+}
+.et-git-lignes .est-moins {
+  color: var(--error);
+  background: color-mix(in srgb, var(--error) 10%, transparent);
+}
+.et-git-lignes .est-bloc {
+  color: var(--dim);
+  opacity: 0.75;
+}
+.et-git-lignes .est-tete {
+  color: var(--dim);
+  font-weight: 700;
+}
+
+/* ── Plateau du téléphone couché : tuile fixe, lisible au zoom du plateau entier ──
+   La carte y est aussi « de loin » (Board : far = onOuvre || farZoom) : le cadre commun replie alors le corps
+   (cartes.css, .et-carte.est-loin) ; la tuile du téléphone le rouvre, sous une barre qui garde le titre en grand. */
+.et-carte.et-git.est-tel {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+.et-carte.et-git.est-tel .et-barre {
+  height: auto;
+  padding: 18px 24px;
+  justify-content: flex-start;
+  border-bottom: 1px solid var(--mat-line);
+}
+/* Au zoom du plateau entier (≈ 0,17 sur un iPhone couché), 72 points du plan font ≈ 12 points à l'écran : la taille des
+   noms sur les tuiles des consoles. */
+.et-carte.et-git.est-tel .et-titre {
+  font-size: 72px;
+}
+.et-carte.et-git.est-tel .et-type {
+  font-size: 30px;
+}
+.et-git-tel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  height: 100%;
+  overflow: hidden;
+  padding: 22px 24px;
+}
+.et-git-tel p {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.et-git-tel .est-dim {
+  color: var(--dim);
+  font-size: 56px;
+}
+.et-git-tel .est-erreur {
+  color: var(--error);
+  font-size: 40px;
+}
+.et-git-tel-branche {
+  font: 700 72px/1.1 var(--mono);
+}
+.et-git-tel-etat {
+  color: var(--dim);
+  font: 600 56px/1.15 var(--ui);
+}
+.et-git-tel-etat.est-change {
+  color: var(--paper);
+}
+.et-git-tel-dernier {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  color: var(--dim);
+  font: 400 46px/1.25 var(--ui);
+}
+
+/* ── Copies (volet copies, 13/11) : section « Copies », écrans de fusion et de retrait ──
+   Toute grille qui porte un libellé libre (branche, chemin, nom de console) a une colonne `minmax(0, 1fr)` et le
+   texte `overflow-wrap: anywhere` (leçons du 10/11 et du 11/11) ; les boutons à libellé long passent à la ligne. */
+.et-git-copies-liste {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.et-git-copie {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 3px;
+  padding: 7px 10px 8px;
+  border: 1px solid var(--mat-line);
+  border-radius: 6px;
+}
+.et-git-copie.est-prete {
+  border-color: var(--ready);
+}
+.et-git-copie.est-disparue {
+  opacity: 0.7;
+}
+.et-git-copie p {
+  margin: 0;
+  min-width: 0;
+}
+.et-git-copie-tete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+}
+.et-git-copie-branche {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font: 700 13.5px/1.3 var(--mono);
+}
+.et-git-tag {
+  flex: none;
+  padding: 1px 6px;
+  border: 1px solid var(--mat-line);
+  border-radius: 3px;
+  color: var(--dim);
+  font: 700 9.5px/1.4 var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.et-git-tag.est-prete {
+  border-color: var(--ready);
+  color: var(--ready);
+}
+.et-git-tag.est-alerte {
+  border-color: var(--error);
+  color: var(--error);
+}
+.et-git-copie-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 12px;
+  color: var(--dim);
+  font: 400 12px/1.35 var(--mono);
+}
+.et-git-copie-meta span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.et-git-copie-meta .est-change,
+.et-git-copie-console {
+  color: var(--paper);
+}
+.et-git-copie-chemin {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--dim);
+  font: 400 11px/1.3 var(--mono);
+}
+.et-git-copie-actions,
+.et-git-pied {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+/* Un bouton dont le libellé porte un nom libre (« Fusionner dans <branche> ») passe à la ligne au lieu de déborder. */
+.et-git-bouton.et-git-long {
+  height: auto;
+  min-height: 28px;
+  max-width: 100%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+.et-git-bouton.est-danger {
+  border-color: var(--error);
+  color: var(--error);
+}
+
+/* Écrans de fusion et de retrait : barre, corps qui défile, pied d'actions toujours visible. */
+.et-git-vue.est-pied {
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+.et-git-vue-tete b {
+  font-family: var(--mono);
+}
+/* Le titre d'un écran de copie dit la branche en entier (une confirmation porte sur elle) : il passe à la ligne. */
+.et-git-vue.est-pied .et-git-vue-tete .et-git-sujet {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.et-git-ecran {
+  padding: 10px 14px 14px;
+  font-size: 13px;
+}
+.et-git-ecran section {
+  margin-top: 14px;
+}
+.et-git-ecran p {
+  margin: 0 0 8px;
+  overflow-wrap: anywhere;
+}
+.et-git-tetes {
+  color: var(--dim);
+  font: 400 12px/1.4 var(--mono);
+}
+.et-git-tetes code {
+  color: var(--paper);
+  font-weight: 700;
+}
+.et-git-refus {
+  margin: 0;
+  padding-left: 18px;
+}
+.et-git-refus li + li {
+  margin-top: 4px;
+}
+.et-git-entre {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 24px;
+}
+.et-git-entre.est-regarder .et-git-chemin {
+  color: var(--error);
+}
+.et-git-lignes-nb {
+  color: var(--dim);
+  font: 400 11.5px/1.3 var(--mono);
+  white-space: nowrap;
+}
+.et-git-regarder {
+  color: var(--error);
+  font-size: 12.5px;
+}
+.et-git-commit.est-fixe {
+  cursor: default;
+}
+.et-git-commit.est-fixe:hover {
+  background: transparent;
+}
+.et-git-avertit {
+  font-weight: 600;
+}
+.et-git-texte .et-git-copie-chemin {
+  display: block;
+  margin-top: 4px;
+}
+.et-git-pied {
+  margin: 0;
+  padding: 8px 10px;
+  border-top: 1px solid var(--mat-line);
+}
+.et-git-pied p {
+  flex-basis: 100%;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* La note du retrait (fichiers ignorés effacés) s'aligne sur le texte de l'écran, pas sur la marge des visionneuses. */
+.et-git-ecran > .et-git-note {
+  margin: 0 0 8px;
+}
+
+/* Téléphone : le résumé des copies, à la taille de la ligne d'état. */
+.et-git-tel-copies {
+  color: var(--paper);
+  font: 600 56px/1.15 var(--ui);
+}

@@ -1,0 +1,712 @@
+/* Volet « quota » (17/11/2026) : usage par console, budget, validation avant de lancer. Composants : Budget.jsx.
+   Classes `usage-*` (ce qui se compte) et `budget-*` (ce qui se règle ou se répond) : aucune n'existe dans une autre
+   feuille (vérifié le 17/11, leçon 28) ; jamais `quota-*`, pris par la limite d'usage du volet comptes.
+   Les deux looks par leurs jetons, chacun avec son repli (Réverbère : --texte, --barre, --trait… ; Tapis : --paper,
+   --slab-bar, --mat-line). Couleurs : la pastille prend la couleur de sa barre ; orange à 80 %, couleur d'appel à 100 %.
+   Aucune animation, rien sur le plateau du téléphone ni dans les tuiles vues de loin. */
+
+/* ═══ Pastille d'une console (barre de la dalle, console agrandie, en-tête du téléphone) ═══ */
+.usage-pastille {
+  flex: none;
+  display: inline-block; /* pas inline-flex : ses morceaux deviendraient des blocs et perdraient leurs espaces */
+  height: 22px;
+  margin: 0;
+  padding: 0 7px;
+  line-height: 20px;
+  background: none;
+  border: 1px solid color-mix(in srgb, currentColor 32%, transparent);
+  border-radius: 11px;
+  font: 600 10.5px/1 var(--mono);
+  font-stretch: normal;
+  letter-spacing: 0;
+  text-transform: none;
+  white-space: nowrap;
+  color: var(--texte-2, var(--dim));
+  cursor: pointer;
+}
+.usage-pastille > i {
+  font-style: normal;
+}
+.usage-pastille:hover,
+.usage-pastille[aria-expanded='true'] {
+  color: var(--texte, var(--paper));
+  border-color: color-mix(in srgb, currentColor 60%, transparent);
+}
+.usage-pastille.est-haut {
+  background: #ff9f43;
+  border-color: #ff9f43;
+  color: #0b0e18;
+}
+.usage-pastille.est-atteint {
+  background: var(--appel, #f2e94e);
+  border-color: var(--encre, #0b0e18);
+  color: var(--encre, #0b0e18);
+}
+/* Réverbère d'avant les « 3 plans » : la barre d'une console qui t'attend est jaune, la pastille passe à l'encre. */
+[data-theme='reverbere']:not([data-reel3='oui']) .slab.is-needs .usage-pastille:not(.est-haut, .est-atteint),
+[data-theme='reverbere'] .sheet.is-needs:not(.reel) .sheet-bar .usage-pastille:not(.est-haut, .est-atteint) {
+  color: var(--encre-2, #0b0e18);
+}
+[data-theme='tapis'] .slab-bar .usage-pastille:not(.est-haut, .est-atteint) {
+  color: var(--dim);
+}
+/* De loin : la tuile ne change pas. */
+.slab.is-far .usage-pastille {
+  display: none;
+}
+/* Console agrandie : 28 px comme ses autres pastilles (lot-design/plein.css). */
+.usage-plein {
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 13px;
+  line-height: 24px;
+}
+
+/* Place (leçon 157) : la barre de la dalle était déjà pleine. Mesuré au banc au PIRE cas (nom de 48 signes, C2, repère de
+   copie et son installation, TRAVAILLE, âge « 12 h 05 », « ↻ 10/10 ») par test/volets/quota/essai-interface.mjs : la
+   pastille courte (« 3,40 $ · 68 % ») à partir de 700 px de barre (une dalle de 720 px ; au pire cas le nom y tombe à sa
+   largeur minimale, 3 em, sans rien faire déborder), entière à partir de 980 px (le nom y garde au moins 96 px) ; en
+   dessous, rien (le détail reste dans la console agrandie, au téléphone et dans T'ATTEND). « Tapis » : son ruban de nom
+   ne rétrécit pas, la barre déborderait plus tôt : courte à partir de 1 100 px, entière à partir de 1 320 px.
+   « Arrêter ? » armé prend sa place. */
+/* Un montant en $ ne s'affiche JAMAIS sans « éq. API » (demande : « à étiqueter comme tel ») : forme entière « 1,24 M ·
+   3,40 $ éq. API · 68 % » ; moyenne « 3,40 $ éq. API · 68 % » (sans les jetons) ; étroite « 1,24 M · 68 % » (jetons et %,
+   sans montant : rien à étiqueter) ; plus étroite, rien. Seuils mesurés au pire cas par essai-interface.mjs. Codex n'a pas
+   de montant : sa forme étroite garde « 1,24 M · 67 % ». */
+@container (max-width: 979px) {
+  [data-theme='reverbere'] .bar-in .usage-pastille.est-claude :is(.usage-jetons, .usage-sep),
+  [data-theme='reverbere'] .bar-in .usage-pastille.est-codex .usage-eq {
+    display: none;
+  }
+}
+@container (max-width: 819px) {
+  [data-theme='reverbere'] .bar-in .usage-pastille.est-claude .usage-jetons {
+    display: inline;
+  }
+  [data-theme='reverbere'] .bar-in .usage-pastille.est-claude :is(.usage-cout, .usage-eq) {
+    display: none;
+  }
+}
+@container (max-width: 699px) {
+  [data-theme='reverbere'] .bar-in .usage-pastille {
+    display: none;
+  }
+}
+@container (max-width: 1319px) {
+  [data-theme='tapis'] .slab-bar .usage-pastille.est-claude :is(.usage-jetons, .usage-sep),
+  [data-theme='tapis'] .slab-bar .usage-pastille.est-codex .usage-eq {
+    display: none;
+  }
+}
+@container (max-width: 1219px) {
+  [data-theme='tapis'] .slab-bar .usage-pastille.est-claude .usage-jetons {
+    display: inline;
+  }
+  [data-theme='tapis'] .slab-bar .usage-pastille.est-claude :is(.usage-cout, .usage-eq) {
+    display: none;
+  }
+}
+@container (max-width: 1099px) {
+  [data-theme='tapis'] .slab-bar .usage-pastille {
+    display: none;
+  }
+}
+.slab-bar:has(.slab-close.is-armed) .usage-pastille {
+  display: none;
+}
+/* Téléphone. Debout, dans le bandeau d'état (sous l'en-tête, qui n'a pas la place), poussée à droite avec l'âge ;
+   couché ou « Tapis », dans l'en-tête, qui garde le montant et le % sur un écran étroit (le détail est au toucher). */
+.usage-tel,
+.usage-bande {
+  height: 26px;
+  padding: 0 9px;
+  border-radius: 13px;
+  font-size: 11px;
+  line-height: 24px;
+}
+@media (max-width: 520px) {
+  .usage-tel.est-claude :is(.usage-sep, .usage-cout, .usage-eq),
+  .usage-tel.est-codex .usage-eq {
+    display: none;
+  }
+}
+
+/* ═══ Le panneau (portail dans <body>, par-dessus tout ; sous les menus .tmenu-fond à 1000) ═══ */
+.budget-fond {
+  position: fixed;
+  inset: 0;
+  z-index: 950;
+}
+@media (max-width: 760px) {
+  .budget-fond {
+    background: rgba(4, 6, 12, 0.55);
+  }
+}
+.budget-panneau {
+  position: fixed;
+  display: grid;
+  gap: 12px;
+  width: 340px;
+  max-width: calc(100vw - 24px);
+  max-height: calc(100dvh - 16px);
+  overflow: auto;
+  padding: 12px 14px 14px;
+  background: var(--barre, var(--slab-bar));
+  border: 1px solid var(--trait, var(--mat-line));
+  border-radius: 4px;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.6);
+  color: var(--texte, var(--paper));
+  font: 400 13px/1.35 var(--ui);
+  text-align: left;
+  cursor: default;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 760px) {
+  .budget-panneau {
+    width: calc(100vw - 24px);
+  }
+}
+.budget-panneau p {
+  margin: 0;
+}
+.budget-panneau-tete {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+.budget-panneau-tete h2 {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  font: 600 13px/1.2 var(--ui);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.budget-panneau button,
+.budget-panneau select,
+.budget-panneau input[type='text'] {
+  min-height: 32px;
+  border: 1px solid var(--trait, var(--mat-line));
+  border-radius: 3px;
+  background: var(--dalle, var(--slab));
+  color: var(--texte, var(--paper));
+  font: 600 13px/1 var(--ui);
+}
+.budget-panneau button {
+  padding: 0 12px;
+  cursor: pointer;
+}
+.budget-panneau button:hover:not(:disabled) {
+  border-color: var(--texte-2, var(--dim));
+}
+.budget-panneau button:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+.usage-detail {
+  display: grid;
+  gap: 8px;
+}
+.usage-total {
+  font: 600 15px/1.25 var(--ui);
+}
+.usage-parts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0;
+}
+.usage-parts div {
+  min-width: 0;
+}
+.usage-parts dt {
+  font: 500 10px/1.2 var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--texte-3, var(--dim));
+}
+.usage-parts dd {
+  margin: 3px 0 0;
+  font: 600 12px/1.2 var(--mono);
+  white-space: nowrap;
+}
+.usage-modeles {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 8px 0 0;
+  list-style: none;
+  border-top: 1px solid var(--trait-fin, var(--mat-line));
+}
+.usage-modeles li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  font: 400 12px/1.3 var(--mono);
+}
+.usage-modele {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.usage-pied {
+  font: 400 11.5px/1.35 var(--mono);
+  color: var(--texte-2, var(--dim));
+}
+.usage-note,
+.budget-note {
+  font: 400 11.5px/1.35 var(--ui);
+  color: var(--texte-3, var(--dim));
+}
+.budget-form {
+  display: grid;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--trait-fin, var(--mat-line));
+}
+.budget-champs {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 8px;
+}
+.budget-montant {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.budget-montant span {
+  font: 500 10px/1.2 var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--texte-3, var(--dim));
+}
+.budget-panneau .budget-montant input {
+  width: 100%;
+  min-width: 0;
+  padding: 0 9px;
+  font: 600 14px/1 var(--mono);
+}
+.budget-panneau select {
+  padding: 0 8px;
+}
+.budget-unite {
+  align-self: center;
+  font: 600 12px/1 var(--mono);
+  color: var(--texte-2, var(--dim));
+}
+.budget-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+/* Le seul jaune du panneau : ce qui enregistre ou répond (« à toi de toucher »). */
+.budget-panneau .budget-oui,
+.budget-oui {
+  background: var(--appel, var(--tape));
+  border-color: transparent;
+  color: var(--encre, var(--ink));
+}
+.budget-etat {
+  font: 500 12px/1.35 var(--mono);
+  color: var(--texte-2, var(--dim));
+}
+.budget-etat.est-haut {
+  color: #ff9f43;
+}
+.budget-etat.est-atteint {
+  color: var(--appel, var(--paper));
+}
+.budget-fait {
+  font: 500 12px/1.35 var(--ui);
+  color: var(--texte-2, var(--dim));
+}
+.budget-erreur {
+  margin: 0;
+  font: 600 12px/1.35 var(--ui);
+  color: var(--error);
+  overflow-wrap: anywhere;
+}
+.budget-valider {
+  display: grid;
+  gap: 4px;
+  padding-top: 10px;
+  border-top: 1px solid var(--trait-fin, var(--mat-line));
+}
+.budget-valider label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: 600 13px/1.2 var(--ui);
+  cursor: pointer;
+}
+.budget-valider small {
+  font: 400 11.5px/1.35 var(--ui);
+  color: var(--texte-3, var(--dim));
+}
+.budget-panneau input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--texte, var(--paper));
+}
+/* iPhone : en dessous de 16 px, il zoome sur le champ ; cibles de 44 px au doigt. */
+@media (max-width: 760px), (pointer: coarse) {
+  .budget-panneau .budget-montant input,
+  .budget-panneau select {
+    min-height: 44px;
+    font-size: 16px;
+  }
+  .budget-panneau button {
+    min-height: 44px;
+  }
+}
+
+/* ═══ Une équipe : UNE ligne dans son en-tête, sur toute la largeur de sa grille (reverbere.css, `.equipe-tete`) ═══ */
+.usage-equipe {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 2px 0;
+  background: none;
+  border: 0;
+  font: 400 10.5px/1.3 var(--mono);
+  color: var(--texte-2, var(--dim));
+  text-align: left;
+  cursor: pointer;
+}
+.usage-equipe-t {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.usage-equipe i {
+  font: 400 13px/1 var(--ui);
+  font-style: normal;
+}
+.usage-equipe:hover,
+.usage-equipe[aria-expanded='true'] {
+  color: var(--texte, var(--paper));
+}
+.usage-equipe.est-haut {
+  color: #ff9f43;
+}
+.usage-equipe.est-atteint {
+  color: var(--appel, var(--paper));
+}
+.app.is-mobile .usage-equipe {
+  min-height: 32px;
+  font-size: 12px;
+}
+
+/* ═══ « Valider les lancements » dans le formulaire « Nouvelle équipe » : même case que « Vérifier à la fin · Codex »
+   (veille.css, `.verification-reglage`), SUR SA RANGÉE, seulement là où les deux tiennent côte à côte sans ajouter de
+   hauteur (mesuré au banc) : le téléphone debout. Dans la colonne de l'ordinateur (304 px) et le volet du téléphone
+   couché, elles ne tiennent pas : pas de case (le réglage reste dans l'en-tête de l'équipe, décision Q4). ═══ */
+.composer .budget-case {
+  display: none;
+}
+@media (max-width: 760px) and (min-width: 370px) and (orientation: portrait) {
+  .app.is-mobile .composer .budget-case {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+}
+
+/* ═══ Cartes de T'ATTEND : les classes `carte`, `carte-haut`, `carte-q`, `carte-bas` des cartes d'une console qui
+   t'attend donnent le look de chaque thème ; ici, la zone qui ouvre la console et les gestes à côté. ═══ */
+.budget-carte {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  cursor: default;
+}
+.budget-ouvre {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: inherit;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+button.budget-ouvre {
+  cursor: pointer;
+}
+/* Résumé en entier (300 caractères au plus) : plus de coupure à deux lignes, une consigne s'y cachait (relecture). */
+.budget-resume {
+  display: block;
+  font: 400 12px/1.35 var(--mono);
+  opacity: 0.8;
+  overflow-wrap: anywhere;
+}
+.budget-gestes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.budget-gestes button {
+  min-height: 32px;
+  padding: 0 14px;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  background: none;
+  color: inherit;
+  font: 600 13px/1 var(--ui);
+  cursor: pointer;
+}
+.budget-gestes .budget-oui {
+  background: var(--bouton-jaune, var(--appel, var(--tape)));
+  border-color: transparent;
+  box-shadow: var(--ombre-jaune, none);
+  color: var(--encre, var(--ink));
+}
+.budget-gestes button:disabled {
+  opacity: 0.62;
+  cursor: progress;
+}
+/* Réverbère d'avant les « 3 plans » : la carte est un aplat jaune, le bouton passe à l'encre. */
+[data-theme='reverbere']:not([data-reel3='oui']) .app:not(.is-mobile) .budget-gestes .budget-oui,
+[data-theme='reverbere']:not([data-reel='oui']) .app.is-mobile .budget-gestes .budget-oui {
+  background: var(--encre, var(--ink));
+  color: var(--appel, var(--paper));
+}
+.app.is-mobile .budget-gestes button {
+  min-height: 44px;
+  flex: 1 1 0;
+  font-size: 15px;
+}
+.budget-carte .budget-erreur {
+  font-size: 12px;
+}
+
+/* ═══ Bandeau « Budget atteint — continuer ? » (dalle vue de près, écran de la console du téléphone) : la même matière
+   que celui de la limite d'usage (comptes.css, `.cpt-quota`), avec son jaune sur « Continuer » seulement. ═══ */
+.budget-bandeau {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 20px;
+  margin: 0;
+  padding: 10px 14px 11px 17px;
+  background: var(--slab-bar);
+  border-bottom: 1px solid var(--trait, var(--mat-line));
+  box-shadow: inset 3px 0 0 var(--appel, var(--paper));
+  color: var(--texte, var(--paper));
+  text-align: left;
+  cursor: default;
+}
+[data-theme='reverbere'] .budget-bandeau {
+  background: linear-gradient(180deg, #161b30, var(--barre));
+}
+.budget-bandeau p {
+  margin: 0;
+}
+.budget-bandeau-texte {
+  flex: 1 1 220px;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 4px;
+}
+.budget-bandeau-titre {
+  font: 600 10.5px/1.2 var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.budget-bandeau-detail {
+  overflow: hidden;
+  font: 400 12.5px/1.35 var(--mono);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.budget-bandeau-geste {
+  flex: 0 1 auto;
+  max-width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: start;
+  gap: 6px;
+}
+.budget-bandeau .budget-oui {
+  min-height: 32px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 2px;
+  font: 600 13px/1.1 var(--ui);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.budget-bandeau .budget-oui:disabled {
+  opacity: 0.62;
+  cursor: progress;
+}
+/* Dalle vue de près : sur le haut du terminal, sous la barre, contre-zoomé (--zb) ; la question (plaque) et la limite
+   d'usage (comptes) passent d'abord. */
+.slab > .budget-bandeau {
+  position: absolute;
+  left: 0;
+  top: 40px;
+  z-index: 2;
+  width: calc(100% * var(--zb, 1));
+  box-shadow: inset 3px 0 0 var(--appel, var(--paper)), 0 10px 18px -8px rgba(0, 0, 0, 0.7);
+  transform: scale(calc(1 / var(--zb, 1)));
+  transform-origin: 0 0;
+}
+.slab:has(> .plaque) > .budget-bandeau,
+.slab:has(> .cpt-quota) > .budget-bandeau {
+  display: none;
+}
+/* Téléphone debout : sous la barre du haut et le bandeau d'état ; le bouton sur toute la largeur, 44 px. Clavier ouvert,
+   il se retire comme les touches. */
+.sheet > .budget-bandeau {
+  flex: none;
+  position: relative;
+  z-index: 2;
+}
+.sheet > .budget-bandeau .budget-bandeau-geste {
+  flex: 1 1 100%;
+  justify-items: stretch;
+}
+.sheet > .budget-bandeau .budget-oui {
+  min-height: 44px;
+}
+.sheet.ecrit > .budget-bandeau,
+.sheet:has(> .cpt-quota) > .budget-bandeau {
+  display: none;
+}
+[data-theme='reverbere'][data-reel='oui'] .app.is-mobile .sheet.reel > .budget-bandeau {
+  margin: 0 6px 8px;
+  padding: 10px 14px 12px 16px;
+  background: var(--verre, var(--barre));
+  border: 1px solid var(--verre-bord, var(--trait));
+  border-radius: 4px;
+  box-shadow: inset 3px 0 0 var(--appel);
+  & .budget-bandeau-titre {
+    font: var(--t-et);
+    letter-spacing: 0.14em;
+    color: var(--papier);
+  }
+  & .budget-bandeau-detail {
+    font: 400 var(--t-tx) / 1.35 var(--mono);
+    color: var(--papier-2);
+  }
+  & .budget-oui {
+    background: var(--bouton-jaune, var(--appel));
+    box-shadow: var(--ombre-jaune, none);
+    font: 600 var(--t-tx) / 1 var(--ui);
+  }
+}
+/* Téléphone couché : posé en absolu sur la case du terminal (comme la limite d'usage), texte et bouton côte à côte. */
+@media (orientation: landscape) and (max-height: 520px) {
+  .app.is-mobile .sheet:has(> .budget-bandeau) {
+    position: relative;
+  }
+  .app.is-mobile .sheet > .budget-bandeau {
+    position: absolute;
+    grid-column: 1;
+    grid-row: 2;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 3;
+    gap: 6px 16px;
+    padding: 7px 12px 8px 15px;
+    box-shadow: inset 3px 0 0 var(--appel, var(--paper)), 0 10px 18px -8px rgba(0, 0, 0, 0.7);
+  }
+  .app.is-mobile .sheet > .budget-bandeau .budget-bandeau-geste {
+    flex: 0 1 auto;
+    justify-items: start;
+  }
+}
+
+/* « Tapis » : la colonne n'a pas de cartes pleines (ses consoles sont des rangées `.row`) ; la carte du volet prend la
+   matière d'une rangée qui t'attend, avec son filet à gauche. */
+[data-theme='tapis'] .budget-carte {
+  gap: 6px;
+  padding: 11px 18px 12px 15px;
+  border-left: 3px solid #ff5a36;
+  border-bottom: 1px solid rgba(236, 228, 160, 0.07);
+  color: var(--paper);
+}
+[data-theme='tapis'] .budget-carte :is(.carte-haut, .carte-bas) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font: 400 11px/1.2 var(--mono);
+  color: var(--dim);
+}
+[data-theme='tapis'] .budget-carte .carte-haut b {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font: 600 14px/1.2 var(--ui);
+  color: var(--paper);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+[data-theme='tapis'] .budget-carte .carte-q {
+  font: 600 15px/1.25 var(--ui);
+}
+/* Tâche entière d'une demande de lancement (relecture de sécurité : Orkun lit ce qu'il accepte). Pas de défilement
+   interne : le texte se déplie dans la liste, qui défile. */
+.budget-deplie {
+  display: block;
+  margin: 0 auto 0 0;
+  text-align: left;
+  min-height: 44px; /* passage obligé avant « Accepter » : une cible au doigt */
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: 500 12px/1.3 var(--mono);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.budget-tache {
+  margin: 0;
+  padding: 8px 10px;
+  border-left: 2px solid currentColor;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: 400 12px/1.45 var(--mono);
+  opacity: 0.9;
+}
+/* Rôle, dossier réel, base d'une demande de lancement : en entier, coupés n'importe où plutôt que masqués. (Classe
+   distincte de `.budget-champs`, la grille du réglage du budget : seconde relecture.) */
+.budget-demande-champs {
+  display: block;
+  font: 400 12px/1.35 var(--mono);
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+.budget-gestes .budget-oui:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+/* Texte venu d'un agent sur une carte : des diacritiques empilés (U+0346 × 200) débordaient sur la carte du dessus et sur
+   son « Accepter » (seconde relecture) ; chaque bloc de texte rogne sa propre encre. */
+.budget-carte :is(.carte-q, .budget-resume, .budget-tache, .budget-demande-champs),
+.budget-carte .carte-haut b {
+  overflow: hidden;
+}
+.budget-tache-fin {
+  display: block;
+  font: 400 11px/1.3 var(--mono);
+  opacity: 0.7;
+}

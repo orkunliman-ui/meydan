@@ -1,0 +1,469 @@
+/* Mémoire de projet (volet du 11/11, Memoire.jsx ; docs/specs/2026-11-11-memoire-projet.md) : le panneau et son bouton
+   dans l'en-tête de la colonne. Préfixe `mp-` : lot5-memoire.css parle de mémoire GRAPHIQUE du plateau, rien à voir.
+   Même matière que les panneaux Ordre et Boucle (barre de nuit, filet, petites capitales mono). Aucun jaune : il ne veut
+   dire que « à toi de toucher », et une proposition d'agent n'est qu'un signal discret (pastille d'encre claire).
+   Aucune animation. Les couleurs du thème « Réverbère » passent d'abord, celles du « Tapis » ensuite. */
+
+/* ── Le bouton de l'en-tête, à côté de « Ordre » ── */
+.mp-ouvre {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 40px;
+  min-width: 40px;
+  margin-right: -8px;
+  padding: 0 11px;
+  background: none;
+  border: 1px solid var(--trait, var(--mat-line));
+  border-radius: 3px;
+  font: 700 11px/1 var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--texte, var(--paper));
+  cursor: pointer;
+}
+.mp-ouvre svg {
+  flex: none;
+  color: var(--texte-2, var(--dim));
+}
+.mp-ouvre:active {
+  background: rgba(190, 205, 255, 0.14);
+}
+/* L'icône et le nombre seuls (mesuré au banc : le mot « Mémoire » ne tient dans aucune des deux colonnes, voir Rail.jsx). */
+.mp-ouvre.est-court {
+  gap: 5px;
+  padding: 0 9px;
+}
+/* Ordinateur : 40 × 40, le nombre posé dans son coin : la largeur ne bouge pas de 0 à 12. */
+.app:not(.is-mobile) .mp-ouvre.est-court {
+  position: relative;
+  width: 40px;
+  padding: 0;
+}
+.app:not(.is-mobile) .mp-ouvre.est-court .mp-ouvre-n {
+  position: absolute;
+  top: 3px;
+  right: 2px;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 4px;
+  border-radius: 8px;
+  font-size: 9.5px;
+}
+.app:not(.is-mobile) .mp-ouvre.est-court:has(.mp-ouvre-n) svg {
+  translate: -4px 3px;
+}
+/* Ordinateur : la marque, le point de liaison, « Ordre » et « Mémoire » en icône, « Ranger » nommé, dans 304 px.
+   Mesuré au banc (1920 × 1080) : écart 6, marge 14, « Ranger » 8 → le carré de la marque garde ses 20 px dans les états
+   Ranger / Annuler / Rangé (il était écrasé à 2-3 px avant la mémoire) ; liaison coupée : 18,9 px (16,7 avant). */
+.app:not(.is-mobile) .rail .marque:has(.mp-ouvre.est-court) {
+  gap: 6px;
+  padding: 0 14px;
+}
+.app:not(.is-mobile) .rail .marque:has(.mp-ouvre.est-court) .ranger-ouvre {
+  padding: 0 8px;
+}
+/* Le dernier bouton de l'en-tête rattrape la marge de la colonne (-8 px) ; les autres non. */
+.ordre-ouvre:has(+ .mp-ouvre),
+.mp-ouvre:has(+ .ranger-ouvre) {
+  margin-right: 0;
+}
+/* Le nombre de propositions en attente : pastille d'encre claire, chiffres de même largeur. */
+.mp-ouvre-n {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: rgba(190, 205, 255, 0.16);
+  font: 700 10.5px/1 var(--mono);
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+  color: var(--texte, var(--paper));
+}
+@media (pointer: coarse) {
+  .app .mp-ouvre {
+    height: 44px;
+    min-width: 44px;
+  }
+}
+/* Téléphone debout, écran « reel » (reel.css) : comme « Ordre » à côté, sans cadre, à l'encre et au papier. */
+@media not all and (orientation: landscape) and (max-height: 520px) {
+  [data-theme='reverbere'][data-reel='oui'] .app.is-mobile .mp-ouvre {
+    height: 44px;
+    padding: 0 10px;
+    border: 0;
+    font: var(--t-et);
+    letter-spacing: 0.14em;
+    color: var(--papier-2);
+  }
+  [data-theme='reverbere'][data-reel='oui'] .app.is-mobile .mp-ouvre svg {
+    color: var(--papier-3);
+  }
+  [data-theme='reverbere'][data-reel='oui'] .app.is-mobile .mp-ouvre-n {
+    background: rgba(232, 235, 244, 0.14);
+    letter-spacing: 0;
+    color: var(--papier);
+  }
+}
+
+/* ── Le panneau ── */
+.mp-fond {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: grid;
+  place-items: center;
+  padding: 24px 16px;
+  background: rgba(4, 6, 12, 0.62);
+}
+.mp {
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 600px);
+  max-height: min(calc(100dvh - 48px), 860px);
+  min-height: 0;
+  overflow: hidden;
+  background: var(--barre, var(--slab-bar));
+  border: 1px solid var(--trait, var(--mat-line));
+  border-radius: 14px;
+  font: 400 14px/1.4 var(--ui, inherit);
+  color: var(--texte, var(--paper));
+}
+.mp-tete {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 56px;
+  padding: 6px 18px 4px;
+}
+.mp-tete b {
+  flex: 1;
+  min-width: 0;
+  font: 700 19px/1.2 var(--ui, inherit);
+}
+.mp-x {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  margin-right: -12px;
+  background: none;
+  border: 0;
+  font: 400 24px/1 var(--ui, inherit);
+  color: inherit;
+  cursor: pointer;
+}
+
+/* Le choix du projet : une pastille par projet ; le nombre de propositions y est dit discrètement. */
+.mp-projets {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 18px 12px;
+  border-bottom: 1px solid var(--trait-fin, var(--mat-line));
+}
+.mp-projets button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  max-width: 100%;
+  min-height: 34px;
+  padding: 0 12px;
+  background: none;
+  border: 1px solid var(--trait, var(--mat-line));
+  border-radius: 999px;
+  font: 600 12.5px/1 var(--mono);
+  color: var(--texte-2, var(--dim));
+  cursor: pointer;
+}
+.mp-projets button span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mp-projets button[aria-pressed='true'] {
+  background: var(--texte, var(--paper));
+  border-color: var(--texte, var(--paper));
+  color: var(--encre, var(--ink));
+}
+.mp-n {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: rgba(190, 205, 255, 0.16);
+  font: 700 10.5px/1 var(--mono);
+  font-style: normal;
+  font-variant-numeric: tabular-nums;
+  color: var(--texte, var(--paper));
+}
+.mp-projets [aria-pressed='true'] > .mp-n {
+  background: rgba(11, 14, 24, 0.14);
+  color: var(--encre, var(--ink));
+}
+
+/* Le corps : seul lui défile ; toute grille qui porte un texte à couper a sa colonne en minmax(0, 1fr). */
+.mp-corps {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  gap: 16px;
+  padding: 12px 18px 18px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.mp-aide,
+.mp-vide {
+  margin: 0;
+  font: 500 12.5px/1.45 var(--ui, inherit);
+  color: var(--texte-2, var(--dim));
+  overflow-wrap: anywhere;
+}
+.mp-vide {
+  font-size: 13.5px;
+}
+.mp-bloc {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+.mp-bloc h3 {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0;
+  font: 600 11px/1 var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--texte-2, var(--dim));
+}
+.mp-compte {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  color: var(--texte, var(--paper));
+}
+.mp-bloc ul {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Un fait validé : le texte se touche pour le modifier sur place. */
+.mp-fait {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  border-top: 1px solid var(--trait-fin, var(--mat-line));
+}
+.mp-fait:last-child {
+  border-bottom: 1px solid var(--trait-fin, var(--mat-line));
+}
+.mp-fait-texte {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 11px 6px;
+  background: none;
+  border: 0;
+  font: 400 15px/1.42 var(--ui, inherit);
+  color: inherit;
+  text-align: left;
+  overflow-wrap: anywhere;
+  cursor: text;
+}
+.mp-fait-texte:hover {
+  background: rgba(190, 205, 255, 0.05);
+}
+.mp-fait.est-edite {
+  gap: 8px;
+  padding: 10px 0 12px;
+}
+
+/* Une proposition d'agent : carte à peine marquée, filet gauche d'encre claire (jamais le jaune). */
+.mp-a-valider ul {
+  gap: 8px;
+}
+.mp-prop {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+  padding: 10px 12px 12px;
+  background: rgba(190, 205, 255, 0.05);
+  border: 1px solid var(--trait, var(--mat-line));
+  border-left: 3px solid var(--texte-2, var(--dim));
+  border-radius: 10px;
+}
+.mp-prop-qui {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 2px 10px;
+  margin: 0;
+  font: 500 12px/1.35 var(--mono);
+  color: var(--texte-2, var(--dim));
+  overflow-wrap: anywhere;
+}
+.mp-prop-qui > span {
+  min-width: 0;
+}
+.mp-prop-qui b {
+  font-weight: 700;
+  color: var(--texte, var(--paper));
+}
+
+/* Champs et boutons. 16 px dans les champs : en dessous, l'iPhone zoome au toucher. */
+.mp-champ {
+  width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  background: var(--dalle, rgba(0, 0, 0, 0.25));
+  border: 1px solid var(--trait, var(--mat-line));
+  border-radius: 10px;
+  font: 400 16px/1.4 var(--ui, inherit);
+  color: inherit;
+  resize: vertical;
+  overflow-wrap: anywhere;
+}
+.mp-champ:disabled {
+  opacity: 0.55;
+}
+.mp-reste {
+  font: 500 11.5px/1.2 var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--texte-3, var(--dim));
+}
+.mp-reste.est-trop {
+  color: var(--error);
+}
+.mp-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.mp-ok,
+.mp-non,
+.mp-suppr {
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 10px;
+  font: 700 14px/1 var(--ui, inherit);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.mp-ok {
+  background: var(--texte, var(--paper));
+  border: 1px solid var(--texte, var(--paper));
+  color: var(--encre, var(--ink));
+}
+.mp-non {
+  background: none;
+  border: 1px solid var(--trait, var(--mat-line));
+  color: inherit;
+}
+.mp-suppr {
+  margin-left: auto;
+  background: none;
+  border: 1px solid color-mix(in srgb, var(--error) 55%, transparent);
+  color: var(--error);
+}
+.mp-suppr.est-arme {
+  background: var(--error);
+  border-color: var(--error);
+  color: var(--encre, var(--ink));
+}
+.mp-ok:disabled,
+.mp-non:disabled,
+.mp-suppr:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.mp-erreur {
+  margin: 0;
+  font: 600 13.5px/1.35 var(--ui, inherit);
+  color: var(--error);
+  overflow-wrap: anywhere;
+}
+
+/* L'ajout, en bas du panneau (au-dessus du clavier sur le téléphone). */
+.mp-ajout {
+  flex: none;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 6px 8px;
+  padding: 12px 18px calc(14px + env(safe-area-inset-bottom));
+  background: var(--barre, var(--slab-bar));
+  border-top: 1px solid var(--trait-fin, var(--mat-line));
+}
+.mp-ajout .mp-champ {
+  resize: none;
+}
+.mp-ajout .mp-ok {
+  height: 46px;
+}
+.mp-ajout .mp-reste,
+.mp-ajout .mp-erreur {
+  grid-column: 1 / -1;
+}
+
+/* Au doigt : 44 points pour tout ce qui se touche. */
+@media (pointer: coarse) {
+  .mp-projets button,
+  .mp-ok,
+  .mp-non,
+  .mp-suppr {
+    min-height: 44px;
+  }
+  .mp-ok,
+  .mp-non,
+  .mp-suppr {
+    height: 44px;
+  }
+}
+
+/* Téléphone (même condition que `mobile` dans App.jsx) : plein écran, posé sur la zone visible (clavier compris :
+   --vvh / --vvt, posés par App.jsx seulement clavier ouvert). */
+@media (max-width: 760px), (max-height: 520px) and (pointer: coarse) {
+  .mp-fond {
+    display: block;
+    top: var(--vvt, 0px);
+    bottom: auto;
+    height: var(--vvh, 100dvh);
+    padding: 0;
+    background: var(--sol-bas, var(--mat-deep));
+  }
+  .mp {
+    width: 100%;
+    height: 100%;
+    max-height: none;
+    padding-top: env(safe-area-inset-top);
+    border: 0;
+    border-radius: 0;
+  }
+  .mp-tete {
+    min-height: 52px;
+    padding: 4px 16px 2px;
+  }
+  .mp-projets,
+  .mp-corps,
+  .mp-ajout {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}

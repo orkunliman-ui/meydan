@@ -1,0 +1,98 @@
+/* Cibles au doigt (chasse du 17/11, téléphone, défaut 10) : 44 px au moins pour ce que le doigt touche, mesuré au banc
+   par `elementFromPoint` (test/volets/interface-robuste/retour/essai-cibles.mjs). Avant : « Suggestions » et « Agents
+   bloqués » 145 × 32, « Musique » 62 × 30, case « Contrôle Codex avant livraison » 13 × 13 dans une ligne de 20 px,
+   « Voir le terminal » de la discussion vide 124 × 33 ; « Nouvelle console » couchée : Shell / Claude / Codex / Équipe
+   88 × 30, « Une de moins / Une de plus » 23 × 34 (debout 87 × 38 et 44 × 42).
+   Seulement au doigt : pointeur grossier ET aucun pointeur fin (leçon du 13/11 : ne pas conditionner sur la souris ;
+   un iPad avec trackpad garde la mise en page de l'ordinateur). L'ordinateur ne bouge pas d'un pixel (essai-cibles
+   compare ses boîtes avant / après).
+   La colonne du téléphone a une hauteur fixe : chaque pixel pris par une rangée l'est à la liste (leçons « colonne »,
+   « + N plus bas »). Les 44 px se prennent donc dans les marges qui entourent déjà chaque cible, sans changer la mise
+   en page : même nombre de lignes de consoles visibles avant / après, debout et couché (mesuré). */
+@media not all and (any-pointer: fine) {
+  @media (pointer: coarse) {
+    /* ── Rangée basse de la liste debout : Suggestions · Agents bloqués · Musique ──
+       Avant : boutons de 32 px dans une rangée de 45 (6 px de marge dessus et dessous). Les boutons prennent ces marges :
+       44 px, rangée de 45 inchangée. (Couché, la rangée a déjà ses boutons de 44 : sa marge reste.) */
+    [data-agencement] .rail:not(.reel3) .rail-utiles {
+      padding-block: 0;
+    }
+    .rail .veille-acces button,
+    [data-agencement] .rail .rail-utiles .veille-acces button {
+      min-height: 44px;
+    }
+    /* « Musique » au repos (`.seul`). Musique en cours, le lecteur passe sur une rangée à lui sous les deux boutons :
+       ses tailles ne changent pas, et la rangée garde sa hauteur (6 + 32 + 6 + lecteur + 6 avant, 44 + 6 + lecteur
+       après). Ses boutons ⏮ ⏯ ⏭ n'étaient pas dans la chasse : pas touchés ici. */
+    [data-agencement] .rail .rail-utiles .mus-mini.seul {
+      min-height: 44px;
+    }
+    /* Le bouton couvre le filet de son cadre (1 px dessus, 1 px dessous) : 44 px touchables dans un cadre de 44. */
+    [data-agencement] .rail .rail-utiles .mus-mini.seul .mus-nom {
+      min-height: 44px;
+      margin-block: -1px;
+    }
+
+    /* ── Case « Contrôle Codex avant livraison » d'une équipe, dans la liste ──
+       La ligne fait 20 px ; l'en-tête de l'équipe a 15 px vides au-dessus (écart de grille et marge) et 6 px dessous
+       (son retrait bas). La zone touchable de la case s'y étend (comme « Arrêter », 10/11) : 44 px, et l'équipe garde sa
+       hauteur, la liste ses lignes. Elle déborde de 3 px sur la ligne de texte du dessus (projet · branche), qui ne se
+       touche pas ; « Livrer » (équipe prête), quand il est juste au-dessus, reste devant elle. */
+    .equipe .verification-reglage label {
+      position: relative;
+    }
+    .equipe .verification-reglage label::before {
+      content: '';
+      position: absolute;
+      inset: -18px 0 -6px;
+    }
+    .equipe-tete .livrer {
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── Formulaire « Nouvelle console » (pli de la liste debout, fenêtre de l'accueil couché) ──
+       Types : le bandeau prend 44 px et ses boutons le remplissent (avant : 3 px de retrait, boutons de 38 debout, 30
+       couché). Nombre : boutons de 44 × 44 ; ils couvrent le filet du cadre (1 px) au lieu de s'y loger (42 debout). */
+    [data-theme] .composer .seg {
+      height: auto;
+      padding: 0;
+    }
+    [data-theme] .composer .seg button {
+      height: 44px;
+    }
+    [data-theme] .composer .stepper {
+      width: auto;
+      height: 44px;
+    }
+    [data-theme='reverbere'] .composer .stepper {
+      width: 108px; /* celle du pli debout depuis le 10/11 : la rangée debout ne bouge pas */
+    }
+    [data-theme] .composer .stepper button {
+      width: 44px;
+      height: 44px;
+      margin-block: -1px;
+    }
+    /* Équipe : la case « Vérifier à la fin · Codex » sur une ligne de 44 px (le formulaire défile en lui-même). */
+    [data-theme] .composer label.verification-reglage {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 44px;
+    }
+    /* Couché : le nombre reste sur la rangée des types (le bandeau laisse sa place au compteur de 108 px), et la
+       rangée gagne 8 px (36 → 44) : pris au titre de la fenêtre (14 → 6 px dessous), la fenêtre garde sa hauteur et
+       « Faire entrer » sa place sans défiler. */
+    [data-theme] .ve-nouveau .composer .seg {
+      flex-basis: calc(100% - 116px);
+    }
+    .boucle.ve-nouveau > header {
+      margin-bottom: 6px;
+    }
+
+    /* ── Discussion vide : « Voir le terminal » (lien centré sous le texte, rien autour) ── */
+    .fil-note button {
+      min-height: 44px;
+    }
+  }
+}

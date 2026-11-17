@@ -1,0 +1,340 @@
+/* ═══ Copies de travail (volet « copies », 13/11 ; composants : Copies.jsx) ═══
+   La case « Dans une copie » du formulaire « Nouvelle console » ne prend qu'UNE rangée basse (22 px), et seulement pour
+   Claude / Codex dans un dépôt git ; ses options n'apparaissent que cochée : dans le formulaire sur le téléphone, dans un
+   panneau à côté de la colonne sur l'ordinateur (la liste de la colonne garde sa place). Réverbère range le formulaire
+   par `order` : la case et les options juste après la consigne (order 3), avant le compte et le bouton (order 4).
+   Tout texte libre (branche, nom de fichier, commande) se coupe : `minmax(0, 1fr)`, ellipse ou `overflow-wrap: anywhere`.
+   Aucune animation. */
+
+.composer .copie-case,
+.composer .copie-options {
+  order: 3;
+  flex: 1 1 100%;
+  min-width: 0;
+}
+.copie-case {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-height: 22px;
+  font: 600 13px/1.2 var(--ui);
+  color: var(--paper);
+  cursor: pointer;
+}
+.copie-case input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--paper);
+}
+.copie-case small {
+  min-width: 0;
+  overflow: hidden;
+  font: 400 11px/1.2 var(--mono);
+  color: var(--dim);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.copie-case.est-grise {
+  cursor: default;
+  color: var(--dim);
+}
+.copie-case.est-grise small {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* ── Les options ── */
+.copie-options {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+  min-width: 0;
+}
+.copie-champ {
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  font: 400 11px/1.2 var(--mono);
+  color: var(--dim);
+}
+/* « .field span » est caché par Réverbère : ce libellé n'est pas un .field. */
+.copie-champ span {
+  display: inline;
+  white-space: nowrap;
+}
+.copie-options input:not([type='checkbox']),
+.tmenu .copie-options input:not([type='checkbox']) {
+  width: 100%;
+  min-width: 0;
+  height: 30px;
+  padding: 0 9px;
+  background: var(--dalle, var(--slab));
+  border: 1px solid var(--trait, var(--mat-line));
+  border-radius: 2px;
+  font: 400 12.5px/1 var(--mono);
+  color: var(--paper);
+}
+.copie-fichiers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 12px;
+  max-height: 76px; /* 50 fichiers au plus : au-delà de trois rangées, la liste défile (le formulaire, pas le plateau) */
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+.copie-fichiers li {
+  min-width: 0;
+  max-width: 100%;
+}
+.copie-fichiers label {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+  min-height: 24px;
+  cursor: pointer;
+}
+.copie-options input[type='checkbox'],
+.tmenu .copie-options input[type='checkbox'] {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--paper);
+}
+.copie-fichiers code {
+  min-width: 0;
+  overflow: hidden;
+  font: 400 12px/1.25 var(--mono);
+  color: var(--paper);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.copie-vide,
+.copie-note {
+  display: block;
+  min-width: 0;
+  margin: 0;
+  font: 400 11px/1.35 var(--mono);
+  color: var(--dim);
+  overflow-wrap: anywhere;
+}
+.copie-ecartes,
+.copie-options .copie-note {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+/* L'avertissement de l'installation, sous son champ, aligné sur lui ; dans le menu aussi (il n'est pas une .copie-note). */
+.copie-avert {
+  display: block;
+  min-width: 0;
+  margin: -2px 0 0 82px;
+  font: 400 11px/1.35 var(--mono);
+  color: var(--dim);
+  overflow-wrap: anywhere;
+}
+@media (pointer: coarse) {
+  .copie-avert {
+    margin-left: 0;
+  }
+}
+.copie-note b {
+  color: var(--paper);
+  font-weight: 600;
+}
+/* Doigt : 16 px au moins dans un champ, sinon l'iPhone zoome la page quand il prend le clavier. */
+@media (pointer: coarse) {
+  .copie-options input:not([type='checkbox']),
+  .tmenu .copie-options input:not([type='checkbox']) {
+    height: 36px;
+    font-size: 16px;
+  }
+}
+
+/* ── Ordinateur : le panneau des options, à côté de la colonne, sur le plateau ── */
+.copie-cote {
+  position: fixed;
+  z-index: 900; /* sous les menus (.tmenu-fond : 1000) */
+  display: grid;
+  gap: 10px;
+  width: 380px;
+  max-width: calc(100vw - 340px);
+  padding: 12px 14px 14px;
+  background: var(--barre, var(--slab-bar));
+  border: 1px solid var(--trait, var(--mat-line));
+  border-radius: 3px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+}
+.copie-titre {
+  min-width: 0;
+  overflow: hidden;
+  font: 600 13px/1.2 var(--ui);
+  color: var(--paper);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* ── Menu d'une console : « Continuer dans une copie » ── */
+.tmenu .copie-continuer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+  padding: 12px 14px;
+}
+.tmenu .copie-continuer > .copie-note {
+  font: 400 12.5px/1.4 var(--ui);
+  color: var(--texte, var(--tape));
+}
+/* Le menu le dit déjà en toutes lettres au-dessus des options. */
+.tmenu .copie-options .copie-note {
+  display: none;
+}
+/* `.tmenu.colonne b` fait de chaque <b> une rangée de menu (46 px, bordure) : pas dans une phrase. */
+.tmenu.colonne .copie-note b {
+  display: inline;
+  min-height: 0;
+  height: auto;
+  padding: 0;
+  border: 0;
+  font: inherit;
+  font-weight: 700;
+  white-space: normal;
+}
+/* Titre du journal d'une installation : une ligne, la commande entière dans la bulle. */
+.tmenu.colonne b.copie-titre-journal {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.tmenu.colonne .copie-continuer button.copie-go {
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid rgba(214, 224, 255, 0.4);
+  border-radius: 2px;
+  text-align: center;
+}
+.tmenu.colonne .copie-continuer > b {
+  padding: 0;
+  min-height: 0;
+  border: 0;
+  color: var(--error);
+  font: 600 12px/1.35 var(--ui);
+}
+
+/* ── Le repère d'une console dans une copie ── */
+.copie-repere {
+  display: inline-flex;
+  flex: 0 1 auto;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 46%;
+  overflow: hidden;
+  font: 600 11px/1 var(--mono);
+  color: var(--dim);
+  white-space: nowrap;
+}
+.copie-branche {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.copie-inst {
+  flex: none;
+  max-width: 100%;
+  overflow: hidden;
+  padding: 2px 5px;
+  background: none;
+  border: 1px solid var(--trait, var(--mat-line));
+  border-radius: 2px;
+  font: 600 10.5px/1.1 var(--mono);
+  color: var(--paper);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+button.copie-inst {
+  cursor: pointer;
+}
+.copie-inst.est-echec {
+  border-color: var(--error);
+  color: var(--error);
+}
+/* Une console dans une copie a une ligne de plus dans la liste : sa rangée (40 à 58 px fixes selon l'écran) grandit
+   d'autant au lieu de déborder sur la suivante. */
+[data-theme] .app .rail .rang:has(> .rang-nom > .copie-repere) {
+  height: auto;
+  min-height: 40px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+/* Dans une ligne de la liste : sous le nom, sur une ligne à lui, coupé. */
+.copie-repere.est-ligne {
+  display: flex;
+  max-width: 100%;
+  margin-top: 3px;
+  font-size: 10.5px;
+}
+/* L'installation, sur sa ligne à elle : un échec s'y lit (code, dernières lignes) sur deux lignes au plus. */
+.copie-inst-ligne {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  min-width: 0;
+  margin-top: 2px;
+  overflow: hidden;
+  font: 600 10.5px/1.3 var(--mono);
+  color: var(--paper);
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.copie-inst-ligne.est-echec {
+  color: var(--error);
+}
+.carte .copie-repere.est-ligne {
+  margin: 2px 0 0;
+}
+/* Console plein écran du téléphone (MobileConsole.jsx) : la copie sur UNE ligne fixe, sous la barre (dans le bandeau
+   d'état du design « 3 plans »), coupée proprement ; rien qui bouge ni ne s'anime. */
+.sheet-copie {
+  flex: none;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 4px 14px 2px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.bande .sheet-copie {
+  padding: 4px 0 0;
+}
+.sheet-copie > .copie-repere.est-ligne {
+  flex: 0 1 auto;
+  margin-top: 0;
+}
+.sheet-copie > .copie-inst-ligne {
+  display: block;
+  flex: 0 1 auto;
+  margin-top: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* La fin du journal (menu ouvert depuis la barre de la dalle) : texte brut nettoyé par le serveur. */
+.tmenu .copie-journal {
+  height: 240px; /* hauteur fixe : le menu se place avant que la fin du journal arrive */
+  margin: 0;
+  padding: 10px 14px 12px;
+  overflow: auto;
+  font: 400 11px/1.4 var(--mono);
+  color: var(--texte, var(--tape));
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

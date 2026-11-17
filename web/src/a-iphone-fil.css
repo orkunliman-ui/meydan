@@ -1,0 +1,52 @@
+/* Volet a-iphone : contexte de la question (T'ATTEND) et photo dans la bulle en attente, dans le Chat. */
+
+/* ── A. La question laisse voir la conversation au-dessus d'elle (téléphone) ─────────────────────────────────────────
+   Audit du 11/11 (constat 5) : la carte jaune ne montrait QUE la question ; l'appli native garde le fil visible au-dessus.
+   Banc 390 × 844, conversation réelle, permission d'écrire un fichier : 1 message entier au-dessus de la carte, parce que
+   la carte (≈ 420 points) et la barre d'envoi (≈ 165 points, inutilisable tant que l'agent attend) prenaient l'écran.
+   Seulement `.sheet` (le téléphone) : l'ordinateur a la place, rien n'y change. */
+
+/* 1. Pendant la question, la barre d'envoi laisse sa place : rien ne peut partir tant que l'agent attend (« L'envoi
+      revient juste après »), et la réponse est sur la carte — comme dans l'appli native, où la demande prend la place du
+      champ. La barre n'est que cachée : le texte et les pièces en cours restent, et reviennent avec elle. */
+.app .sheet.en-fil:has(> .fil > .fil-attend) > .envoi {
+  display: none;
+}
+.app .sheet.en-fil:has(> .fil > .fil-attend) > .fil {
+  padding-bottom: calc(14px + env(safe-area-inset-bottom));
+}
+
+/* 2. La carte d'une question, plus serrée : « Voir dans le terminal › » monte à droite de « T'ATTEND » au lieu d'avoir sa
+      rangée ; réponses à 44 points (toujours un seul toucher) ; un contexte long défile dans la carte au-delà de 4 lignes. */
+.app .sheet .fil-question {
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  padding: 14px 14px 14px 16px;
+}
+.app .sheet .fil-question > * {
+  grid-column: 1 / -1;
+}
+.app .sheet .fil-question > small {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: center;
+}
+/* La cible garde ses 44 points ; ses marges négatives (dans le blanc de la carte) empêchent la rangée de grandir. */
+.app .sheet .fil-question > .fil-lien {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: center;
+  min-height: 44px;
+  margin: -14px -8px -14px 0;
+  padding: 0 8px;
+}
+.app .sheet .fil-question > b {
+  font-size: 17px;
+}
+.app .sheet .fil-question .fil-contexte {
+  max-height: calc(4 * 1.45em);
+}
+.app .sheet .fil-choix button {
+  min-height: 44px;
+  padding: 10px 14px;
+}

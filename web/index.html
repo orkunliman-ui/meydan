@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#12241F" />
+    <meta name="robots" content="noindex" />
+    <link rel="manifest" href="/manifest.webmanifest" crossorigin="use-credentials" />
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <!-- Écran d'accueil d'iOS : l'icône SVG y est ignorée, il lui faut un PNG de 180 (carré, sans coins arrondis : iOS les
+         arrondit lui-même). « black-translucent » : la page passe sous l'heure et garde la couleur de la barre du haut ;
+         les barres du haut compensent par env(safe-area-inset-top) (lot3-tel.css). -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Meydan" />
+    <title>Meydan</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

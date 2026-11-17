@@ -1,0 +1,168 @@
+/* Carte « Navigateur · <console> » (volet copies, 13/11) : ce que voit le navigateur piloté par l'agent d'une console
+   (NavNode.jsx). Préfixe « et-nav » (aucune autre feuille ne l'emploie) ; le cadre commun est `.et-carte.et-nav`
+   (Carte.jsx, cartes.css). Couleurs par les jetons des deux thèmes (--slab, --slab-bar, --paper, --dim, --mat-line,
+   --working, --starting, --error). Aucune animation, aucune transition, aucun défilement interne. */
+
+/* ── Ordinateur : la barre ──
+   Le titre cède la place à l'adresse (au plus 45 % de la barre) ; l'adresse se coupe proprement (grille minmax(0, 1fr)),
+   l'état garde toujours sa place. */
+.et-carte.et-nav:not(.est-loin) .et-titre {
+  flex: 0 1 auto;
+  max-width: 45%;
+}
+.et-nav-infos {
+  flex: 1 1 0;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+.et-nav-adresse {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--dim);
+  font: 400 12px/1.2 var(--mono);
+}
+.et-nav-etat {
+  padding: 4px 7px;
+  border: 1px solid var(--mat-line);
+  border-radius: 4px;
+  color: var(--dim);
+  font: 700 10px/1 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.et-nav-etat.est-direct {
+  color: var(--working);
+  border-color: currentColor;
+}
+.et-nav-etat.est-attente {
+  color: var(--starting);
+}
+.et-nav-etat.est-coupe {
+  color: var(--error);
+  border-color: currentColor;
+}
+
+/* ── Ordinateur : l'image ──
+   Toute l'image visible dans la carte (contain), sur le fond de la dalle ; elle ne prend jamais la souris (lecture seule :
+   un geste sur l'image ne va nulle part, et déplacer ou redimensionner la carte n'est jamais arrêté par elle). */
+.et-nav-vue {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  place-items: center;
+  background: var(--slab);
+}
+/* Deux <img> superposés : seul celui « de devant » se voit ; l'autre charge l'image suivante (NavNode.jsx, montre). */
+.et-nav-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  visibility: hidden;
+}
+.et-nav-image.est-devant {
+  visibility: visible;
+}
+.et-nav-vue.est-vide .et-nav-image {
+  display: none;
+}
+/* Navigateur fermé : la dernière image reste, grisée. */
+.et-nav-vue.est-ferme .et-nav-image {
+  filter: grayscale(1);
+  opacity: 0.35;
+}
+.et-nav-message {
+  position: relative;
+  margin: 0;
+  padding: 16px;
+  max-width: 46ch;
+  text-align: center;
+  color: var(--dim);
+  font: 400 13px/1.45 var(--ui);
+}
+/* Par-dessus une image (navigateur fermé) : un bandeau en bas, lisible sur l'image grisée. */
+.et-nav-vue:not(.est-vide) .et-nav-message {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  max-width: none;
+  padding: 10px 14px;
+  background: var(--slab-bar);
+  border: 1px solid var(--mat-line);
+  border-radius: 6px;
+  color: var(--paper);
+}
+
+/* ── Plateau du téléphone couché : tuile fixe, lisible au zoom du plateau entier ──
+   La carte y est aussi « de loin » (Board : far = onOuvre || farZoom) : le cadre commun replie alors le corps
+   (cartes.css, .et-carte.est-loin) ; la tuile le rouvre, sous une barre qui garde le titre en grand (comme carte-git.css).
+   Au zoom du plateau entier (≈ 0,17 sur un iPhone couché), 72 points du plan font ≈ 12 points à l'écran. `overflow: clip`
+   ne fait aucune zone de défilement (ni calque, ni défilement, même par le code) ; `hidden` pour un navigateur qui ne le
+   connaît pas. */
+.et-carte.et-nav.est-tel {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+.et-carte.et-nav.est-tel .et-barre {
+  height: auto;
+  padding: 18px 24px;
+  justify-content: flex-start;
+  border-bottom: 1px solid var(--mat-line);
+}
+.et-carte.et-nav.est-tel .et-titre {
+  font-size: 72px;
+}
+.et-carte.et-nav.est-tel .et-type {
+  font-size: 30px;
+}
+.et-carte.et-nav.est-tel .et-corps {
+  overflow: hidden;
+  overflow: clip;
+}
+.et-nav-tel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 14px;
+  height: 100%;
+  padding: 22px 24px;
+  overflow: hidden;
+  overflow: clip;
+}
+.et-nav-tel-adresse,
+.et-nav-tel-etat {
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  overflow: clip;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.et-nav-tel-adresse {
+  font: 700 46px/1.15 var(--mono);
+}
+.et-nav-tel-etat {
+  color: var(--dim);
+  font: 600 56px/1.1 var(--ui);
+}
+.et-nav-tel-etat.est-ouvert {
+  color: var(--working);
+}
+.et-nav-tel-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  object-fit: contain;
+  object-position: left top;
+}

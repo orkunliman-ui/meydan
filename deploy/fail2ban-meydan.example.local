@@ -1,0 +1,11 @@
+# 10 refus 429 (zone meydan_auth, page de connexion de Meydan) en 60 s → adresse bannie 1 h.
+# Jail à part de nginx-limit-req : à copier dans /etc/fail2ban/jail.d/, puis fail2ban-client reload.
+[meydan-limit-req]
+enabled = true
+filter = nginx-limit-req
+backend = auto
+port = http,https
+logpath = /var/log/nginx/meydan.error.log
+findtime = 60
+maxretry = 10
+bantime = 3600

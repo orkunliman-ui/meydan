@@ -1,0 +1,304 @@
+/* Volet « raccourcis » (13/11), lot C : préréglages de groupe (Groupes.jsx). Une rangée de puces sous le bouton de
+   lancement du formulaire « Nouvelle console » (colonne de l'ordinateur, pli du téléphone, panneau du téléphone couché),
+   et l'éditeur, sur le panneau des boucles (styles.css `.boucle`). Les deux thèmes : les teintes passent par les
+   variables de la colonne « 3 plans » (--papier…), de Réverbère (--texte…), puis de Tapis (--paper…). Préfixe `gr-`. */
+
+.gr {
+  --gr-texte: var(--papier, var(--texte, var(--paper)));
+  --gr-pale: var(--papier-3, var(--texte-3, var(--dim)));
+  --gr-trait: var(--filet, var(--trait, var(--mat-line)));
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+  min-width: 0;
+}
+/* Réverbère range le formulaire en flex : type (1), nombre (2), champs (3), lancement (4), erreur (5). Les groupes
+   viennent EN TÊTE (order 0, juste après le titre), sur toute la largeur : décision d'Orkun du 17/11, raccourcis-9
+   (« Puces en tête du formulaire ») ; au bas du pli ouvert d'un portable 1366 × 768, il fallait défiler pour les
+   atteindre. Tapis suit l'ordre du DOM (Rail.jsx : même place). */
+.composer > .gr {
+  order: 0;
+  flex: 1 1 100%;
+}
+.gr-puces {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+/* Une puce : lancer (nom au-dessus, résumé dessous) | modifier. Un nom trop long est coupé, la puce ne dépasse jamais. */
+.gr-puce {
+  display: inline-grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-width: 0;
+  max-width: 100%;
+  border: 1px solid var(--gr-trait);
+  border-radius: 2px;
+}
+.gr-puce.is-en-cours {
+  border-color: var(--gr-texte);
+}
+.gr-lance {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: center;
+  gap: 4px;
+  min-width: 0;
+  min-height: 38px;
+  padding: 5px 8px 5px 10px;
+  background: none;
+  border: 0;
+  text-align: left;
+  color: var(--gr-texte);
+  cursor: pointer;
+}
+.gr-nom,
+.gr-resume {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.gr-nom {
+  font: 600 10.5px/1 var(--mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gr-pale);
+}
+.gr-resume {
+  font: 600 13px/1.1 var(--ui);
+}
+.gr-modifie {
+  width: 28px;
+  padding: 0 0 4px;
+  background: none;
+  border: 0;
+  border-left: 1px solid var(--gr-trait);
+  font: 700 19px/1 var(--ui);
+  color: var(--gr-pale);
+  cursor: pointer;
+}
+.gr-plus {
+  min-height: 38px;
+  padding: 0 11px;
+  background: none;
+  border: 1px dashed var(--gr-trait);
+  border-radius: 2px;
+  font: 600 12.5px/1 var(--ui);
+  color: var(--gr-pale);
+  cursor: pointer;
+}
+:is(.gr-lance, .gr-modifie, .gr-plus):hover:not(:disabled) {
+  background: rgba(190, 205, 255, 0.08);
+  color: var(--gr-texte);
+}
+:is(.gr-lance, .gr-modifie, .gr-plus):disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+.gr-puce.is-en-cours .gr-lance:disabled {
+  opacity: 1;
+}
+.gr-dossier {
+  margin: 0;
+  font: 500 12px/1.35 var(--ui);
+  color: var(--gr-pale);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gr-dossier b {
+  font-weight: 600;
+  color: var(--gr-texte);
+}
+.gr-avis {
+  margin: 0;
+  font: 500 12px/1.35 var(--ui);
+  color: var(--gr-pale);
+  overflow-wrap: anywhere;
+}
+.gr-avis.is-erreur {
+  color: var(--error);
+}
+
+/* ── Le pli « Nouvelle console » ouvert : il défile en lui-même, « Fermer » reste en bas de l'écran ──
+   Mesuré au banc le 13/11, AVANT les groupes : portable 1366 × 768, pli ouvert, « Fermer » finissait à y = 926 (158 px
+   sous l'écran). La rangée des groupes l'aurait poussé plus bas, et sous l'écran d'un petit téléphone (375 × 667 :
+   y = 791 pour 667). Comme sur le téléphone couché (lot-design/colonne.css, qui garde ses règles) : le pli ouvert prend
+   la place qui reste sous la liste, défile en lui-même, et « Fermer » reste collé en bas, sur un fond plein. Pli fermé :
+   rien ne change. Ordinateur et téléphone debout ; le téléphone couché (`.rail.reel3`) garde ses propres règles. */
+:is(.app:not(.is-mobile) .rail, .app.is-mobile .rail:not(.reel3)) .pli-boite:has(> .pli.is-ouvert) {
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  /* Sans barre, comme la liste de la colonne (`.roll`) : une barre classique (Windows) prendrait ~15 px des 272 du
+     formulaire et ferait repasser ses rangées à la ligne. L'ombre au-dessus de « Fermer » dit que le pli continue. */
+  scrollbar-width: none;
+}
+[data-theme] :is(.app:not(.is-mobile) .rail, .app.is-mobile .rail:not(.reel3)) .pli-boite > .pli.is-ouvert {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  background-color: #0d1123;
+  box-shadow: 0 -10px 18px -6px var(--sol-bas, #080b18);
+}
+/* « Fermer » collé reste au-dessus du retrait bas du pli (12 à 14 px, plus la zone sûre de l'iPhone) : un fond plein sur
+   les 12 premiers, pour que le formulaire qui défile n'y passe pas dessous. Jamais plus haut que ce retrait : le pli ne
+   défile pas pour lui. Pli qui tient à l'écran : ces 12 px tombent sur le haut vide de ce qui suit « Fermer » (l'usage
+   des comptes, au téléphone : son texte commence plus bas ; vérifié par test/volets/raccourcis/essai-lancer.mjs). */
+[data-theme] :is(.app:not(.is-mobile) .rail, .app.is-mobile .rail:not(.reel3)) .pli-boite > .pli.is-ouvert::after {
+  content: '';
+  position: absolute;
+  /* La largeur de « Fermer », celle du formulaire qui défile dessous. Plus large, le bouton déborderait de son cadre
+     (relevé par test/volets/comptes/essai-interface.mjs, « pli sans débordement »). */
+  left: 0;
+  right: 0;
+  top: calc(100% + 1px); /* sous la bordure de « Fermer » */
+  height: 11px;
+  background: var(--sol-bas, #080b18);
+  pointer-events: none;
+}
+
+/* Au doigt (pli du téléphone, panneau du téléphone couché) : 44 px pour chaque cible, sans changer la mise en page. */
+@media (pointer: coarse) {
+  .gr-lance,
+  .gr-plus {
+    min-height: 44px;
+  }
+  .gr-modifie {
+    width: 44px;
+  }
+}
+
+/* ── L'éditeur (panneau des boucles) ── */
+.gr-editeur {
+  --gr-trait: var(--trait, var(--mat-line));
+  width: min(100%, 520px);
+  max-height: min(92dvh, 880px);
+}
+.gr-editeur :is(select, input, textarea) {
+  width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  background: var(--dalle, rgba(0, 0, 0, 0.25));
+  border: 1px solid var(--gr-trait);
+  border-radius: 10px;
+  font: 400 16px/1.3 var(--ui, inherit); /* 16 px : en dessous, l'iPhone zoome sur le champ */
+  color: inherit;
+}
+.gr-editeur select {
+  height: 44px;
+  padding-block: 0;
+}
+.gr-editeur textarea {
+  resize: vertical;
+}
+.gr-ligne {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 8px 12px 12px;
+  border: 1px solid var(--gr-trait);
+  border-radius: 10px;
+}
+.gr-ligne legend {
+  padding: 0 6px;
+  font: 600 11.5px/1 var(--mono);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--texte-2, var(--dim));
+}
+.gr-ligne-tete {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+}
+.gr-pas {
+  display: flex;
+  align-items: center;
+  height: 44px;
+  border: 1px solid var(--gr-trait);
+  border-radius: 10px;
+}
+.gr-pas button {
+  width: 40px;
+  height: 42px;
+  background: none;
+  border: 0;
+  font: 700 18px/1 var(--mono);
+  color: inherit;
+  cursor: pointer;
+}
+.gr-pas button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.gr-pas output {
+  min-width: 26px;
+  font: 700 14px/1 var(--mono);
+  text-align: center;
+}
+.gr-retire {
+  width: 44px;
+  height: 44px;
+  background: none;
+  border: 1px solid var(--gr-trait);
+  border-radius: 10px;
+  font: 400 22px/1 var(--ui, inherit);
+  color: inherit;
+  cursor: pointer;
+}
+.gr-ajoute {
+  height: 44px;
+  background: none;
+  border: 1px dashed var(--gr-trait);
+  border-radius: 10px;
+  font: 600 14px/1 var(--ui, inherit);
+  color: inherit;
+  cursor: pointer;
+}
+.gr-ajoute:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.gr-total {
+  margin: 0;
+  font: 500 13px/1.35 var(--ui, inherit);
+  color: var(--texte-2, var(--dim));
+  overflow-wrap: anywhere;
+}
+.gr-total.is-erreur {
+  color: var(--error);
+}
+/* « Enregistrer » reste à l'écran quand les lignes font défiler le panneau. */
+.gr-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  display: flex;
+  gap: 8px;
+  padding-bottom: 2px;
+  background: var(--barre, var(--slab-bar));
+  box-shadow: 0 -12px 14px -8px var(--barre, var(--slab-bar));
+}
+.gr-enregistre {
+  flex: 2 1 0;
+}
+.gr-supprime {
+  flex: 1 1 0;
+  height: 50px;
+  margin-top: 4px;
+  background: none;
+  border: 1.5px solid currentColor;
+  border-radius: 12px;
+  font: 700 15px/1 var(--ui, inherit);
+  color: var(--texte-2, var(--dim));
+  cursor: pointer;
+}
+.gr-supprime.is-confirme {
+  color: var(--error);
+}

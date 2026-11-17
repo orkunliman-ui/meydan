@@ -1,0 +1,281 @@
+/* Plateau créatif (volet du 13/11) — formes (FormeNode.jsx) et flèches (Fleches.jsx). Préfixe « cr-fo- ».
+   Couleurs : la classe `cr-coul-<nom>` (cartes.css) pose `--cr-c` ; jamais de jaune (réservé à ce qui attend Orkun).
+   Les traits ne descendent jamais sous ~1,5 point d'écran quand on dézoome (`--zoom`, posé par Board.jsx sur le plateau). */
+
+/* ── Une forme ── */
+.cr-fo-forme {
+  --cr-fo-trait: max(2px, calc(1.5px / var(--zoom, 1)));
+  position: relative;
+  color: var(--cr-c);
+  font-family: var(--ui);
+}
+.cr-fo-rect,
+.cr-fo-ellipse {
+  border: var(--cr-fo-trait) solid var(--cr-c);
+  border-radius: 4px;
+}
+.cr-fo-ellipse {
+  border-radius: 50%;
+}
+.cr-fo-forme.est-plein {
+  background: color-mix(in srgb, var(--cr-c) 16%, transparent);
+}
+/* Choisie, ou en écriture (ordinateur) : un pointillé autour de la boîte (le texte libre n'a pas d'autre bord). */
+.cr-fo-forme.est-choisie,
+.cr-fo-forme.est-ecrite {
+  outline: calc(1px / var(--zoom, 1)) dashed var(--dim);
+  outline-offset: calc(4px / var(--zoom, 1));
+}
+
+/* Le texte : centré dans un rectangle, dans le rectangle inscrit d'une ellipse ; en haut à gauche pour un texte libre. */
+.cr-fo-corps {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  padding: 6px 10px;
+  overflow: hidden;
+  text-align: center;
+}
+.cr-fo-ellipse .cr-fo-corps {
+  inset: 14.6%;
+  padding: 0;
+}
+.cr-fo-libre .cr-fo-corps {
+  align-items: start;
+  padding: 2px 4px;
+  text-align: left;
+}
+.cr-fo-corps > p.cr-fo-texte,
+.cr-fo-champ {
+  margin: 0;
+  max-height: 100%;
+  overflow: hidden;
+  font: 500 var(--cr-fo-taille, 18px) / 1.25 var(--ui);
+  color: var(--cr-c);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.cr-fo-corps > p.cr-fo-vide {
+  font-size: 14px;
+  font-style: italic;
+  color: var(--dim);
+}
+.cr-fo-champ {
+  display: block;
+  width: 100%;
+  height: auto;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  text-align: inherit;
+  caret-color: var(--paper);
+  resize: none;
+  overflow: auto;
+  field-sizing: content; /* rectangle et ellipse : le champ garde la hauteur de son texte, centré comme lui */
+}
+.cr-fo-libre .cr-fo-champ {
+  height: 100%;
+  field-sizing: fixed;
+}
+.cr-fo-champ::placeholder {
+  color: var(--dim);
+  opacity: 1;
+}
+/* Compteur et refus, sous la forme (dans le repère du plan, comme elle). */
+.cr-fo-compte {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 6px);
+  margin: 0;
+  padding: 3px 6px;
+  border-radius: 4px;
+  background: var(--slab-bar);
+  border: 1px solid var(--mat-line);
+  color: var(--dim);
+  font: 600 11px/1.3 var(--mono);
+  white-space: nowrap;
+}
+.cr-fo-compte.est-trop {
+  color: var(--error);
+  border-color: var(--error);
+}
+
+/* Poignées de taille (NodeResizer, sans la prop `color`) : Réverbère les peint au bleu de focus (reverbere.css) ; ici, le
+   même bleu, et le papier pour Tapis qui n'a pas ce jeton. Les lignes restent saisissables mais ne se dessinent pas. */
+.react-flow__resize-control.handle.cr-fo-poignee {
+  background-color: var(--focus, var(--paper));
+}
+.react-flow__resize-control.line.cr-fo-ligne {
+  border-color: transparent;
+}
+
+/* Téléphone couché : tuile fixe peinte, rien de vivant. */
+.cr-fo-forme.est-tel,
+.cr-fo-forme.est-tel * {
+  transition: none;
+  animation: none;
+}
+.cr-fo-forme.est-tel .cr-fo-corps {
+  overflow: clip;
+}
+
+/* ── La barre d'une forme ou d'une flèche choisie (en points d'écran, au-dessus du plateau) ── */
+.cr-fo-barre {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  background: var(--slab-bar);
+  border: 1px solid var(--mat-line);
+  border-radius: 8px;
+  box-shadow: 0 14px 30px -18px rgba(0, 0, 0, 0.85);
+  color: var(--paper);
+  font: 400 12px/1 var(--ui);
+  white-space: nowrap;
+}
+.cr-fo-barre-fleche {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 1002;
+}
+.cr-fo-couleurs {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 4px;
+}
+.cr-fo-barre button {
+  height: 26px;
+  padding: 0 8px;
+  border: 1px solid var(--mat-line);
+  border-radius: 6px;
+  background: var(--slab);
+  color: var(--paper);
+  font: inherit;
+}
+.cr-fo-barre button:hover:not(:disabled) {
+  border-color: var(--paper);
+}
+.cr-fo-barre button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.cr-fo-barre button.cr-fo-pastille {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border-radius: 50%;
+  background: var(--cr-c);
+}
+.cr-fo-barre button.cr-fo-pastille.est-prise {
+  outline: 2px solid var(--paper);
+  outline-offset: 2px;
+}
+.cr-fo-barre button.cr-fo-bouton.est-pris {
+  border-color: var(--paper);
+  background: var(--paper);
+  color: var(--ink);
+}
+.cr-fo-barre button.cr-fo-retire {
+  min-width: 26px;
+  font-size: 15px;
+  color: var(--dim);
+}
+.cr-fo-barre button.cr-fo-retire.est-armee {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--error);
+  border-color: var(--error);
+}
+.cr-fo-barre-erreur {
+  max-width: 260px;
+  padding: 0 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--error);
+}
+
+/* ── Les flèches : un calque SVG dans le repère du plan, sous les dalles (comme .liens-plateau) ── */
+.cr-fo-calque {
+  position: absolute;
+  z-index: -1;
+  left: 0;
+  top: 0;
+  width: 1px;
+  height: 1px;
+  overflow: visible;
+  pointer-events: none;
+}
+/* « Ranger » : les dalles glissent vers leur place finale, les flèches y sont déjà ; elles attendent la fin. */
+.react-flow.est-range .cr-fo-calque {
+  visibility: hidden;
+}
+.cr-fo-trait,
+.cr-fo-halo,
+.cr-fo-prise {
+  fill: none;
+  stroke-linecap: round;
+}
+.cr-fo-trait {
+  stroke: var(--cr-c);
+  stroke-width: max(2px, calc(1.5px / var(--zoom, 1)));
+}
+.cr-fo-pointe {
+  fill: var(--cr-c);
+  transform: scale(max(1, calc(0.75 / var(--zoom, 1))));
+}
+.cr-fo-halo {
+  stroke: var(--focus, var(--paper));
+  stroke-opacity: 0.45;
+  stroke-width: calc(8px / var(--zoom, 1));
+}
+.cr-fo-prise {
+  stroke: transparent;
+  stroke-width: calc(16px / var(--zoom, 1));
+  pointer-events: stroke;
+  cursor: pointer;
+}
+.cr-fo-fleche.est-apercu {
+  opacity: 0.75;
+}
+.cr-fo-cible {
+  fill: none;
+  stroke: var(--cr-c);
+  stroke-width: calc(1.5px / var(--zoom, 1));
+  stroke-dasharray: calc(6px / var(--zoom, 1)) calc(5px / var(--zoom, 1));
+}
+
+/* ── L'outil « Flèche » : la surface qui prend le pointeur, dans le cadre du plateau ── */
+.cr-fo-surface {
+  position: absolute;
+  inset: 0;
+  z-index: 2000;
+  cursor: crosshair;
+  touch-action: none;
+}
+.cr-fo-consigne {
+  position: absolute;
+  left: 50%;
+  top: 14px;
+  transform: translateX(-50%);
+  max-width: calc(100% - 32px);
+  margin: 0;
+  padding: 6px 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: var(--slab-bar);
+  border: 1px solid var(--mat-line);
+  border-radius: 8px;
+  color: var(--paper);
+  font: 400 12px/1.3 var(--ui);
+  pointer-events: none;
+}
+.cr-fo-consigne.est-erreur {
+  color: var(--error);
+  border-color: var(--error);
+}

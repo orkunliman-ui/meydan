@@ -1,0 +1,265 @@
+/* lot-design/plateau.css — voir lot-design.css. Le plateau de l'ordinateur (Board.jsx) sous ?reel3=oui.
+   1. Trois plans : au fond, le nom du groupe de la plus ancienne attente peint en très grand sur le sol (.r3-fond, posé
+      par Board.jsx sur du sol libre seulement, le bas des lettres sous le haut de ses dalles, comme la scène du téléphone
+      debout) ; au milieu, les dalles ; par-dessus, « Répondre » (.r3-repondre), à cheval sur le bord bas de chaque dalle
+      qui t'attend.
+   2. Le jaune ne dit plus que « à toi de toucher » : le bouton Répondre, et le petit carré de ce qui t'attend. Barres à
+      l'encre (plus de bande jaune), plus de filet turquoise de TRAVAILLE ; les états à l'encre et au papier (leur forme
+      les dit, Signe.jsx), les liens d'équipe aussi. ERREUR garde son rouge, FINI son vert (lot6-fini.css). Le halo des
+      consoles qui attendent (une lumière blanche sur le sol, pas du jaune) reste.
+   3. Une chose énorme (le nom du fond), le reste en 13 px (texte) et 10,5 px (étiquettes), rien entre les deux.
+   Tout est sous .react-flow : la console agrandie (.plein, hors du plateau) et le téléphone (.is-mobile) n'en voient rien. */
+
+[data-theme='reverbere'][data-reel3='oui'] .app:not(.is-mobile) .react-flow {
+  --papier: #e8ebf4;
+  --papier-2: rgba(232, 235, 244, 0.64);
+  --papier-3: rgba(232, 235, 244, 0.42);
+  /* Règle 2 : les états à l'encre et au papier (signes, étiquettes, liens, mini-carte les lisent). */
+  --working: var(--papier);
+  --starting: var(--papier-2);
+  --running: var(--papier-2);
+  --ready: var(--papier-2);
+  --shell: var(--papier-3);
+  --closed: var(--papier-3);
+  /* La matière du jaune touché : la même que « Répondre » du téléphone debout (reel.css). */
+  --jaune-haut: color-mix(in srgb, var(--appel) 78%, #fff);
+  --jaune-bas: color-mix(in srgb, var(--appel) 86%, #8a7a00);
+
+  /* ───────── Plan du fond : le grand nom ───────── */
+  & .r3-fond {
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: -1; /* et avant les halos dans la page : sous les halos, les liens et les dalles */
+    pointer-events: none;
+    user-select: none;
+    transition: opacity 500ms ease 80ms;
+  }
+  /* Pendant « Ranger », le nom est déjà à la place finale des dalles : il s'efface, comme les halos (lot4-rangement.css). */
+  &.est-range .r3-fond {
+    opacity: 0;
+    transition-duration: 120ms;
+    transition-delay: 0ms;
+  }
+  & .r3-fond b {
+    position: absolute;
+    display: block;
+    margin-left: -0.05em; /* l'approche du premier jambage : la lettre s'aligne sur le bord de la dalle */
+    font-family: var(--ui);
+    font-weight: 800;
+    line-height: 0.8;
+    letter-spacing: -0.05em;
+    white-space: nowrap;
+    /* Papier qui s'éteint vers le bas : la lettre recule, la dalle qui la chevauche avance. */
+    color: transparent;
+    background: linear-gradient(180deg, rgba(232, 235, 244, 0.5) 0%, rgba(232, 235, 244, 0.2) 62%, rgba(232, 235, 244, 0.06) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+  & .r3-fond span {
+    display: block;
+    width: max-content;
+    padding-right: 0.06em; /* l'approche négative rogne la dernière lettre sinon */
+  }
+
+  /* ───────── Plan du milieu : la dalle qui t'attend, à l'encre ───────── */
+  /* Une ombre vers le haut aussi : la dalle qui chevauche le grand nom se lit devant lui, pas comme un trou dans le mot. */
+  & .slab.is-needs {
+    border-color: var(--papier-3);
+    box-shadow: 0 0 0 0.5px var(--papier-3), 0 -14px 26px -14px rgba(0, 0, 0, 0.9), 0 26px 50px -22px rgba(0, 0, 0, 0.85), 0 3px 10px rgba(0, 0, 0, 0.4);
+  }
+  & .slab.is-needs.is-active {
+    border-color: var(--dalle);
+    box-shadow: 0 0 0 2px var(--dalle), 0 0 0 4px var(--focus), 0 26px 50px -22px rgba(0, 0, 0, 0.85);
+  }
+  & .slab.is-needs .slab-bar {
+    background: linear-gradient(180deg, #161b30, var(--barre));
+    box-shadow: inset 0 -1px 0 var(--trait-fin);
+    color: var(--texte);
+  }
+  & .slab.is-needs .bar-nom {
+    font-weight: 600;
+    color: var(--texte);
+  }
+  & .slab.is-needs .bar-note {
+    color: var(--texte);
+  }
+  & .slab.is-needs .bar-in .signe {
+    color: var(--st); /* le petit carré jaune : ce qui t'attend */
+  }
+  & .slab.is-needs .bar-in .age {
+    font-weight: 400;
+    color: var(--texte-2);
+  }
+  & .slab.is-needs .bar-cwd,
+  & .slab.is-needs .slab-close {
+    color: var(--texte-3);
+  }
+  & .slab.is-needs .bar-in .etat {
+    padding: 0;
+    background: none;
+    border-radius: 0;
+    color: var(--papier);
+  }
+  & .slab.is-needs .bar-vue,
+  & .slab.is-needs .bar-vue button + button,
+  & .slab.is-needs .bar-plein {
+    border-color: var(--trait);
+  }
+  & .slab.is-needs .bar-vue button,
+  & .slab.is-needs .bar-plein {
+    color: var(--texte-2);
+  }
+  & .slab.is-needs .bar-vue button[aria-pressed='true'] {
+    background: rgba(190, 205, 255, 0.14);
+    color: var(--texte);
+  }
+  /* La question : une ligne blanche, petite, sur l'encre de la barre (plus d'aplat jaune) ; deux rangs du terminal au
+     lieu de quatre (même calcul que reverbere.css : le bas tombe entre deux rangs). */
+  & .plaque {
+    align-items: center;
+    height: calc(8px * var(--zb, 1) + round(up, 26px - 8px * var(--zb, 1), var(--rang, 16px) * var(--zb, 1)));
+    padding: 0 13px;
+    background: var(--barre);
+    box-shadow: inset 0 1px 0 var(--trait-fin), 0 10px 18px -8px rgba(0, 0, 0, 0.7);
+    color: var(--texte);
+  }
+  & .plaque b {
+    font: 600 13px/1.2 var(--ui);
+    letter-spacing: 0;
+  }
+
+  /* TRAVAILLE : plus de filet turquoise ; les trois barres du signe le disent. Une boucle en cours : à l'encre. */
+  & .slab.is-working .slab-bar::after {
+    content: none;
+  }
+  & .bar-boucle.est-active {
+    border-color: var(--papier-2);
+    color: var(--papier);
+  }
+
+  /* Liens d'équipe : à l'encre. Ce qui circule (particules) dit qu'ils travaillent. */
+  & .ve-lien.est-travail,
+  & .ve-lien.est-appel,
+  & .ve-lien.est-retour {
+    --lc: var(--papier);
+    --lc2: #fff;
+  }
+
+  /* ───────── Règle 3 : 13 px (texte) et 10,5 px (étiquettes) ───────── */
+  & .bar-nom,
+  & .bar-note,
+  & .bar-input {
+    font-size: 13px;
+  }
+  & .bar-cwd,
+  & .bar-in .age,
+  & .bar-in .genre,
+  & .bar-vue button,
+  & .bar-boucle {
+    font-size: 10.5px;
+  }
+  & .slab-ailleurs {
+    font: 600 13px/1.2 var(--ui);
+  }
+  & .slab-ailleurs button,
+  & .slab-gone small,
+  & .depot {
+    font-size: 10.5px;
+  }
+  & .relance {
+    font-size: 13px;
+  }
+  /* Vue de loin (zoom < 45 %) : la tuile à taille d'écran constante (--zoom, posé par ZoomWatch), et à l'encre. */
+  & .slab-far.tuile {
+    gap: calc(8px / var(--zoom, 1));
+    padding: calc(12px / var(--zoom, 1)) calc(14px / var(--zoom, 1));
+  }
+  & .tuile b {
+    gap: calc(8px / var(--zoom, 1));
+    font: 600 calc(13px / var(--zoom, 1)) / 1.2 var(--ui);
+  }
+  & .tuile b .signe,
+  & .tuile .pied .signe {
+    font-size: calc(11px / var(--zoom, 1));
+  }
+  & .tuile p {
+    font: 600 calc(13px / var(--zoom, 1)) / 1.3 var(--ui);
+    letter-spacing: 0;
+    /* Lignes entières seulement (chasse du 17/11 : « Une question t'attend » tranchée à mi-ligne). La grille donne à la
+       question la place qui reste entre le nom et le pied, sans compter en lignes : sa hauteur est ramenée au multiple de
+       sa hauteur de ligne (13 px × 1,3, à l'échelle du zoom) qui tient dedans. `1lh` serait plus court, mais Chrome 151 le
+       résout mal ici (mesuré : 18,9 px au lieu de 82,9). « + 1px » : une place égale à n lignes au sous-pixel près (rognage
+       posé par lignes.js) ne tombe pas à n − 1. Les « … » de la dernière ligne vue : lignes.js. */
+    max-height: round(down, 100% + 1px, calc(13px * 1.3 / var(--zoom, 1)));
+  }
+  & .tuile .pied {
+    gap: calc(8px / var(--zoom, 1));
+  }
+  & .tuile .etat {
+    font: 700 calc(10.5px / var(--zoom, 1)) / 1 var(--ui);
+  }
+  & .tuile .age {
+    font: 400 calc(10.5px / var(--zoom, 1)) / 1 var(--mono);
+  }
+  & .is-needs .tuile {
+    background: var(--barre);
+  }
+  & .is-needs .tuile :is(b, p) {
+    color: var(--texte);
+  }
+  & .is-needs .tuile .etat {
+    color: var(--papier);
+  }
+  & .is-needs .tuile .age {
+    margin-left: 0; /* à gauche, près de l'état : la droite du bas est à « Répondre » */
+    color: var(--texte-2);
+  }
+  & .is-needs .tuile .signe {
+    color: var(--st);
+  }
+  & .is-working .tuile {
+    box-shadow: none;
+  }
+
+  /* ───────── Plan du dessus : « Répondre » ───────── */
+  /* Contre-mis à l'échelle (--zoom, posé par ZoomWatch) : 34 px à l'écran du zoom 0,3 au zoom 1, vue de loin comprise ;
+     plus petit en deçà, plus grand au-delà. Centré sur le bord bas, aligné à droite. */
+  & .r3-repondre {
+    position: absolute;
+    right: 18px;
+    bottom: 0;
+    z-index: 7;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    height: 34px;
+    padding: 0 12px 0 16px;
+    background: linear-gradient(180deg, var(--jaune-haut) 0%, var(--appel) 46%, var(--jaune-bas) 100%);
+    border: 0;
+    border-radius: 3px;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.62),
+      inset 0 -1px 0 rgba(90, 80, 0, 0.28),
+      0 14px 26px -12px color-mix(in srgb, var(--appel) 60%, transparent),
+      0 6px 14px rgba(0, 0, 0, 0.55);
+    font: 700 13px/1 var(--ui);
+    letter-spacing: 0.02em;
+    color: var(--encre);
+    white-space: nowrap;
+    cursor: pointer;
+    transform: translateY(50%) scale(calc(1 / clamp(0.3, var(--zoom, 1), 1)));
+    transform-origin: 100% 50%;
+  }
+  & .r3-repondre i {
+    font: 400 20px/0.8 var(--ui);
+    font-style: normal;
+    transform: translateY(-1px);
+  }
+  & .r3-repondre:hover {
+    background: linear-gradient(180deg, color-mix(in srgb, var(--appel) 66%, #fff) 0%, var(--appel) 60%);
+  }
+  & .r3-repondre:active {
+    background: color-mix(in srgb, var(--appel) 84%, #fff);
+  }
+}

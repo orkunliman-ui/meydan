@@ -1,0 +1,100 @@
+/* Réagencement (16/11, Orkun : « Réagence tout ca et fait en sorte que ca fonctionne mieu », sur son MacBook, fenêtre
+   Chrome 1736 × 884). « b » (colonne compacte) par défaut depuis ses réponses du 16/11 ; `?agencement=a` rend la colonne d'avant.
+   Mesuré à sa taille : la liste ne montrait que 5 consoles sur 7 (« + 2 plus bas »), le reste de la colonne pris par le
+   réglage d'une équipe, deux gros boutons « Suggestions » / « Alertes » et la rangée « Musique ». */
+
+/* L'enveloppe de Suggestions / Alertes / Musique ne compte pas dans la mise en page de l'agencement « a ». */
+.rail-utiles {
+  display: contents;
+}
+
+/* ── b. Colonne : une seule rangée basse pour Suggestions · Alertes · Musique ── */
+[data-agencement='b'] .rail .rail-utiles {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+  padding: 6px 12px;
+  border-top: 1px solid var(--trait-fin, var(--mat-line));
+}
+[data-agencement='b'] .rail .rail-utiles .veille-acces {
+  flex: 1 1 auto;
+  padding: 0;
+  gap: 6px;
+  min-width: 0;
+}
+[data-agencement='b'] .rail .rail-utiles .veille-acces button {
+  min-height: 32px;
+  padding: 0 8px;
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+[data-agencement='b'] .rail .rail-utiles .mus-mini {
+  flex: 0 1 auto;
+  min-height: 32px;
+  border-top: 0;
+  border: 1px solid var(--mat-line);
+  border-radius: 3px;
+}
+[data-agencement='b'] .rail .rail-utiles .mus-mini .mus-nom {
+  min-height: 30px;
+  padding: 0 10px;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+}
+[data-agencement='b'] .rail .rail-utiles .mus-mini:not(.seul) {
+  flex: 1 1 100%;
+}
+[data-agencement='b'] .rail .rail-utiles:has(.mus-mini:not(.seul)) {
+  flex-wrap: wrap;
+}
+
+/* ── b. Équipe : le réglage « Vérifier à la fin » sur une ligne, sans son explication (au survol) ── */
+[data-agencement='b'] .rail .verification-reglage {
+  margin-top: 6px;
+}
+[data-agencement='b'] .rail .verification-reglage small {
+  display: none;
+}
+[data-agencement='b'] .rail .verification-reglage label {
+  font-size: 12px;
+}
+[data-agencement='b'] .rail .equipe-bas {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Plateau (pour tous depuis le 16/11, « niquel ») : la barre du haut (↶ ↷, Espaces, Disposer) rejoint celle du bas ── */
+.pied-plateau .pc-dispo-bas {
+  display: flex;
+  flex-wrap: wrap-reverse; /* beaucoup d'espaces : une rangée de plus, au-dessus */
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+}
+/* Écran étroit : la barre passe sur deux rangées, la seconde AU-DESSUS (le bas reste collé au bord). */
+.react-flow__panel.pied-plateau {
+  flex-wrap: wrap-reverse;
+}
+/* La grille de « Disposer » s'ouvrait sous son bouton : en bas de l'écran, elle sortait du plateau. Au-dessus. */
+.pied-plateau .pc-dispo-bas .dp-grille {
+  top: auto;
+  bottom: calc(100% + 8px);
+}
+/* La barre de la sélection (plusieurs consoles choisies) était posée en bas au milieu, PAR-DESSUS ↶ ↷ (vu dans l'essai de
+   l'historique de la disposition) : elle prend le haut du plateau, libre depuis que la barre d'outils est en bas. */
+.pc-selection.react-flow__panel {
+  margin: 16px 15px 0;
+}
+
+/* Le libellé court de « Suggestions des agents » dans la rangée basse de b (le texte du bouton ne change pas : lecteurs
+   d'écran et essais le lisent entier). */
+[data-agencement='b'] .rail .rail-utiles .veille-acces button:first-child {
+  font-size: 0;
+}
+[data-agencement='b'] .rail .rail-utiles .veille-acces button:first-child::after {
+  content: 'Suggestions';
+  font-size: 11px;
+}

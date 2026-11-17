@@ -1,0 +1,72 @@
+/* État FINI (11/11, Orkun : « rajouter un signal quand une tache est terminé au lieu de juste dire au repos. Repos doit
+   etre l'etat apres que j'ai vu qu'il a terminé sa tache »). L'agent a fini, Orkun ne l'a pas encore vu : vert franc,
+   plein, immobile (aucune animation : le plateau du téléphone ne doit rien composer de plus, lot5-memoire.css). Le jaune
+   reste aux questions (T'ATTEND) ; le vert pâle du PRÊT revient quand Orkun l'a vue. */
+:root,
+[data-theme='reverbere'] {
+  --fini: #5ce89a;
+}
+
+/* Le signe : la coche du PRÊT, posée dans un disque vert plein. */
+.s-fini {
+  --st: var(--fini);
+}
+.signe.s-fini {
+  background: var(--fini);
+  color: var(--sol-bas, #07100b);
+}
+.signe.s-fini::before {
+  content: '';
+  display: block;
+  width: 0.5em;
+  height: 0.26em;
+  border: solid currentColor;
+  border-width: 0 0 0.13em 0.13em;
+  transform: translateY(-0.08em) rotate(-45deg);
+}
+
+/* La liste : la ligne s'éclaire de vert, filet à gauche, état en gras. */
+.rang.is-fini {
+  background: linear-gradient(90deg, rgba(92, 232, 154, 0.16), rgba(92, 232, 154, 0.03) 70%);
+  box-shadow: inset 3px 0 0 var(--fini);
+}
+.rang.is-fini .etat {
+  color: var(--fini);
+  font-weight: 700;
+}
+.rang.is-fini b {
+  color: var(--texte, #e8ecf8);
+}
+
+/* Le plateau : la fenêtre bordée de vert, un filet plein en haut de sa barre, et la tuile de loin marquée de même. */
+.slab.is-fini {
+  box-shadow:
+    0 0 0 1.5px var(--fini),
+    0 0 26px rgba(92, 232, 154, 0.28);
+}
+.slab.is-fini .slab-bar::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 3px;
+  background: var(--fini);
+}
+.is-fini .tuile {
+  box-shadow: inset 0 8px 0 var(--fini);
+  background: linear-gradient(180deg, rgba(92, 232, 154, 0.14), transparent 55%), var(--barre, #131729);
+}
+.is-fini .tuile .etat {
+  color: var(--fini);
+}
+
+/* Les tuiles du téléphone couché (vue « Tuiles ») et les colonnes. */
+.vt.is-fini {
+  box-shadow:
+    inset 0 0 0 1.5px var(--fini),
+    inset 0 4px 0 var(--fini);
+}
+.vt.is-fini .etat {
+  color: var(--fini);
+}

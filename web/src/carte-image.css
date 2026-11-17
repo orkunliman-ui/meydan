@@ -1,0 +1,233 @@
+/* Plateau créatif (volet du 13/11) : la carte « image » (ImageNode.jsx). Préfixe « cr-im- ». Couleurs par les jetons des
+   deux thèmes ; celles du stylo par les classes cr-coul-* (cartes.css) ; aucun jaune. */
+
+/* ── Les outils de la barre : « Annoter » / « Fini », « Envoyer à… ». Une carte étroite (la barre fait moins de 300 px)
+   cache le nom du type et garde des outils courts. ── */
+.et-image > .et-barre {
+  container-type: inline-size;
+}
+.cr-im-bouton {
+  flex: none;
+  height: 24px;
+  padding: 0 8px;
+  border: 1px solid var(--mat-line);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--paper);
+  font: 600 12px/1 var(--ui);
+  white-space: nowrap;
+}
+.cr-im-bouton:hover {
+  border-color: var(--paper);
+}
+.cr-im-bouton.est-pris {
+  border-color: var(--paper);
+  background: var(--paper);
+  color: var(--ink);
+}
+.cr-im-court {
+  display: none;
+}
+@container (max-width: 300px) {
+  .et-image .et-type {
+    display: none;
+  }
+}
+@container (max-width: 240px) {
+  .et-image .cr-im-long {
+    display: none;
+  }
+  .et-image .cr-im-court {
+    display: inline;
+  }
+  .et-image .et-barre .cr-im-bouton {
+    padding: 0 6px;
+  }
+}
+
+/* ── Le corps : l'image entière (contain), les traits par-dessus dans le même cadre ── */
+.cr-im-cadre {
+  position: absolute;
+  inset: 0;
+  background: var(--mat-deep, transparent);
+}
+.cr-im-img {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+}
+/* Le parent de SurfaceTraits (Encre.jsx, svg « cr-en-surface » qui le remplit) : la même boîte que l'image. */
+.cr-im-traits {
+  position: absolute;
+  inset: 0;
+}
+.cr-im-vide {
+  margin: 0;
+  padding: 12px;
+  color: var(--dim);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+/* La bande d'annotation, posée sur l'image en haut à gauche (le bas est pris par les refus de SurfaceTraits) : les
+   couleurs du stylo, puis la gomme. */
+.cr-im-annote {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  max-width: calc(100% - 16px);
+  padding: 5px 6px;
+  background: var(--slab-bar);
+  border: 1px solid var(--mat-line);
+  border-radius: 8px;
+}
+.cr-im-pastille {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid var(--mat-line);
+  border-radius: 50%;
+  background: var(--cr-c);
+}
+.cr-im-pastille.est-prise {
+  outline: 2px solid var(--paper);
+  outline-offset: 2px;
+}
+
+/* ── Le panneau « Envoyer à… » (NodeToolbar : à côté de la carte, il ne suit pas le zoom) ── */
+.cr-im-panneau {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+  width: 380px;
+  padding: 10px;
+  background: var(--slab-bar);
+  border: 1px solid var(--mat-line);
+  border-radius: 8px;
+  box-shadow: 0 18px 40px -20px rgba(0, 0, 0, 0.85);
+  color: var(--paper);
+  font: 400 14px/1.4 var(--ui);
+  cursor: default;
+}
+.cr-im-tete {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+.cr-im-tete b {
+  grid-column: 2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+.cr-im-tete .cr-im-bouton:last-child {
+  grid-column: 3;
+  min-width: 26px;
+  font-size: 15px;
+}
+.cr-im-liste {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 4px;
+  max-height: 260px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+.cr-im-console {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--mat-line);
+  border-radius: 6px;
+  background: var(--slab);
+  color: var(--paper);
+  text-align: left;
+}
+.cr-im-console:hover,
+.cr-im-console:focus-visible {
+  border-color: var(--paper);
+}
+.cr-im-console > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cr-im-console > small {
+  font: 700 10px/1 var(--mono);
+  letter-spacing: 0.08em;
+  color: var(--dim);
+}
+.cr-im-dit {
+  margin: 0;
+  color: var(--dim);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.cr-im-dit.est-echec {
+  color: var(--error);
+}
+.cr-im-panneau .envoi {
+  border-radius: 6px;
+  border: 1px solid var(--mat-line);
+}
+
+/* ── L'avis du collage / dépôt, en haut du plateau ── */
+.cr-im-avis p {
+  margin: 0;
+  max-width: 520px;
+  padding: 8px 12px;
+  background: var(--slab-bar);
+  border: 1px solid var(--mat-line);
+  border-radius: 8px;
+  color: var(--paper);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.cr-im-avis p.est-echec {
+  border-color: var(--error);
+  color: var(--error);
+}
+
+/* ── Plateau du téléphone : `far` y vaut toujours vrai (Board.jsx), le cadre passerait en « vue de loin » (nom seul).
+   La tuile garde sa barre (nom agrandi) et montre l'image entière, sans ombre, sans rien qui bouge ni défile. ── */
+.et-carte.et-image.est-tel.est-loin {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+.et-carte.et-image.est-tel.est-loin .et-barre {
+  height: auto;
+  min-height: 34px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--mat-line);
+  justify-content: flex-start;
+}
+.et-carte.et-image.est-tel.est-loin .et-titre {
+  font-size: 30px;
+  line-height: 1.15;
+}
+.et-carte.et-image.est-tel.est-loin .et-type {
+  display: inline;
+  font-size: 13px;
+}
+.et-carte.et-image.est-tel .et-corps {
+  overflow: hidden;
+  overflow: clip;
+}

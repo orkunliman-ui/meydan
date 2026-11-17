@@ -1,0 +1,1465 @@
+/* Thème « Réverbère » — formule des juges du 09/11/2026 (docs/juges/2026-11-09-apparence-consensus.md).
+   Tout vit sous [data-theme='reverbere'] ; le thème « Tapis » (styles.css) n'est pas touché. */
+
+@font-face {
+  font-family: 'Host Grotesk';
+  font-weight: 300 800;
+  font-display: block;
+  src: url('./fonts/HostGrotesk-var.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215;
+}
+@font-face {
+  font-family: 'Host Grotesk';
+  font-weight: 300 800;
+  font-display: block;
+  src: url('./fonts/HostGrotesk-var-latinext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+1E00-1E9F, U+20A0-20AB;
+}
+@font-face {
+  font-family: 'Doto';
+  font-weight: 100 900;
+  font-display: block;
+  src: url('./fonts/Doto-var.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Recursive';
+  font-weight: 300 1000;
+  font-display: swap;
+  src: url('./fonts/RecursiveSansLinear-300-1000.woff2') format('woff2');
+  size-adjust: 93.2%; /* ramenée à la largeur de Host Grotesk : les trois candidates tiennent dans les mêmes boîtes */
+}
+@font-face {
+  font-family: 'Martian Grotesk';
+  font-weight: 400;
+  font-display: swap;
+  src: url('./fonts/MartianGrotesk-Regular.woff2') format('woff2');
+  size-adjust: 82.7%;
+}
+@font-face {
+  font-family: 'Martian Grotesk';
+  font-weight: 500;
+  font-display: swap;
+  src: url('./fonts/MartianGrotesk-Medium.woff2') format('woff2');
+  size-adjust: 82.7%;
+}
+@font-face {
+  font-family: 'Martian Grotesk';
+  font-weight: 700;
+  font-display: swap;
+  src: url('./fonts/MartianGrotesk-Bold.woff2') format('woff2');
+  size-adjust: 82.7%;
+}
+
+/* La seule boucle du thème : les trois barres de TRAVAILLE. */
+@keyframes barres {
+  to {
+    transform: scaleY(0.35);
+  }
+}
+/* Une dalle qui se met à attendre s'allume une fois. */
+@keyframes allume {
+  from {
+    opacity: 0;
+  }
+}
+
+/* ───────── Jetons, base, signes, colonne ───────── */
+[data-theme='reverbere'] {
+  --appel: #f2e94e;
+  --sol: #0e1429;
+  --sol-bas: #080b18;
+  --dalle: #0a0c12;
+  --barre: #131729;
+  --encre: #0b0e18;
+  --encre-2: rgba(11, 14, 24, 0.66);
+  --texte: #e6e8f0;
+  --texte-2: #9aa2ba;
+  --texte-3: #7f88a6;
+  --trait: rgba(190, 205, 255, 0.13);
+  --trait-fin: rgba(190, 205, 255, 0.07);
+  --focus: #6e9bff;
+  --needs: var(--appel);
+  --error: #ff5d6c;
+  --working: #3fd9c4;
+  --starting: #3fd9c4;
+  --running: #c9cdd9;
+  --ready: #9ad8a6;
+  --shell: #9aa2ba;
+  --closed: #7f88a6;
+  --ui: 'Host Grotesk', 'Helvetica Neue', Arial, sans-serif;
+  --compteur: 'Doto', 'Iosevka UI', monospace;
+  --rail: 304px;
+  /* Filet de sécurité : une règle « Tapis » non surchargée prend quand même les teintes de la nuit. */
+  --mat: var(--sol);
+  --mat-deep: var(--sol-bas);
+  --mat-line: var(--trait);
+  --slab: var(--dalle);
+  --slab-bar: var(--barre);
+  --paper: var(--texte);
+  --dim: var(--texte-2);
+  --tape: var(--texte);
+  --ink: var(--encre);
+  color-scheme: dark;
+
+  &[data-appel='ivoire'] {
+    --appel: #f3eddd;
+  }
+  &[data-police='recursive'] {
+    --ui: 'Recursive', 'Helvetica Neue', Arial, sans-serif;
+  }
+  &[data-police='martian'] {
+    --ui: 'Martian Grotesk', 'Helvetica Neue', Arial, sans-serif;
+  }
+
+  & body {
+    background: var(--sol-bas);
+    color: var(--texte);
+    font: 400 14px/1.35 var(--ui);
+  }
+  & :focus-visible {
+    outline-color: var(--focus);
+  }
+
+  /* Un signe par état : la forme dit l'état sans la couleur. */
+  & .s-needs { --st: var(--needs); }
+  & .s-error { --st: var(--error); }
+  & .s-working { --st: var(--working); }
+  & .s-starting { --st: var(--starting); }
+  & .s-running { --st: var(--running); }
+  & .s-ready { --st: var(--ready); }
+  & .s-shell { --st: var(--shell); }
+  & .s-closed { --st: var(--closed); }
+  & .signe {
+    flex: none;
+    display: inline-grid;
+    place-items: center;
+    width: 1em;
+    height: 1em;
+    font-size: 14px;
+    font-style: normal;
+    color: var(--st);
+  }
+  & .signe::before {
+    content: '';
+    display: block;
+  }
+  & .s-needs::before {
+    width: 0.64em;
+    height: 0.64em;
+    background: currentColor;
+  }
+  & .s-error::before {
+    width: 0.86em;
+    height: 0.79em;
+    background: currentColor;
+    clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  }
+  & .s-working {
+    grid-auto-flow: column;
+    gap: 0.143em;
+    align-items: end;
+    height: 0.79em;
+  }
+  & .s-working::before {
+    display: none;
+  }
+  & .s-working i {
+    width: 0.143em;
+    background: currentColor;
+    transform-origin: 50% 100%;
+    animation: barres 0.9s ease-in-out infinite alternate;
+  }
+  & .s-working i:nth-child(1) { height: 0.36em; }
+  & .s-working i:nth-child(2) { height: 0.79em; animation-delay: -0.3s; }
+  & .s-working i:nth-child(3) { height: 0.5em; animation-delay: -0.6s; }
+  & .s-starting::before,
+  & .s-running::before {
+    width: 0.71em;
+    height: 0.71em;
+    border: max(1.5px, 0.107em) dotted currentColor;
+    border-radius: 50%;
+  }
+  & .s-running::before {
+    border-style: solid;
+  }
+  & .s-ready::before {
+    width: 0.71em;
+    height: 0.36em;
+    border: solid currentColor;
+    border-width: 0 0 0.143em 0.143em;
+    transform: translateY(-0.143em) rotate(-45deg);
+  }
+  & .s-shell::before {
+    content: '$';
+    font: 700 0.86em/1 var(--mono);
+  }
+  & .s-closed::before {
+    width: 0.71em;
+    height: 0.143em;
+    background: currentColor;
+  }
+
+  & .etat {
+    flex: none;
+    font: 700 10.5px/1 var(--ui);
+    letter-spacing: 0.13em;
+    color: var(--st);
+    white-space: nowrap;
+  }
+  & .age {
+    flex: none;
+    font: 400 11px/1 var(--mono);
+    color: var(--texte-2);
+    white-space: nowrap;
+  }
+  & .genre {
+    flex: none;
+    padding: 3px 5px 2px;
+    border: 1px solid var(--trait);
+    border-radius: 2px;
+    font: 400 9.5px/1 var(--mono);
+    letter-spacing: 0.1em;
+    color: var(--texte-2);
+  }
+
+  /* ── Colonne ── */
+  & .rail {
+    background: linear-gradient(180deg, #0b0f1f, var(--sol-bas) 40%);
+    border-right: 1px solid var(--trait);
+  }
+  & .marque {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 52px;
+    padding: 0 20px;
+    border-bottom: 1px solid var(--trait-fin);
+  }
+  & .marque-signe {
+    position: relative;
+    width: 20px;
+    height: 20px;
+    border: 1.5px solid var(--texte-2);
+    border-radius: 4px;
+  }
+  & .marque-signe::after {
+    content: '';
+    position: absolute;
+    left: 3.5px;
+    bottom: 3.5px;
+    width: 6px;
+    height: 6px;
+    background: var(--appel);
+  }
+  & .marque b {
+    font: 700 18px/1 var(--ui);
+    letter-spacing: -0.01em;
+  }
+  & .liaison {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font: 400 11px/1 var(--mono);
+    color: var(--texte-2);
+  }
+  & .liaison::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--working);
+  }
+  & .liaison.is-coupee {
+    color: var(--error);
+  }
+  & .liaison.is-coupee::before {
+    background: var(--error);
+  }
+
+  /* Le compteur : ce qui t'attend, en très grand. */
+  & .appel {
+    flex: none;
+    display: flex;
+    align-items: flex-end;
+    gap: 14px;
+    width: 100%;
+    padding: 16px 20px 10px;
+    background: none;
+    border: 0;
+    text-align: left;
+    color: inherit;
+    cursor: pointer;
+  }
+  & .appel:disabled {
+    cursor: default;
+  }
+  & .appel-n {
+    font: 900 148px/0.74 var(--compteur);
+    letter-spacing: -0.04em;
+    color: var(--appel);
+  }
+  & .appel-t {
+    min-width: 0;
+    padding-bottom: 2px;
+  }
+  & .appel-t b {
+    display: block;
+    font: 800 21px/1 var(--ui);
+    letter-spacing: 0.07em;
+    color: var(--appel);
+  }
+  & .appel-t em,
+  & .appel-t small {
+    display: block;
+    margin-top: 9px;
+    font: 400 11.5px/1.5 var(--mono);
+    font-style: normal;
+  }
+  & .appel-t em {
+    color: var(--appel);
+  }
+  & .appel-t small {
+    margin-top: 2px;
+    color: var(--texte-2);
+  }
+  /* Les autres états : séparés par « · », sauf en début de ligne — le rang est décalé d'un séparateur vers la gauche et rogné d'autant. */
+  & .appel-t small {
+    --sep: 3ch;
+    display: flex;
+    flex-wrap: wrap;
+    margin-left: calc(-1 * var(--sep));
+    clip-path: inset(0 0 0 var(--sep));
+  }
+  & .appel-t small span {
+    white-space: nowrap;
+  }
+  & .appel-t small span::before {
+    content: '·';
+    display: inline-block;
+    width: var(--sep);
+    text-align: center;
+  }
+  & .appel.is-long {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 18px;
+  }
+  & .appel.is-vide .appel-n {
+    color: transparent;
+    -webkit-text-stroke: 1.5px var(--texte-3);
+  }
+  & .appel.is-vide .appel-t b {
+    font-size: 15px;
+    line-height: 1.25;
+    color: var(--texte-2);
+  }
+
+  & .roll {
+    padding: 0;
+    scrollbar-width: none; /* la liste défile toujours, sans barre visible */
+  }
+
+  /* Essai du 10/11 — repère « la liste continue » : ?repere=ligne|aucun|barre|fondu (« ligne » choisie par Orkun le 10/11, les autres restent consultables). */
+  &[data-repere='barre'] .roll {
+    scrollbar-width: thin;
+    scrollbar-color: var(--texte-3) transparent;
+  }
+  &[data-repere='fondu'] .roll[data-suite] {
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 64px), transparent);
+  }
+  & .roll-suite {
+    flex: none;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 0;
+    padding: 8px 20px 9px;
+    border-top: 1px solid var(--trait);
+    font: 500 12px/1.2 var(--ui);
+    color: var(--texte-2);
+  }
+  & .roll-suite b {
+    font-weight: 700;
+    color: var(--appel);
+  }
+
+  /* Carte pleine : une console qui t'attend. */
+  & .carte {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr); /* sans cela un nom trop long élargit la colonne au lieu d'être coupé par « … » */
+    gap: 7px;
+    width: 100%;
+    margin: 0;
+    padding: 10px 20px 11px;
+    background: var(--appel);
+    color: var(--encre);
+    border: 0;
+    border-radius: 0;
+    text-align: left;
+    cursor: pointer;
+  }
+  & li + li > .carte {
+    box-shadow: inset 0 1px 0 rgba(11, 14, 24, 0.28);
+  }
+  & .carte.is-active {
+    box-shadow: inset 4px 0 0 var(--focus);
+  }
+  & .carte-haut {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  & .carte-haut b {
+    flex: 1;
+    min-width: 0;
+    font: 700 14px/1 var(--ui);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  & .carte .signe {
+    color: var(--encre);
+  }
+  & .carte .age {
+    color: var(--encre);
+    font-weight: 700;
+  }
+  & .carte-q {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    font: 600 19px/1.15 var(--ui);
+    letter-spacing: -0.012em;
+    text-wrap: balance;
+  }
+  & .carte-bas {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    font: 400 10.5px/1 var(--mono);
+    color: var(--encre-2);
+  }
+  & .va {
+    display: none;
+  }
+
+  /* Une ligne de 40 px par console qui ne t'attend pas. */
+  & .rang {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    height: 40px;
+    padding: 0 20px;
+    background: none;
+    border: 0;
+    border-radius: 0;
+    text-align: left;
+    color: inherit;
+    cursor: pointer;
+  }
+  & li + li > .rang {
+    box-shadow: inset 0 1px 0 var(--trait-fin);
+  }
+  & .rang:hover {
+    background-color: rgba(190, 205, 255, 0.05);
+  }
+  & .rang-nom {
+    flex: 1;
+    min-width: 0;
+  }
+  & .rang b {
+    display: block;
+    font: 600 14px/1 var(--ui);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  & .rang small {
+    display: none;
+  }
+  & .rang .age {
+    min-width: 42px;
+    text-align: right;
+  }
+  & .rang.is-error {
+    background: repeating-linear-gradient(-45deg, rgba(255, 93, 108, 0.16) 0 6px, rgba(255, 93, 108, 0.04) 6px 12px);
+  }
+  & .rang.is-closed b {
+    color: var(--texte-3);
+  }
+  & li > .rang.is-active {
+    box-shadow: inset 4px 0 0 var(--focus);
+  }
+
+  /* ── Faire entrer une console : deux rangées ── */
+  & .composer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 20px;
+    border-top: 1px solid var(--trait-fin);
+  }
+  & .composer-title,
+  & .field span {
+    display: none;
+  }
+  & .composer-row {
+    display: contents;
+  }
+  & .seg {
+    order: 1;
+    flex: 1 1 calc(100% - 72px);
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    gap: 4px;
+    height: 36px;
+    padding: 3px;
+    background: rgba(190, 205, 255, 0.05);
+    border: 0;
+    border-radius: 2px;
+  }
+  & .seg button {
+    height: 30px;
+    padding: 0;
+    background: none;
+    border: 0;
+    border-radius: 2px;
+    font: 600 13px/1 var(--ui);
+    color: var(--texte-2);
+  }
+  & .seg button.is-on {
+    background: rgba(190, 205, 255, 0.14);
+    color: var(--texte);
+    box-shadow: inset 0 0 0 1px rgba(190, 205, 255, 0.22);
+  }
+  & .stepper {
+    order: 2;
+    flex: none;
+    width: 64px;
+    height: 36px;
+    border: 1px solid var(--trait);
+    border-radius: 2px;
+  }
+  & .stepper button {
+    width: 23px;
+    font: 700 13px/1 var(--mono);
+    color: var(--texte-2);
+  }
+  & .stepper output {
+    width: 16px;
+    font: 700 13px/1 var(--mono);
+  }
+  & .field {
+    order: 3;
+    flex: 1 1 40%;
+    min-width: 0;
+  }
+  & .field select {
+    height: 36px;
+    padding: 0 11px;
+    background: var(--dalle);
+    border: 1px solid var(--trait);
+    border-radius: 2px;
+    font: 400 12px/1 var(--mono);
+    color: var(--texte);
+  }
+  & .go {
+    order: 4;
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    height: 36px;
+    padding: 0 14px;
+    background: rgba(190, 205, 255, 0.1);
+    border: 1px solid rgba(214, 224, 255, 0.4);
+    border-radius: 2px;
+    font: 700 13px/1 var(--ui);
+    font-stretch: normal;
+    letter-spacing: 0.01em;
+    text-transform: none;
+    color: var(--texte);
+  }
+  & .go::after {
+    content: '→';
+    font: 400 15px/1 var(--mono);
+  }
+  & .go:hover {
+    background: rgba(190, 205, 255, 0.18);
+  }
+  & .composer-error {
+    order: 5;
+    flex-basis: 100%;
+  }
+  & .apparence {
+    padding: 7px 20px 9px;
+    border-top: 1px solid var(--trait-fin);
+    color: var(--texte-3);
+  }
+  & .apparence [aria-checked='true'] {
+    color: var(--texte);
+  }
+
+  /* ── La place ── */
+  & .mat {
+    background: var(--sol);
+  }
+  & .mat::before {
+    display: none;
+  }
+  & .dallage {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+  /* Le halo du réverbère : fixe, un seul calque sous les dalles, indépendant de la couleur d'appel. */
+  & .halos {
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: -1;
+    pointer-events: none;
+  }
+  & .halos i {
+    position: absolute;
+    background: radial-gradient(closest-side, rgba(243, 237, 221, 0.3), rgba(243, 237, 221, 0.2) 62%, rgba(243, 237, 221, 0.06) 82%, rgba(243, 237, 221, 0) 100%);
+  }
+  & .mat-empty b {
+    font: 700 44px/1 var(--ui);
+    font-stretch: normal;
+    text-transform: none;
+    color: var(--texte);
+  }
+  & .mat-empty span {
+    color: var(--texte-2);
+  }
+  & .react-flow__minimap {
+    background: rgba(8, 11, 24, 0.86);
+    border: 0;
+    border-radius: 2px;
+    box-shadow: 0 0 0 1px var(--trait), 0 18px 40px -18px #000;
+  }
+  & .react-flow__attribution a {
+    color: rgba(230, 232, 240, 0.34);
+  }
+  & .react-flow__resize-control.handle {
+    background-color: var(--focus);
+    box-shadow: 0 0 0 2px var(--dalle);
+  }
+  /* Les lignes de redimensionnement restent saisissables mais ne se dessinent pas : le focus n'a qu'un trait, l'anneau bleu. */
+  & .react-flow__resize-control.line {
+    border-color: transparent;
+  }
+
+  /* ── La dalle ── */
+  & .slab {
+    background: var(--dalle);
+    border: 1px solid var(--trait);
+    border-radius: 2px;
+    box-shadow: 0 26px 50px -22px rgba(0, 0, 0, 0.85), 0 3px 10px rgba(0, 0, 0, 0.4);
+    animation: none;
+  }
+  & .slab.is-needs {
+    border-color: var(--appel);
+    box-shadow: 0 0 0 1px var(--appel), 0 0 0 5px color-mix(in srgb, var(--appel) 14%, transparent), 0 26px 50px -22px rgba(0, 0, 0, 0.85);
+    animation: none;
+  }
+  & .slab.is-error {
+    border-color: var(--error);
+    box-shadow: 0 0 0 0.5px var(--error), 0 26px 50px -22px rgba(0, 0, 0, 0.85);
+  }
+  & .slab.is-active {
+    border-color: var(--dalle); /* un seul trait autour de la dalle qui a le clavier : le bleu */
+    box-shadow: 0 0 0 2px var(--dalle), 0 0 0 4px var(--focus), 0 26px 50px -22px rgba(0, 0, 0, 0.85);
+  }
+
+  /* La barre garde 40 px dans le plan (le terminal ne bouge jamais) ; son contenu est contre-zoomé pour rester lisible. */
+  & .slab-bar {
+    display: block;
+    height: 40px;
+    padding: 0;
+    border-bottom: 0;
+    border-radius: 1px 1px 0 0;
+    box-shadow: inset 0 -1px 0 var(--trait-fin);
+    background: linear-gradient(180deg, #161b30, var(--barre));
+  }
+  & .bar-in {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    width: calc(100% * var(--zb, 1));
+    height: calc(40px * var(--zb, 1));
+    padding: 0 4px 0 13px;
+    transform: scale(calc(1 / var(--zb, 1)));
+    transform-origin: 0 0;
+    container-type: size;
+  }
+  & .bar-nom {
+    flex: 0 1 auto; /* un nom long se coupe avant que les boutons sortent de la barre (banc du 11/11, 1366 × 768) */
+    min-width: 3em;
+    max-width: 60%;
+    font: 600 14.5px/1 var(--ui);
+    letter-spacing: -0.005em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  & .bar-cwd,
+  & .bar-note {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  & .bar-cwd {
+    font: 400 11px/1 var(--mono);
+    color: var(--texte-3);
+  }
+  & .bar-note {
+    font: 600 14.5px/1 var(--ui);
+    letter-spacing: -0.005em;
+  }
+  & .bar-note::before {
+    content: '— ';
+    font-weight: 400;
+  }
+  & .bar-input {
+    flex: none;
+    width: 190px;
+    height: min(26px, 100%);
+    padding: 0 7px;
+    background: var(--dalle);
+    border: 1px solid var(--focus);
+    border-radius: 2px;
+    font: 600 14px/1 var(--ui);
+    color: var(--texte);
+  }
+  & .slab-close {
+    width: 30px;
+    min-width: 0;
+    height: min(30px, 100%);
+    padding: 0;
+    font: 300 19px/1 var(--ui);
+    color: var(--texte-3);
+  }
+  & .slab-close.is-armed {
+    width: auto;
+    padding: 0 8px;
+    font: 800 12px/1 var(--ui);
+    font-stretch: normal;
+    color: #1a0810;
+  }
+  @container (max-height: 28px) {
+    & .bar-nom,
+    & .bar-note {
+      font-size: 13px;
+    }
+    & .slab .bar-in .etat {
+      padding: 2px 5px 1px;
+    }
+  }
+  @container (max-width: 340px) {
+    & .bar-cwd,
+    & .bar-in .genre {
+      display: none;
+    }
+    & .bar-nom {
+      flex: 1;
+      max-width: none;
+    }
+  }
+  @container (max-width: 230px) {
+    & .bar-in .age {
+      display: none;
+    }
+  }
+  /* Dalle étroite (mosaïque d'un portable, 1366 × 768) : l'âge et le ↻ au repos laissent la place aux boutons, sinon
+     le × sortait de la barre (banc du 11/11). Agrandie, la console a tout. */
+  @container (max-width: 360px) {
+    & .bar-in .age,
+    & .bar-in .bar-boucle:not(.est-active) {
+      display: none;
+    }
+  }
+
+  /* TRAVAILLE : un filet turquoise fixe en haut de la barre. */
+  & .slab.is-working .slab-bar::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 2px;
+    background:
+      linear-gradient(90deg, transparent, var(--working) 45%, #c9fff6 50%, var(--working) 55%, transparent) 38% 0 / 46% 100% no-repeat,
+      rgba(63, 217, 196, 0.2);
+  }
+  /* ERREUR : hachures rouges, jamais d'aplat. */
+  & .slab.is-error .slab-bar {
+    background: repeating-linear-gradient(-45deg, rgba(255, 93, 108, 0.2) 0 6px, rgba(255, 93, 108, 0.06) 6px 12px), var(--barre);
+  }
+  & .slab.is-error .bar-note {
+    color: var(--texte);
+  }
+  /* T'ATTEND : la barre passe à la couleur d'appel, encre sombre dessus. */
+  & .slab.is-needs .slab-bar {
+    background: var(--appel);
+    box-shadow: none;
+    color: var(--encre);
+  }
+  & .slab.is-needs .bar-nom {
+    font-weight: 700;
+    color: var(--encre);
+  }
+  & .slab.is-needs .bar-note,
+  & .slab.is-needs .bar-in .signe,
+  & .slab.is-needs .bar-in .age {
+    color: var(--encre);
+  }
+  & .slab.is-needs .bar-in .age {
+    font-weight: 700;
+  }
+  & .slab.is-needs .bar-cwd,
+  & .slab.is-needs .slab-close {
+    color: var(--encre-2);
+  }
+  & .slab.is-needs .bar-in .etat {
+    padding: 5px 7px 4px;
+    background: var(--encre);
+    border-radius: 2px;
+    color: var(--appel);
+  }
+
+  /* La plaque : la question en grand, posée sur le haut du terminal tant que la console n'a pas le clavier. */
+  & .plaque {
+    position: absolute;
+    left: 0;
+    top: 40px;
+    z-index: 1;
+    display: flex;
+    align-items: flex-end;
+    width: calc(100% * var(--zb, 1));
+    /* Au moins 44 px à l'écran, et le bas tombe entre deux rangs du terminal (8 px de marge puis des rangs entiers). */
+    height: calc(8px * var(--zb, 1) + round(up, 44px - 8px * var(--zb, 1), var(--rang, 16px) * var(--zb, 1)));
+    padding: 3px 13px 11px;
+    background: var(--appel);
+    color: var(--encre);
+    box-shadow: 0 10px 18px -8px rgba(0, 0, 0, 0.7);
+    transform: scale(calc(1 / var(--zb, 1)));
+    transform-origin: 0 0;
+    pointer-events: none;
+    animation: allume 0.45s ease-out both;
+  }
+  & .plaque b {
+    min-width: 0;
+    font: 600 22px/1.1 var(--ui);
+    letter-spacing: -0.015em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  & [data-petit] .plaque b {
+    font-size: 19px;
+  }
+
+  /* ── Vue de loin (zoom < 45 %) : la dalle devient une tuile, pleine si elle t'attend ── */
+  & .slab-far.tuile {
+    inset: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    place-content: space-between stretch;
+    justify-items: start;
+    gap: 24px;
+    padding: 44px 48px 40px;
+    text-align: left;
+    background: var(--barre);
+    overflow: hidden;
+    pointer-events: auto;
+    cursor: grab;
+  }
+  & .tuile b {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    max-width: 100%;
+    white-space: nowrap;
+    font: 600 66px/1.15 var(--ui);
+    font-stretch: normal;
+    text-transform: none;
+    color: var(--texte);
+  }
+  & .tuile b .signe {
+    flex: none;
+    font-size: 50px;
+  }
+  /* Le nom dans son propre élément : les points de suspension ne s'appliquent pas au texte nu d'un conteneur flex. */
+  /* Il reprend tout du <b> : sans cela la règle « Tapis » `.slab-far span` lui donne la couleur d'état (jaune sur tuile jaune). */
+  & .tuile-nom {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font: inherit;
+    font-stretch: inherit;
+    letter-spacing: inherit;
+    color: inherit;
+  }
+  & .tuile p {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+    margin: 0;
+    font: 600 56px/1.1 var(--ui);
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  & .tuile .pied {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    width: 100%;
+    font: 400 40px/1 var(--mono);
+    letter-spacing: 0;
+    color: var(--texte-2);
+  }
+  & .tuile .pied .signe {
+    font-size: 44px;
+  }
+  & .tuile .etat {
+    font: 700 44px/1 var(--ui);
+    font-stretch: normal;
+    letter-spacing: 0.1em;
+    color: var(--st);
+  }
+  & .tuile .age {
+    margin-left: auto;
+    font: 400 40px/1 var(--mono);
+    letter-spacing: 0;
+    color: var(--texte-2);
+  }
+  & .is-needs .tuile {
+    background: var(--appel);
+  }
+  & .is-needs .tuile :is(b, p, .etat, .age, .signe) {
+    color: var(--encre);
+  }
+  & .is-error .tuile {
+    background: repeating-linear-gradient(-45deg, rgba(255, 93, 108, 0.2) 0 16px, rgba(255, 93, 108, 0.06) 16px 32px), var(--barre);
+  }
+  & .is-working .tuile {
+    box-shadow: inset 0 6px 0 var(--working);
+  }
+  & .is-closed .tuile b {
+    color: var(--texte-3);
+  }
+
+  /* ── Téléphone : la liste ── */
+  & .is-mobile .rail {
+    background: radial-gradient(130% 46% at 30% 6%, #121a38, rgba(8, 11, 24, 0) 72%), var(--sol-bas);
+  }
+  & .is-mobile .marque {
+    height: 54px;
+    padding: 0 18px;
+  }
+  & .is-mobile .liaison {
+    font-size: 12px;
+  }
+  & .is-mobile .appel {
+    padding: 20px 18px 12px;
+  }
+  & .is-mobile .appel-n {
+    font-size: 124px;
+  }
+  & .is-mobile .appel-t b {
+    font-size: 22px;
+  }
+  & .is-mobile .appel.is-vide .appel-t b {
+    font-size: 16px;
+  }
+  & .is-mobile .appel-t em,
+  & .is-mobile .appel-t small {
+    font-size: 12.5px;
+  }
+  & .is-mobile .carte {
+    gap: 9px;
+    padding: 15px 18px;
+  }
+  & .is-mobile .carte-haut b {
+    font-size: 15px;
+  }
+  & .is-mobile .carte .age {
+    font-size: 12.5px;
+  }
+  & .is-mobile .carte-q {
+    -webkit-line-clamp: 3;
+    font-size: 24px;
+    line-height: 1.1;
+  }
+  & .is-mobile .carte-bas {
+    justify-content: space-between;
+    margin-top: 3px;
+    font-size: 12px;
+  }
+  & .is-mobile .va {
+    display: block;
+    font: 400 26px/0.6 var(--ui);
+    font-style: normal;
+    color: var(--encre);
+  }
+  & .is-mobile .rang {
+    height: 58px;
+    gap: 12px;
+    padding: 0 18px;
+  }
+  & .is-mobile .rang-nom {
+    display: grid;
+    gap: 6px;
+  }
+  & .is-mobile .rang b {
+    font-size: 16px;
+  }
+  & .is-mobile .rang small {
+    display: block;
+    font: 400 12px/1 var(--mono);
+    color: var(--texte-2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  & .is-mobile .rang .etat {
+    font-size: 11.5px;
+  }
+  & .is-mobile .rang .age {
+    min-width: 44px;
+    font-size: 12.5px;
+  }
+  & .pli-boite {
+    flex: none;
+    padding: 10px 12px calc(14px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--trait-fin);
+    background: rgba(8, 11, 24, 0.9);
+  }
+  & .pli-boite .composer {
+    padding: 4px 0 12px;
+    border-top: 0;
+  }
+  & .pli-boite :is(.seg, .stepper, .field select, .go) {
+    height: 44px;
+  }
+  & .pli-boite .seg button {
+    height: 38px;
+  }
+  & .pli-boite .apparence {
+    padding: 4px 0 12px;
+    border-top: 0;
+  }
+  & .pli-boite .apparence button {
+    padding-block: 11px;
+  }
+  & .pli {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    height: 52px;
+    background: rgba(190, 205, 255, 0.1);
+    border: 1px solid rgba(214, 224, 255, 0.4);
+    border-radius: 2px;
+    font: 700 16px/1 var(--ui);
+    color: var(--texte);
+  }
+  & .pli::before {
+    content: '+';
+    font: 400 20px/1 var(--mono);
+  }
+  & .pli.is-ouvert::before {
+    content: none;
+  }
+
+  /* ── Téléphone : le terminal plein écran ── */
+  & .sheet {
+    background: var(--dalle);
+  }
+  & .sheet-bar {
+    gap: 8px;
+    height: 50px;
+    padding: 0 12px 0 2px;
+    background: var(--barre);
+    border-bottom: 1px solid var(--trait-fin);
+  }
+  /* Retour vers la liste, dit en toutes lettres : une flèche seule ne se voyait pas comme la sortie du terminal. */
+  & .sheet-back {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    height: 44px;
+    padding: 0 10px 0 8px;
+    font: 600 14px/1 var(--ui);
+    color: inherit;
+  }
+  & .sheet-back i {
+    font: 400 26px/1 var(--ui);
+    font-style: normal;
+    transform: translateY(-2px);
+  }
+  & .sheet-bar b {
+    font: 700 16px/1 var(--ui);
+  }
+  & .sheet-bar .etat {
+    font-size: 11px;
+  }
+  & .sheet.is-needs .sheet-bar {
+    background: var(--appel);
+    border-bottom: 0;
+    color: var(--encre);
+  }
+  & .sheet.is-needs .sheet-bar .signe {
+    color: var(--encre);
+  }
+  & .sheet.is-needs .sheet-bar .etat {
+    padding: 6px 8px 5px;
+    background: var(--encre);
+    border-radius: 2px;
+    color: var(--appel);
+  }
+  & .sheet.is-needs .sheet-bar .age {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--encre);
+  }
+  /* La zone porte la plaque : hors de .sheet-term, dont le overflow: hidden la rognait aux marges du terminal. */
+  & .sheet-zone {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  /* Marges du terminal inchangées (6px 8px) : la plaque va bord à bord, collée à la barre. */
+  & .sheet .plaque {
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: auto; /* une à trois lignes de question : la hauteur suit le texte */
+    padding: 4px 16px 13px;
+    transform: none;
+  }
+  & .sheet .plaque b {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    font-size: 23px;
+    white-space: normal;
+  }
+  & .suite {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    height: 44px;
+    padding: 0 14px;
+    background: var(--sol-bas);
+    border-top: 1px solid var(--trait);
+    font: 400 12px/1 var(--mono);
+    color: var(--texte-2);
+  }
+  & .suite-q {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  & .suite button {
+    flex: none;
+    height: 44px;
+    padding: 0;
+    background: none;
+    border: 0;
+    font: 600 13.5px/1 var(--ui);
+    color: var(--texte);
+  }
+  & .suite i {
+    flex: none;
+    font-style: normal;
+    color: var(--texte-3);
+  }
+  /* Barre d'envoi : jaune (ou ivoire) réservé à ce qui part. Le reste vient de styles.css. */
+  & .envoi {
+    --envoi-accent: var(--appel);
+    background: var(--sol-bas);
+    border-top-color: var(--trait);
+  }
+  & .envoi + .suite {
+    border-top-color: var(--trait-fin);
+  }
+  & .keys {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+    padding: 2px 8px calc(14px + env(safe-area-inset-bottom));
+    overflow: visible;
+    background: var(--sol-bas);
+    border-top: 0;
+  }
+  & .keys button {
+    min-width: 0;
+    height: 46px;
+    padding: 0;
+    background: var(--barre);
+    border: 1px solid var(--trait);
+    border-radius: 2px;
+    font: 600 13px/1 var(--ui);
+    color: var(--texte);
+  }
+  & .keys button.large {
+    grid-column: span 2;
+  }
+  & .keys button.allume {
+    background: var(--appel);
+    border-color: var(--appel);
+    font-weight: 700;
+    color: var(--encre);
+  }
+  & .keys button:active {
+    background: rgba(190, 205, 255, 0.22);
+    color: var(--texte);
+  }
+  & .keys button.allume:active {
+    background: color-mix(in srgb, var(--appel) 82%, #fff);
+    color: var(--encre);
+  }
+}
+
+/* ───────── Équipe : un capitaine et ses équipiers, d'un bloc dans la liste (10/11) ───────── */
+[data-theme='reverbere'] {
+  & .equipe {
+    box-shadow: inset 0 1px 0 var(--trait);
+  }
+  & .equipe > ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    box-shadow: inset 2px 0 0 var(--texte-3); /* le filet qui tient l'équipe ensemble */
+  }
+  & .equipe-tete {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 7px 12px;
+    padding: 11px 20px 9px;
+  }
+  & .equipe-titre {
+    display: flex;
+    align-items: baseline;
+    gap: 9px;
+    min-width: 0;
+  }
+  & .equipe-titre i {
+    flex: none;
+    font: 500 10.5px/1 var(--mono);
+    font-style: normal;
+    letter-spacing: 0.08em;
+    color: var(--texte-2);
+  }
+  & .equipe-titre b {
+    min-width: 0;
+    font: 600 14px/1.1 var(--ui);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  & :is(.equipe-bas, .equipe-q, .livrer, .equipe-erreur) {
+    grid-column: 1 / -1;
+  }
+  & .equipe-bas {
+    font: 400 10.5px/1.2 var(--mono);
+    color: var(--texte-2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  /* Ce que la livraison change dans le projet (fichiers, lignes, fichiers à regarder) : à lire avant de confirmer.
+     Même écriture que la ligne du projet, sur trois lignes au plus. */
+  & .equipe-contenu {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.4;
+  }
+  & .equipe-contenu b {
+    font-weight: 700;
+    color: var(--encre);
+  }
+  & .equipe-q {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+    margin: 0;
+    font: 600 19px/1.15 var(--ui);
+    letter-spacing: -0.012em;
+    text-wrap: balance;
+  }
+  & .arreter {
+    padding: 4px 0;
+    background: none;
+    border: 0;
+    font: 500 11px/1 var(--mono);
+    color: var(--texte-2);
+    text-decoration: underline;
+    text-decoration-color: var(--texte-3);
+    text-underline-offset: 3px;
+    cursor: pointer;
+  }
+  & .arreter:hover,
+  & .arreter.is-arme {
+    color: var(--texte);
+  }
+  & .arreter.is-arme {
+    font-weight: 700;
+    text-decoration-color: var(--error);
+  }
+  & .livrer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    height: 40px;
+    padding: 0 14px;
+    background: var(--encre);
+    border: 0;
+    border-radius: 2px;
+    font: 700 14px/1 var(--ui);
+    color: var(--appel);
+    cursor: pointer;
+  }
+  & .livrer::after {
+    content: '→';
+    font: 400 15px/1 var(--mono);
+  }
+  & .livrer.is-arme {
+    outline: 2px solid var(--encre);
+    outline-offset: 2px;
+  }
+  & :is(.livrer, .arreter):disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+  & .equipe-erreur {
+    margin: 0;
+    font: 500 12px/1.3 var(--ui);
+    color: var(--error);
+  }
+
+  /* Équipe prête à livrer : l'en-tête devient une carte pleine, comme une console qui t'attend. */
+  & .equipe.is-prete .equipe-tete {
+    background: var(--appel);
+    color: var(--encre);
+  }
+  & .equipe.is-prete .equipe-titre i {
+    font-weight: 700;
+    color: var(--encre);
+  }
+  & .equipe.is-prete :is(.equipe-bas, .arreter) {
+    color: var(--encre-2);
+    text-decoration-color: var(--encre-2);
+  }
+  & .equipe.is-prete .arreter:hover,
+  & .equipe.is-prete .arreter.is-arme {
+    color: var(--encre);
+  }
+  & .equipe.is-prete .equipe-erreur {
+    font-weight: 700;
+    color: var(--encre);
+  }
+  & .equipe.is-prete > ul {
+    box-shadow: inset 2px 0 0 var(--appel);
+  }
+
+  /* Mission d'une nouvelle équipe */
+  & .field.mission {
+    order: 3;
+    flex: 1 1 100%;
+  }
+  & .field textarea {
+    display: block;
+    width: 100%;
+    min-height: 72px;
+    padding: 9px 11px;
+    background: var(--dalle);
+    border: 1px solid var(--trait);
+    border-radius: 2px;
+    font: 400 13px/1.35 var(--ui);
+    color: var(--texte);
+    resize: vertical;
+  }
+  & .field textarea::placeholder {
+    color: var(--texte-3);
+  }
+  & .field textarea:focus {
+    outline: 0;
+    border-color: var(--focus);
+    box-shadow: 0 0 0 1px var(--focus);
+  }
+
+  /* Téléphone */
+  & .is-mobile .equipe-tete {
+    gap: 9px 12px;
+    padding: 13px 18px 11px;
+  }
+  & .is-mobile .equipe-titre b {
+    font-size: 16px;
+  }
+  & .is-mobile :is(.equipe-titre i, .equipe-bas) {
+    font-size: 12px;
+  }
+  & .is-mobile .arreter {
+    padding: 9px 0;
+    font-size: 12.5px;
+  }
+  & .is-mobile .livrer {
+    height: 48px;
+    font-size: 16px;
+  }
+  & .pli-boite .field textarea {
+    font-size: 16px; /* en dessous de 16 px, l'iPhone zoome sur le champ */
+  }
+  /* Formulaire d'une équipe : le bouton prend toute la largeur, sous la mission. */
+  & .composer.is-equipe .go {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+  /* Cibles au doigt (chasse aux bugs du téléphone, 10/11) : 44 px au moins, sans changer la mise en page. */
+  & .is-mobile .arreter {
+    position: relative;
+  }
+  & .is-mobile .arreter::after {
+    content: '';
+    position: absolute;
+    inset: -8px -8px;
+  }
+  & .pli-boite .stepper {
+    width: 108px;
+  }
+  & .pli-boite .stepper button {
+    width: 44px;
+  }
+  & .pli-boite .field select {
+    font-size: 16px; /* en dessous de 16 px, l'iPhone zoome sur le champ */
+  }
+}

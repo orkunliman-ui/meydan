@@ -1,0 +1,142 @@
+/* Carte « Aperçu web » (plateau étendu, volet du 11/11) : formulaire du port, cadre isolé du site relayé, outils de la
+   barre. Préfixe « et-web » (aucune autre feuille ne l'emploie). Couleurs par les jetons des deux thèmes. Aucune
+   animation, aucun défilement interne propre à la carte (le cadre défile, lui, seulement sur l'ordinateur). */
+
+/* Outils de la barre (recharger, onglet, port). */
+.et-web-outil {
+  flex: none;
+  min-width: 26px;
+  height: 24px;
+  padding: 0 6px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--dim);
+  font-size: 14px;
+  line-height: 1;
+}
+.et-web-outil-mot {
+  font: 700 10px/1 var(--mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.et-web-outil:hover:not(:disabled) {
+  color: var(--paper);
+  border-color: var(--mat-line);
+}
+.et-web-outil:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* Le cadre : toute la place du corps, fond blanc comme un onglet (une page sans fond resterait lisible). */
+.et-web-vue {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+.et-web-vue.est-vide {
+  place-items: center;
+}
+.et-web-cadre {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #fff;
+}
+/* Déplacer ou redimensionner la carte : le cadre ne prend pas la souris en passant dessous (sinon le geste s'arrête). */
+.react-flow__node.dragging .et-web-cadre,
+.react-flow__node:has(.react-flow__resize-control:active) .et-web-cadre {
+  pointer-events: none;
+}
+.et-web-etat {
+  margin: 0;
+  padding: 16px;
+  max-width: 46ch;
+  text-align: center;
+  color: var(--dim);
+  font: 400 13px/1.45 var(--ui);
+  white-space: pre-line;
+}
+.et-web-etat.est-erreur {
+  color: var(--error);
+}
+
+/* Formulaire (carte sans port, ou « Port »). */
+.et-web-form {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: center;
+  justify-items: start;
+  gap: 12px;
+  padding: 18px 22px;
+  font-family: var(--ui);
+}
+.et-web-aide {
+  margin: 0;
+  max-width: 52ch;
+  color: var(--dim);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.et-web-champ {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  width: min(100%, 420px);
+}
+.et-web-champ span {
+  font: 700 10px/1 var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+.et-web-champ input {
+  min-width: 0;
+  height: 32px;
+  padding: 0 10px;
+  background: var(--slab-bar);
+  border: 1px solid var(--mat-line);
+  border-radius: 6px;
+  font-family: var(--mono);
+  font-size: 14px;
+}
+.et-web-champ input:focus {
+  border-color: var(--paper);
+  outline: none;
+}
+.et-web-actions {
+  display: flex;
+  gap: 8px;
+  padding-left: 82px;
+}
+.et-web-bouton {
+  height: 32px;
+  padding: 0 14px;
+  border: 1px solid var(--paper);
+  border-radius: 6px;
+  background: var(--paper);
+  color: var(--slab);
+  font-weight: 700;
+}
+.et-web-bouton:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.et-web-bouton.et-web-discret {
+  background: transparent;
+  color: var(--paper);
+  border-color: var(--mat-line);
+}
+.et-web-erreur {
+  margin: 0;
+  padding-left: 82px;
+  max-width: 100%;
+  color: var(--error);
+  font-size: 12px;
+}

@@ -1,0 +1,966 @@
+/* lot-design/colonne.css — voir lot-design.css. La colonne de l'ordinateur (304 px) et la liste du téléphone couché
+   (844 × 390 : volet gauche marque / scène / bascule / « Nouvelle console », volet droit la liste), sous `?reel3=oui`.
+   Mêmes règles que le téléphone debout (reel.css), mêmes teintes, mêmes tailles :
+   1. Trois plans : la plus ancienne attente prend la scène (Rail.jsx `Scene`) — le nom de son projet en très grand au
+      fond, la question sur une carte de verre au milieu, « Répondre » jaune par-dessus, à cheval sur le bord de la carte.
+   2. Jaune = à toi de toucher (Répondre, Livrer, le repère de ce qui t'attend). Plus de « 2 » en pixels jaunes, plus de
+      cartes pleines jaunes, plus de jaune décoratif (marque, Ordre, Ranger, compteurs des filtres). Les états passent à
+      l'encre et au papier (Signe.jsx dit l'état par sa forme) ; ERREUR garde son rouge, FINI son vert (lot6-fini.css).
+   3. Une chose énorme (le nom du projet), tout le reste en 10,5 px (étiquettes mono capitales) ou 13 px (texte).
+      Téléphone couché : cibles de 44 px au moins, champs de 16 px (sous 16, l'iPhone zoome).
+   Portée : `.rail.reel3`. Rail.jsx ne pose `reel3` que si `?reel3=oui` ET (ordinateur OU téléphone couché) : le
+   téléphone debout ne reçoit jamais la classe. Ce qui ne vaut que pour l'ordinateur vise en plus `.app:not(.is-mobile)`,
+   ce qui ne vaut que couché `.app.is-mobile` sous la même condition que `couche` (Rail.jsx). */
+
+/* ───────── Teintes et tailles (celles de reel.css), posées sur la colonne seule : le plateau garde les siennes ───────── */
+[data-theme='reverbere'][data-reel3='oui'] .rail.reel3 {
+  --papier: #e8ebf4;
+  --papier-2: rgba(232, 235, 244, 0.64);
+  --papier-3: rgba(232, 235, 244, 0.42);
+  --filet: rgba(214, 224, 255, 0.1);
+  --t-et: 600 10.5px/1 var(--mono); /* étiquette : mono, capitales espacées */
+  --t-tx: 13px; /* texte */
+  /* Règle 2 : les états à l'encre et au papier (le liseré de liaison suit --working). */
+  --working: var(--papier);
+  --starting: var(--papier-2);
+  --running: var(--papier-2);
+  --ready: var(--papier-2);
+  --shell: var(--papier-3);
+  --closed: var(--papier-3);
+  --jaune-haut: color-mix(in srgb, var(--appel) 78%, #fff);
+  --jaune-bas: color-mix(in srgb, var(--appel) 86%, #8a7a00);
+  --bouton-jaune: linear-gradient(180deg, var(--jaune-haut) 0%, var(--appel) 46%, var(--jaune-bas) 100%);
+  --ombre-jaune: inset 0 1px 0 rgba(255, 255, 255, 0.62), inset 0 -1px 0 rgba(90, 80, 0, 0.28), 0 12px 22px -12px color-mix(in srgb, var(--appel) 60%, transparent), 0 5px 12px rgba(0, 0, 0, 0.55);
+  --verre: linear-gradient(180deg, rgba(24, 31, 58, 0.72), rgba(10, 13, 27, 0.9));
+  --verre-bord: rgba(214, 224, 255, 0.13);
+  --verre-haut: rgba(214, 224, 255, 0.26);
+  background: radial-gradient(140% 34% at 18% 0%, #141c3c, rgba(8, 11, 24, 0) 70%), var(--sol-bas);
+}
+
+[data-theme='reverbere'][data-reel3='oui'] .rail.reel3 {
+  /* ───────── Le mot géant (règle 1, plan du fond) — GrandMot.jsx mesure par sa sonde, même police que le mot ───────── */
+  & .grand-mot .grand-mot-sonde {
+    position: absolute;
+    left: 0;
+    top: 0;
+    visibility: hidden;
+    white-space: nowrap;
+    font: 800 100px/1 var(--ui);
+    font-style: normal;
+    letter-spacing: -0.05em;
+    pointer-events: none;
+  }
+  & .grand-mot {
+    position: relative;
+    z-index: 0;
+    pointer-events: none;
+    user-select: none;
+  }
+  & .grand-mot span {
+    display: block;
+    width: max-content;
+    padding-right: 0.06em; /* l'approche négative rogne la dernière lettre sinon */
+    font: 800 var(--gm, 44px) / 0.8 var(--ui);
+    letter-spacing: -0.05em;
+    white-space: nowrap;
+    /* Papier qui s'éteint vers le bas : la lettre recule, la carte qui la chevauche avance. */
+    color: transparent;
+    background: linear-gradient(180deg, rgba(232, 235, 244, 0.58) 0%, rgba(232, 235, 244, 0.26) 52%, rgba(232, 235, 244, 0.08) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+
+  /* ───────── En-tête : petit, à l'encre ───────── */
+  & .marque {
+    gap: 9px;
+    border-bottom: 0;
+  }
+  & .marque-signe {
+    width: 16px;
+    height: 16px;
+    border-color: var(--papier-3);
+    border-radius: 3px;
+  }
+  & .marque-signe::after {
+    left: 3px;
+    bottom: 3px;
+    width: 5px;
+    height: 5px;
+    background: var(--papier); /* plus de jaune décoratif */
+  }
+  & .marque b {
+    font: 700 var(--t-tx) / 1 var(--ui);
+    letter-spacing: 0.02em;
+  }
+  & .liaison {
+    font: var(--t-et);
+    letter-spacing: 0.08em;
+    color: var(--papier-3);
+  }
+  & .liaison::before {
+    width: 5px;
+    height: 5px;
+  }
+  & .liaison.est-point {
+    font-size: 0; /* ordinateur : le point seul, le texte au survol */
+  }
+  & .liaison.is-coupee {
+    color: var(--error);
+  }
+  & :is(.ordre-ouvre, .ranger-ouvre) {
+    background: none;
+    border: 0;
+    font: var(--t-et);
+    letter-spacing: 0.14em;
+    color: var(--papier-2);
+  }
+  & .ordre-ouvre i {
+    font: var(--t-et);
+    color: var(--papier-2); /* plus de jaune décoratif */
+  }
+  & .ranger-ouvre i {
+    width: 10px;
+    height: 10px;
+    color: var(--papier-2);
+    background:
+      linear-gradient(currentColor, currentColor) 0 0 / 4px 4px no-repeat,
+      linear-gradient(currentColor, currentColor) 100% 0 / 4px 4px no-repeat,
+      linear-gradient(currentColor, currentColor) 0 100% / 4px 4px no-repeat,
+      linear-gradient(currentColor, currentColor) 100% 100% / 4px 4px no-repeat;
+  }
+  /* « Annuler » du Ranger : un choix offert, pas une attente → papier plein, pas jaune. */
+  & .ranger-ouvre.est-annuler {
+    background: var(--papier);
+    color: var(--encre);
+  }
+  & :is(.ordre-ouvre, .ranger-ouvre):hover {
+    color: var(--papier);
+  }
+
+  /* ───────── La scène : la plus ancienne attente (règles 1, 2, 3) ───────── */
+  & .scene {
+    position: relative;
+    flex: none;
+  }
+  & .scene-sur {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 0;
+    font: var(--t-et);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--papier-2);
+  }
+  & .scene-sur > span {
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  & .scene-plus {
+    position: static;
+    flex: none;
+    margin: 0;
+    background: none;
+    border: 0;
+    color: var(--papier-2);
+  }
+  & .scene-carte {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+    margin: 0;
+    background: var(--verre);
+    -webkit-backdrop-filter: blur(14px) saturate(130%);
+    backdrop-filter: blur(14px) saturate(130%);
+    border: 1px solid var(--verre-bord);
+    border-top-color: var(--verre-haut);
+    border-radius: 4px;
+    box-shadow: 0 28px 48px -24px rgba(0, 0, 0, 0.95), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    text-align: left;
+    color: var(--papier);
+    cursor: pointer;
+    -webkit-touch-callout: none;
+    user-select: none;
+  }
+  & .scene-qui {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    font: var(--t-et);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--papier-2);
+  }
+  & .scene-qui .signe {
+    font-size: 11px;
+  }
+  & .scene-qui b {
+    min-width: 0;
+    font: inherit;
+    line-height: 1.3; /* capitales mono : à 1, le haut des lettres était rogné */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  & .scene-q {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font: 600 var(--t-tx) / 1.32 var(--ui);
+    color: var(--papier);
+    text-wrap: pretty;
+    overflow-wrap: anywhere;
+  }
+  & .scene-sujet {
+    font: 400 10.5px/1.3 var(--mono);
+    color: var(--papier-3);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  /* Plan de devant : le bouton jaune de la scène, à cheval sur le bord bas de la carte. */
+  & .scene-go {
+    position: absolute;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--bouton-jaune);
+    border-radius: 3px;
+    box-shadow: var(--ombre-jaune);
+    font: 700 var(--t-tx) / 1 var(--ui);
+    letter-spacing: 0.02em;
+    color: var(--encre);
+  }
+  & .scene-go i {
+    font: 400 var(--t-tx) / 1 var(--mono);
+    font-style: normal;
+  }
+  & .scene-carte:hover .scene-go,
+  & .scene-carte:active .scene-go {
+    background: color-mix(in srgb, var(--appel) 84%, #fff);
+  }
+  & .scene-carte:hover {
+    border-color: rgba(214, 224, 255, 0.2);
+  }
+}
+
+[data-theme='reverbere'][data-reel3='oui'] .rail.reel3 {
+  /* ───────── Filtres : petits, papier ; le compteur de « T'attend » n'est plus jaune (il ne se touche pas seul) ───────── */
+  & .tri {
+    isolation: isolate; /* les pastilles (z-index -1) restent au-dessus du fond de la colonne */
+    border-bottom: 0;
+  }
+  & .tri button {
+    position: relative;
+    background: none;
+    border: 0;
+    border-radius: 0;
+    font: var(--t-et);
+    letter-spacing: 0.1em;
+    color: var(--papier-3);
+  }
+  & .tri button::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    border: 1px solid var(--filet);
+    border-radius: 14px;
+  }
+  & .tri button b,
+  & .tri button.tri-attend b {
+    font-weight: 600;
+    color: var(--papier-2);
+  }
+  & .tri button[aria-pressed='true'],
+  & .tri button.tri-attend[aria-pressed='true'] {
+    background: none;
+    color: var(--papier);
+  }
+  & .tri button[aria-pressed='true']::before {
+    background: rgba(232, 235, 244, 0.1);
+    border-color: rgba(232, 235, 244, 0.3);
+  }
+  & .tri button[aria-pressed='true'] b {
+    color: var(--papier);
+  }
+
+  /* ───────── Liste rangée par projet (Rail.jsx `parProjet`) ───────── */
+  & .projet-tete {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+    font: var(--t-et);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--papier-3);
+  }
+  & .projet-tete span {
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  & .projet-tete i {
+    flex: none;
+    font-style: normal;
+    letter-spacing: 0;
+  }
+  & .projet-tete + li > .rang {
+    box-shadow: none;
+  }
+  & .projet-tete + li > .carte {
+    box-shadow: inset 2px 0 0 var(--appel);
+  }
+  /* Côté droit : la place du « ⋯ » réservée par lot3-menus.css reste (padding-right jamais touché). */
+  & .rang {
+    gap: 10px;
+  }
+  & .rang b {
+    font: 600 var(--t-tx) / 1.1 var(--ui);
+  }
+  & .rang small {
+    font: 400 10.5px/1.25 var(--mono);
+    color: var(--papier-3);
+  }
+  & .rang .signe {
+    font-size: 11px;
+  }
+  & .rang .etat {
+    font: var(--t-et);
+    letter-spacing: 0.1em;
+  }
+  & .rang .age {
+    font: 400 10.5px/1 var(--mono);
+    color: var(--papier-3);
+  }
+  & li + li > .rang {
+    box-shadow: inset 0 1px 0 var(--filet);
+  }
+  & .rang:hover {
+    background-color: rgba(232, 235, 244, 0.05);
+  }
+  & .rang.is-closed b {
+    color: var(--papier-3);
+  }
+  /* La console du plateau qui a la main : papier, plus le bleu (une seule couleur qui veut dire quelque chose). */
+  & li > .rang.is-active,
+  & .projet-tete + li > .rang.is-active,
+  & li + li > .rang.is-active {
+    background-color: rgba(232, 235, 244, 0.07);
+    box-shadow: inset 2px 0 0 var(--papier);
+  }
+  /* FINI (lot 6) : son filet vert à gauche reste, quelle que soit la place de la ligne. ERREUR garde ses hachures rouges
+     (reverbere.css). Sélecteurs séparés : une liste `:is()` reste fragile avec les pseudo-classes (leçon du 10/11). */
+  & li > .rang.is-fini,
+  & li + li > .rang.is-fini,
+  & .projet-tete + li > .rang.is-fini {
+    box-shadow: inset 3px 0 0 var(--fini);
+  }
+  & .ligne-plus {
+    color: var(--papier-3);
+  }
+
+  /* Une autre console qui t'attend : une ligne d'encre, le jaune sur son repère et sur son bouton « Répondre ». */
+  & .carte {
+    background: none;
+    box-shadow: inset 2px 0 0 var(--appel);
+    color: var(--papier);
+  }
+  & li + li > .carte {
+    box-shadow: inset 2px 0 0 var(--appel), inset 0 1px 0 var(--filet);
+  }
+  & .carte.is-active,
+  & li + li > .carte.is-active {
+    background-color: rgba(232, 235, 244, 0.07);
+  }
+  & .carte:hover {
+    background-color: rgba(232, 235, 244, 0.05);
+  }
+  & .carte-haut b {
+    font: 600 var(--t-tx) / 1.1 var(--ui);
+  }
+  & .carte .signe {
+    font-size: 11px;
+    color: var(--appel);
+  }
+  & .carte .age {
+    font: 400 10.5px/1 var(--mono);
+    color: var(--papier-2);
+  }
+  & .carte-q {
+    -webkit-line-clamp: 2;
+    font: 500 var(--t-tx) / 1.3 var(--ui);
+    letter-spacing: 0;
+    text-wrap: pretty;
+    color: var(--papier-2);
+  }
+  & .carte-bas {
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 0;
+    font: 400 10.5px/1.2 var(--mono);
+    color: var(--papier-3);
+  }
+  & .carte-bas > span {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  /* Le « › » de la carte devient un vrai bouton : « Répondre › », jaune en relief (le seul jaune de la ligne avec le repère). */
+  & .carte .va {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bouton-jaune);
+    border-radius: 3px;
+    box-shadow: var(--ombre-jaune);
+    font: 400 var(--t-tx) / 1 var(--mono);
+    font-style: normal;
+    color: var(--encre);
+  }
+  & .carte .va::before {
+    content: 'Répondre';
+    font: 700 var(--t-tx) / 1 var(--ui);
+    letter-spacing: 0.02em;
+  }
+  & .carte:hover .va,
+  & .carte:active .va {
+    background: color-mix(in srgb, var(--appel) 84%, #fff);
+  }
+  & .carte + .ligne-plus {
+    color: var(--papier-2);
+  }
+  & .carte + .ligne-plus:hover,
+  & .carte + .ligne-plus:focus-visible {
+    background: rgba(190, 205, 255, 0.1);
+  }
+
+  /* ───────── Équipe : en-tête en petites capitales ; prête à livrer, le jaune va sur « Livrer » seulement ───────── */
+  & .equipe {
+    box-shadow: inset 0 1px 0 var(--filet);
+  }
+  & .equipe > ul {
+    box-shadow: inset 2px 0 0 var(--papier-3);
+  }
+  & .equipe-titre i {
+    font: var(--t-et);
+    letter-spacing: 0.16em;
+    color: var(--papier-3);
+  }
+  & .equipe-titre b {
+    font: 600 var(--t-tx) / 1.1 var(--ui);
+    color: var(--papier);
+  }
+  & .equipe-bas {
+    font: 400 10.5px/1.3 var(--mono);
+    color: var(--papier-3);
+  }
+  & .equipe-q {
+    font: 600 var(--t-tx) / 1.32 var(--ui);
+    letter-spacing: 0;
+  }
+  & .arreter {
+    font: var(--t-et);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--papier-3);
+    text-decoration-color: var(--filet);
+  }
+  & .arreter:hover,
+  & .arreter.is-arme {
+    color: var(--papier);
+  }
+  & .equipe-erreur {
+    font: 500 var(--t-tx) / 1.3 var(--ui);
+  }
+  & .equipe.is-prete .equipe-tete {
+    background: linear-gradient(90deg, color-mix(in srgb, var(--appel) 9%, transparent), transparent 70%);
+    box-shadow: inset 2px 0 0 var(--appel);
+    color: var(--papier);
+  }
+  & .equipe.is-prete .equipe-titre i {
+    color: var(--appel);
+  }
+  & .equipe.is-prete :is(.equipe-bas, .arreter, .equipe-q) {
+    color: var(--papier-2);
+  }
+  & .equipe.is-prete .equipe-contenu b {
+    color: var(--papier);
+  }
+  & .equipe.is-prete .equipe-erreur {
+    color: var(--error);
+  }
+  & .equipe.is-prete > ul {
+    box-shadow: inset 2px 0 0 var(--appel);
+  }
+  & .livrer {
+    background: var(--bouton-jaune);
+    box-shadow: var(--ombre-jaune);
+    font: 700 var(--t-tx) / 1 var(--ui);
+    color: var(--encre);
+  }
+  & .livrer::after {
+    font: 400 var(--t-tx) / 1 var(--mono);
+  }
+
+  /* ───────── Ce qui reste plus bas : l'étiquette, sans jaune (elle ne se touche pas) ───────── */
+  & .roll-suite {
+    border-top-color: var(--filet);
+    font: var(--t-et);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--papier-3);
+  }
+  & .roll-suite b {
+    font-weight: 600;
+    color: var(--papier);
+  }
+
+  /* ───────── Rien ne t'attend : plus de « 0 » géant, une étiquette ───────── */
+  & .appel {
+    align-items: center;
+  }
+  & .appel-n {
+    display: none;
+  }
+  & .appel-t b,
+  & .appel.is-vide .appel-t b {
+    font: var(--t-et);
+    letter-spacing: 0.16em;
+    color: var(--papier-2);
+  }
+  & .appel-t b br {
+    display: none;
+  }
+  & .appel-t em,
+  & .appel-t small {
+    font: 400 10.5px/1.5 var(--mono);
+    color: var(--papier-3);
+  }
+
+  /* ───────── Musique ───────── */
+  & .mus-mini {
+    border-top-color: var(--filet);
+    color: var(--papier-3);
+  }
+  & .mus-nom {
+    font: var(--t-et);
+    letter-spacing: 0.16em;
+  }
+  & .mus-titre b {
+    font: 500 var(--t-tx) / 1.1 var(--ui);
+    color: var(--papier);
+  }
+  & .mus-titre i {
+    font: 400 10.5px/1.1 var(--mono);
+  }
+  & .mus-jeu {
+    color: var(--papier);
+  }
+  & .mus-pos {
+    background: var(--papier-2);
+  }
+
+  /* ───────── Nouvelle console : texte à 13, étiquettes à 10,5 ───────── */
+  & .composer {
+    border-top-color: var(--filet);
+  }
+  & .seg {
+    background: rgba(190, 205, 255, 0.04);
+  }
+  & .seg button {
+    font: 600 var(--t-tx) / 1 var(--ui);
+    color: var(--papier-3);
+  }
+  & .seg button.is-on {
+    background: rgba(232, 235, 244, 0.1);
+    box-shadow: inset 0 0 0 1px rgba(232, 235, 244, 0.26);
+    color: var(--papier);
+  }
+  & .stepper {
+    border-color: var(--filet);
+  }
+  & :is(.stepper button, .stepper output) {
+    font: 600 var(--t-tx) / 1 var(--mono);
+  }
+  & .stepper button {
+    color: var(--papier-2);
+  }
+  & .field select {
+    border-color: var(--filet);
+    font: 400 var(--t-tx) / 1 var(--ui);
+    color: var(--papier);
+  }
+  & .field textarea {
+    border-color: var(--filet);
+    font: 400 var(--t-tx) / 1.35 var(--ui);
+    color: var(--papier);
+  }
+  & .field textarea::placeholder {
+    color: var(--papier-3);
+  }
+  & .go {
+    background: rgba(232, 235, 244, 0.08);
+    border-color: rgba(232, 235, 244, 0.32);
+    font: 700 var(--t-tx) / 1 var(--ui);
+    color: var(--papier);
+  }
+  & .go::after {
+    font: 400 var(--t-tx) / 1 var(--mono);
+  }
+  & .composer-title {
+    font: var(--t-et);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--papier-3);
+  }
+  & .composer-error {
+    font: 500 var(--t-tx) / 1.3 var(--ui);
+  }
+  /* Formulaire replié derrière « Nouvelle console » : téléphone couché, et ordinateur de moins de 1000 px de haut (Rail.jsx
+     `bas` — Chrome sur un écran 1080p). */
+  & .pli-boite {
+    border-top-color: var(--filet);
+    background: none;
+  }
+  & .pli {
+    background: linear-gradient(180deg, rgba(190, 205, 255, 0.08), rgba(190, 205, 255, 0.03));
+    border: 1px solid var(--verre-bord);
+    border-top-color: var(--verre-haut);
+    border-radius: 3px;
+    font: 600 var(--t-tx) / 1 var(--ui);
+    letter-spacing: 0.02em;
+    color: var(--papier);
+  }
+  & .pli::before {
+    font: 400 var(--t-tx) / 1 var(--mono);
+    color: var(--papier-2);
+  }
+
+  /* ───────── Apparence, notifications, déconnexion : étiquettes ───────── */
+  & .apparence {
+    border-top-color: var(--filet);
+    font: var(--t-et);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--papier-3);
+  }
+  & .apparence button {
+    letter-spacing: inherit;
+    text-transform: inherit;
+  }
+  & .apparence [aria-checked='true'] {
+    color: var(--papier);
+  }
+  & .alertes b {
+    font: var(--t-et);
+    letter-spacing: 0.16em;
+    color: var(--papier-3);
+  }
+  & .alertes p {
+    font: 400 var(--t-tx) / 1.4 var(--ui);
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--papier-2);
+  }
+  & .alertes button {
+    border-color: var(--filet);
+    font: 600 var(--t-tx) / 1 var(--ui);
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--papier);
+  }
+  /* « Activer » : un réglage offert, pas une attente → papier plein. */
+  & .alertes button.est-appel {
+    background: var(--papier);
+    border-color: var(--papier);
+    color: var(--encre);
+  }
+}
+
+/* ═════════ Ordinateur : la colonne de 304 px (à la souris, pas de contrainte de 44 px) ═════════ */
+[data-theme='reverbere'][data-reel3='oui'] .app:not(.is-mobile) > .rail.reel3 {
+  & .marque {
+    padding: 0 14px 0 20px;
+  }
+  & :is(.ordre-ouvre, .ranger-ouvre) {
+    height: 32px;
+    padding: 0 8px;
+  }
+  & .ordre-ouvre:has(+ .ranger-ouvre) {
+    margin-right: 0;
+  }
+  & .scene {
+    padding: 4px 16px 30px;
+  }
+  /* Le « ⋯ » s'aligne sur le bord de la carte : c'est la rangée qui mord sur la marge, pas le bouton qui en sort. */
+  & .scene-sur {
+    height: 34px;
+    margin-right: -6px;
+  }
+  & .scene-plus {
+    width: 28px;
+    height: 28px;
+  }
+  & .scene .grand-mot {
+    margin: 2px -1px calc(var(--gm, 44px) * -0.3) -2px;
+  }
+  /* Un mot sur une seule ligne (nom sans séparateur) : la carte n'en mord que le pied, sinon il ne se lit plus. */
+  & .scene .grand-mot:not(:has(span + span)) {
+    margin-bottom: calc(var(--gm, 44px) * -0.15);
+  }
+  & .scene-carte {
+    gap: 8px;
+    padding: 12px 14px 26px;
+  }
+  & .scene-q {
+    -webkit-line-clamp: 3;
+  }
+  & .scene-go {
+    right: 12px;
+    bottom: -16px;
+    height: 32px;
+    padding: 0 12px 0 16px;
+  }
+  & .tri {
+    flex-wrap: wrap;
+    overflow: visible;
+    gap: 4px;
+    padding: 4px 14px 8px;
+  }
+  & .tri button {
+    height: 28px;
+    padding: 0 10px;
+  }
+  & .tri button::before {
+    inset: 0;
+  }
+  & .projet-tete {
+    padding: 11px 20px 5px; /* un projet d'une seule console est fréquent : l'en-tête reste court */
+  }
+  & .rang {
+    padding-left: 20px;
+  }
+  & .carte {
+    gap: 6px;
+    padding-block: 10px 11px;
+    padding-left: 20px;
+  }
+  & .carte .va {
+    height: 26px;
+    padding: 0 10px 0 12px;
+  }
+  & .equipe-tete {
+    padding: 14px 20px 8px;
+  }
+  & .livrer {
+    height: 32px;
+  }
+  & .pli-boite {
+    padding: 8px 16px 12px;
+  }
+  & .pli {
+    height: 40px;
+  }
+}
+
+/* Volet paperclip (fusionné après ce volet, 12/11) : la case « Vérifier à la fin » sous la tête d'une équipe héritait de
+   14 px, une taille du milieu (règle 3, relevé par essai-reel3 sur le PC et la liste couchée). Texte : 13 px. */
+[data-reel3='oui'] .rail.reel3 .verification-reglage label {
+  font-size: var(--t-tx);
+}
+
+/* ═════════ Téléphone couché, la liste : volet gauche (marque, scène, bascule, « Nouvelle console »), volet droit (la
+   liste, et la musique en pied, à côté de « Nouvelle console ») ═════════
+   La scène a besoin de ~220 px : la rangée de la musique (48) quitte le volet gauche pour le pied du volet droit. */
+@media (orientation: landscape) and (max-height: 520px) {
+  [data-theme='reverbere'][data-reel3='oui'] .app.is-mobile > .rail.reel3 {
+    /* À gauche : marque, scène, bascule, « Nouvelle console ». À droite : « Suggestions des agents / Alertes » (volet
+       paperclip, fusionné après ce volet) à la hauteur de la marque, la liste, la musique en pied. Sans place à elle, la
+       rangée de la veille tombait sous le volet gauche : la scène écrasée, « Répondre » couvrait la bascule et toucher
+       « Tuiles » ouvrait la console (banc apercu-ensemble du 13/11). */
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
+
+    & .marque {
+      grid-column: 1;
+      grid-row: 1;
+      height: 48px;
+      padding: 0 4px 0 16px;
+    }
+    & .ordre-ouvre {
+      margin-right: 0; /* styles.css le tire de 8 px à droite : il débordait du volet gauche */
+      padding: 0 10px;
+    }
+    & :is(.scene, .appel) {
+      grid-column: 1;
+      grid-row: 2;
+      align-self: start;
+      min-height: 0;
+    }
+    & .scene {
+      padding: 0 14px 30px;
+    }
+    & .scene-sur {
+      height: 30px;
+      margin-right: -12px;
+    }
+    /* 44 × 44 au doigt, sans grandir la rangée : le bouton déborde de 7 px dessus et dessous. */
+    & .scene-plus {
+      width: 44px;
+      height: 44px;
+      margin: -7px 0;
+    }
+    & .scene .grand-mot {
+      margin: 0 -1px calc(var(--gm, 44px) * -0.3) -2px;
+    }
+    & .scene .grand-mot:not(:has(span + span)) {
+      margin-bottom: calc(var(--gm, 44px) * -0.15);
+    }
+    & .scene-carte {
+      gap: 6px;
+      padding: 10px 12px 28px;
+    }
+    & .scene-q {
+      -webkit-line-clamp: 2;
+    }
+    & .scene-go {
+      right: 10px;
+      bottom: -22px;
+      height: 44px;
+      padding: 0 14px 0 18px;
+    }
+    & .ve-bascule {
+      grid-column: 1;
+      grid-row: 3;
+      align-self: end;
+      margin: 0 14px 6px;
+      border-color: var(--filet);
+    }
+    & .ve-bascule button {
+      font: var(--t-et);
+      letter-spacing: 0.12em;
+      color: var(--papier-3);
+    }
+    & .ve-bascule button[aria-pressed='true'] {
+      background: rgba(232, 235, 244, 0.1);
+      color: var(--papier);
+    }
+    & .pli-boite {
+      grid-column: 1;
+      grid-row: 4;
+      padding: 6px 14px calc(6px + env(safe-area-inset-bottom));
+    }
+    & .veille-acces {
+      grid-column: 2;
+      grid-row: 1;
+      padding: 4px 18px;
+    }
+    & .veille-acces button {
+      min-height: 44px;
+    }
+    & .pli {
+      height: 44px;
+    }
+    /* Formulaire ouvert : il prend le volet gauche sous la marque, défile en lui-même, « Fermer » reste en bas. La scène
+       et la bascule s'effacent le temps de le remplir. (En service, le formulaire ouvert dépasse l'écran : « Fermer »
+       finit à y = 453 pour 390 de haut.) */
+    &:has(.pli.is-ouvert) :is(.scene, .appel, .ve-bascule) {
+      display: none;
+    }
+    &:has(.pli.is-ouvert) .pli-boite {
+      grid-row: 2 / 5;
+      min-height: 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding-bottom: 0;
+    }
+    &:has(.pli.is-ouvert) .pli {
+      position: sticky;
+      bottom: 0;
+      z-index: 1;
+      margin-bottom: calc(6px + env(safe-area-inset-bottom));
+      background: linear-gradient(180deg, #121830, #0c1022);
+      box-shadow: 0 -10px 18px -6px var(--sol-bas);
+    }
+    /* Au doigt : 44 px pour chaque choix du formulaire (Claude / Codex…, − / +, apparence). */
+    & .pli-boite .seg {
+      height: auto;
+      padding: 0;
+    }
+    & .pli-boite .seg button {
+      height: 44px;
+    }
+    & .pli-boite .stepper {
+      height: 46px; /* 44 + la bordure */
+    }
+    & .pli-boite .stepper button {
+      height: 44px;
+    }
+    & .pli-boite .apparence button {
+      min-height: 44px;
+      padding-block: 0;
+    }
+    /* Champs à 16 px : sous 16, l'iPhone zoome sur la page au toucher. */
+    & .pli-boite :is(.field select, .field textarea) {
+      font-size: 16px;
+    }
+    & .mus-mini {
+      grid-column: 2;
+      grid-row: 4;
+      border-left: 1px solid var(--trait);
+    }
+    & .mus-nom {
+      padding: 0 18px;
+    }
+    & .roll {
+      grid-column: 2;
+      grid-row: 2 / 4;
+    }
+    & .roll-suite {
+      grid-column: 2;
+      grid-row: 3;
+      padding: 8px 18px 9px;
+    }
+    & .projet-tete {
+      padding: 14px 18px 6px;
+    }
+    & .rang {
+      height: 50px;
+      padding-left: 18px;
+    }
+    & .rang-nom {
+      display: grid;
+      gap: 5px;
+    }
+    & .carte {
+      gap: 6px;
+      padding-block: 10px;
+      padding-left: 18px;
+    }
+    & .carte .va {
+      height: 32px;
+      padding: 0 12px 0 14px;
+    }
+    & .equipe-tete {
+      padding: 14px 18px 6px;
+    }
+    & .livrer {
+      height: 44px;
+    }
+  }
+}
+
+/* `?grand=plateau` (ordinateur) : le nom géant est peint sur le plateau (plateau.css) ; la colonne n'en garde que la carte
+   et « Répondre », pour qu'il n'y ait qu'une chose énorme à l'écran. */
+[data-theme='reverbere'][data-reel3='oui'][data-grand='plateau'] .app:not(.is-mobile) > .rail.reel3 .scene .grand-mot {
+  display: none;
+}

@@ -1,0 +1,8 @@
+/* A− / A+ en Chat (décision d'Orkun du 17/11, plateau-pc-7 : « Oui ») : la taille du texte d'une console, retenue par
+   console (tailles.jsx), grossit aussi sa discussion sur l'ordinateur (dalle et console agrandie). Chaque message est mis
+   à l'échelle (`zoom` : texte, bulles, blocs de code, boutons de la question), la boîte qui défile garde sa taille : la
+   lecture « collée en bas » de Fil.jsx compte sur ses propres hauteurs. 13 px (défaut) = 1. Le téléphone garde son
+   pincement (MobileConsole) : il ne monte pas Discussion. */
+.discussion .fil > * {
+  zoom: var(--fil-zoom, 1);
+}

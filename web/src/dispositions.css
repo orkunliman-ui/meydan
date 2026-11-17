@@ -1,0 +1,161 @@
+/* Volet « raccourcis » (13/11) : feuille du lot dispositions. Ordinateur seulement, sauf mention.
+   Dispositions prêtes (dp-, Dispositions.jsx) : le bouton « Disposer » du bandeau du haut à gauche et sa grille de
+   vignettes, dans la matière du bandeau (pc-disposition.css : --pc-fond, --pc-texte, --pc-doux, --pc-trait, --pc-marque,
+   prises au thème : Réverbère ou Tapis). Design « 3 plans » : pas de jaune ici (le jaune ne dit que « à toi de toucher »),
+   du texte en 13 px et des étiquettes en petites capitales.
+   Repères d'alignement (rp-, Reperes.jsx) : lignes de 1 point à l'écran quel que soit le zoom (--zoom, posé par ZoomWatch
+   sur le plateau), au-dessus des dalles, la couleur de la sélection (--focus en Réverbère, --tape en Tapis). Le plateau du
+   téléphone n'a ni l'un ni l'autre. */
+
+/* ── Le bouton, à la suite des espaces ── */
+.dp {
+  position: relative;
+  flex: none;
+}
+.pc-dispo .dp-ouvre {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 11px 0 10px;
+  background: var(--pc-fond);
+  border: 1px solid var(--pc-trait);
+  border-radius: 3px;
+  box-shadow: 0 10px 24px -14px rgba(0, 0, 0, 0.85);
+  white-space: nowrap;
+}
+.pc-dispo .dp-ouvre[aria-expanded='true'] {
+  border-color: color-mix(in srgb, var(--pc-marque) 60%, var(--pc-trait));
+  box-shadow: inset 0 -2px 0 var(--pc-marque), 0 10px 24px -14px rgba(0, 0, 0, 0.85);
+}
+/* L'icône : une grande et deux petites, en traits. */
+.dp-icone {
+  flex: none;
+  box-sizing: border-box;
+  width: 15px;
+  height: 11px;
+  border: 1.5px solid currentColor;
+  border-radius: 1.5px;
+  opacity: 0.8;
+  background:
+    linear-gradient(currentColor, currentColor) 58% 0 / 1.5px 100% no-repeat,
+    linear-gradient(currentColor, currentColor) 100% 50% / 42% 1.5px no-repeat;
+}
+.dp-nom {
+  font: 700 11px/1 var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.dp-qui {
+  font: 600 13px/1 var(--ui);
+  font-stretch: normal;
+  color: var(--pc-doux);
+}
+
+/* ── La grille des vignettes, sous le bouton (gardée dans le plateau par Dispositions.jsx) ── */
+.dp-grille {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 10;
+  width: max-content;
+  padding: 11px 10px 10px;
+  background: var(--pc-fond);
+  color: var(--pc-texte);
+  border: 1px solid var(--pc-trait);
+  border-radius: 4px;
+  box-shadow: 0 22px 44px -18px rgba(0, 0, 0, 0.9);
+  cursor: default;
+}
+.dp-tete {
+  margin: 0 3px 10px;
+  font: 700 13px/1.3 var(--ui);
+  font-stretch: normal;
+}
+.dp-tete span {
+  display: block;
+  font-weight: 400;
+  color: var(--pc-doux);
+}
+.dp-vignettes {
+  display: grid;
+  grid-template-columns: repeat(4, 132px);
+  gap: 6px;
+}
+.pc-dispo .dp-vignette {
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+  padding: 8px 8px 9px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  text-align: left;
+}
+.pc-dispo .dp-vignette:hover:not(:disabled) {
+  border-color: var(--pc-trait);
+}
+.pc-dispo .dp-vignette:disabled {
+  opacity: 0.36;
+}
+/* Les places, dessinées : la première (la console active, la « grande ») plus marquée. */
+.dp-dessin {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+}
+.dp-dessin i {
+  position: absolute;
+  border-radius: 1.5px;
+  background: color-mix(in srgb, var(--pc-texte) 16%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pc-texte) 38%, transparent);
+}
+.dp-dessin i.dp-premiere {
+  background: color-mix(in srgb, var(--pc-texte) 46%, transparent);
+}
+.dp-legende {
+  max-width: 100%;
+  overflow: hidden;
+  font: 600 13px/1.2 var(--ui);
+  font-stretch: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dp-combien {
+  font: 700 10.5px/1 var(--mono);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--pc-doux);
+}
+
+/* ── Repères d'alignement, dans le plan du plateau ── */
+.rp-calque {
+  --rp-trait: var(--focus, var(--tape));
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  z-index: 3000; /* au-dessus des dalles, même choisies (React Flow les élève à 1000) */
+  pointer-events: none;
+}
+.rp-ligne {
+  position: absolute;
+  display: block;
+  background: var(--rp-trait);
+}
+.rp-v {
+  width: calc(1px / var(--zoom, 1));
+  margin-left: calc(-0.5px / var(--zoom, 1));
+}
+.rp-h {
+  height: calc(1px / var(--zoom, 1));
+  margin-top: calc(-0.5px / var(--zoom, 1));
+}
+/* Un centre aligné : en tirets (un bord : trait plein). */
+.rp-v.rp-centre {
+  background: repeating-linear-gradient(to bottom, var(--rp-trait) 0 calc(5px / var(--zoom, 1)), transparent 0 calc(9px / var(--zoom, 1)));
+}
+.rp-h.rp-centre {
+  background: repeating-linear-gradient(to right, var(--rp-trait) 0 calc(5px / var(--zoom, 1)), transparent 0 calc(9px / var(--zoom, 1)));
+}

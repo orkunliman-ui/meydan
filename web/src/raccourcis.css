@@ -1,0 +1,294 @@
+/* Volet « raccourcis » (13/11) : feuille du lot raccourcis. Ordinateur seulement, sauf mention.
+   Lot A (touches seules) : l'aide des touches et l'écran de réglage (Raccourcis.jsx, `.rc-fenetre`), le bouton des
+   réglages (`.rc-ouvre`, dans Apparence) et l'avis de G quand une carte Git ne peut pas être posée (`.rc-note`). Rien de
+   tout cela n'est monté au téléphone. Teintes prises au thème, comme pc-disposition.css : Réverbère (--barre, --texte…),
+   sinon Tapis (--slab-bar, --paper…). Même matière que la mémoire du projet (fenêtre au milieu, fond voilé). Le jaune
+   (--appel) ne sert qu'à « à toi de toucher » : la touche que l'écran de réglage attend. */
+
+.rc-fond,
+.rc-ouvre,
+.rc-note {
+  --rc-fond: var(--barre, var(--slab-bar));
+  --rc-texte: var(--texte, var(--paper));
+  --rc-doux: var(--texte-2, var(--dim));
+  --rc-pale: var(--texte-3, var(--dim));
+  --rc-trait: var(--trait, var(--mat-line));
+  --rc-filet: var(--trait-fin, var(--mat-line));
+  --rc-appel: var(--appel, var(--tape));
+  --rc-encre: var(--encre, var(--ink));
+  --rc-refus: var(--error);
+  --rc-focus: var(--focus, var(--tape));
+}
+
+/* ── La fenêtre : aide (`?`) et réglage ── */
+.rc-fond {
+  position: fixed;
+  inset: 0;
+  z-index: 1150; /* au-dessus de la console agrandie et de la mémoire (1100) */
+  display: grid;
+  place-items: center;
+  padding: 24px 16px;
+  background: rgba(4, 6, 12, 0.62);
+}
+.rc-fenetre {
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 620px);
+  max-height: min(calc(100dvh - 48px), 900px);
+  min-height: 0;
+  overflow: hidden;
+  background: var(--rc-fond);
+  border: 1px solid var(--rc-trait);
+  border-radius: 14px;
+  box-shadow: 0 24px 60px -24px rgba(0, 0, 0, 0.9);
+  font: 400 14px/1.4 var(--ui, inherit);
+  color: var(--rc-texte);
+  outline: none;
+}
+.rc-tete {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 58px;
+  padding: 6px 8px 4px 20px;
+  border-bottom: 1px solid var(--rc-filet);
+}
+.rc-tete b {
+  flex: 1;
+  min-width: 0;
+  font: 700 19px/1.2 var(--ui, inherit);
+}
+.rc-onglets {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--rc-trait);
+  border-radius: 3px;
+}
+.rc-onglets button {
+  height: 28px;
+  padding: 0 12px;
+  background: none;
+  border: 0;
+  border-radius: 2px;
+  font: 600 10.5px/1 var(--mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--rc-doux);
+  cursor: pointer;
+}
+.rc-onglets button[aria-selected='true'] {
+  background: var(--rc-texte);
+  color: var(--rc-encre);
+}
+.rc-x {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  background: none;
+  border: 0;
+  font: 300 26px/1 var(--ui, inherit);
+  color: var(--rc-doux);
+  cursor: pointer;
+}
+.rc-x:hover {
+  color: var(--rc-texte);
+}
+.rc-corps {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 14px 20px 16px;
+}
+.rc-intro {
+  margin: 0 0 10px;
+  font: 400 13px/1.45 var(--ui, inherit);
+  color: var(--rc-doux);
+}
+
+/* Une ligne par action : la touche, ce qu'elle fait, (réglage) les boutons. */
+.rc-liste {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.rc-liste li {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  min-height: 46px;
+  padding: 6px 0;
+  border-top: 1px solid var(--rc-filet);
+}
+.rc-liste li:first-child {
+  border-top: 0;
+}
+.rc-quoi {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.rc-quoi b {
+  font: 600 14px/1.25 var(--ui, inherit);
+  overflow-wrap: anywhere;
+}
+.rc-quoi small {
+  font: 400 12.5px/1.35 var(--ui, inherit);
+  color: var(--rc-doux);
+  overflow-wrap: anywhere;
+}
+/* Une action qui n'a rien sur cet écran (X en thème Tapis) : grisée, et l'aide dit pourquoi. */
+.rc-liste li.est-absente :is(.rc-touche, b) {
+  opacity: 0.42;
+}
+.rc-liste li.est-absente b {
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+
+/* Une touche du clavier : capuchon clair, bord du bas plus épais. */
+.rc-touche {
+  display: inline-grid;
+  place-items: center;
+  justify-self: start;
+  box-sizing: border-box;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  background: color-mix(in srgb, var(--rc-texte) 7%, transparent);
+  border: 1px solid color-mix(in srgb, var(--rc-texte) 32%, transparent);
+  border-bottom-width: 3px;
+  border-radius: 5px;
+  font: 700 14px/1 var(--mono);
+  color: var(--rc-texte);
+  white-space: nowrap;
+}
+.rc-touche.est-vide {
+  background: none;
+  border-style: dashed;
+  border-bottom-width: 1px;
+  font: 400 11px/1 var(--mono);
+  color: var(--rc-pale);
+}
+.rc-touche.est-mot {
+  min-width: 0;
+  height: 24px;
+  padding: 0 7px;
+  border-bottom-width: 2px;
+  font: 600 11px/1 var(--mono);
+}
+.rc-sous {
+  margin: 18px 0 4px;
+  font: 600 10.5px/1 var(--mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--rc-pale);
+}
+.rc-liste.rc-fixes li {
+  grid-template-columns: minmax(0, 220px) minmax(0, 1fr);
+  min-height: 38px;
+  padding: 4px 0;
+}
+.rc-combos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 12px;
+}
+.rc-combo {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.rc-pied {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 14px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--rc-filet);
+  font: 400 12.5px/1.3 var(--ui, inherit);
+  color: var(--rc-doux);
+}
+.rc-pied kbd {
+  vertical-align: middle;
+}
+
+/* Les boutons de la fenêtre : au trait. */
+.rc-boutons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+:is(.rc-changer, .rc-aucune, .rc-defaut, .rc-lien) {
+  height: 34px;
+  padding: 0 12px;
+  background: none;
+  border: 1px solid var(--rc-trait);
+  border-radius: 3px;
+  font: 600 13px/1 var(--ui, inherit);
+  color: var(--rc-texte);
+  white-space: nowrap;
+  cursor: pointer;
+}
+:is(.rc-changer, .rc-aucune, .rc-defaut, .rc-lien, .rc-onglets button):hover:not(:disabled, [aria-selected='true'], .est-attente) {
+  background: color-mix(in srgb, var(--rc-texte) 9%, transparent);
+}
+.rc-aucune:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+/* La touche attendue : à toi de toucher, donc jaune. */
+.rc-changer.est-attente {
+  background: var(--rc-appel);
+  border-color: var(--rc-appel);
+  color: var(--rc-encre);
+}
+.rc-reglage li.est-attente .rc-touche {
+  border-color: var(--rc-appel);
+}
+.rc-avis {
+  color: var(--rc-doux);
+}
+.rc-avis.est-refus {
+  font-weight: 600;
+  color: var(--rc-refus);
+}
+.rc-fenetre :focus-visible {
+  outline: 2px solid var(--rc-focus);
+  outline-offset: 2px;
+}
+
+/* ── Dans les réglages (Apparence) : sur sa propre ligne, sans la pastille des choix ── */
+.apparence .rc-ouvre {
+  flex-basis: 100%;
+  justify-content: flex-start;
+  cursor: pointer;
+}
+.apparence .rc-ouvre::before {
+  content: none;
+}
+.apparence .rc-ouvre:hover {
+  color: var(--rc-texte);
+}
+
+/* ── G : la carte Git n'a pas pu être posée (le serveur dit pourquoi), en haut au milieu du plateau ── */
+.rc-note {
+  position: absolute;
+  z-index: 6;
+  top: 64px;
+  left: 50%;
+  translate: -50% 0;
+  max-width: min(560px, calc(100% - 32px));
+  margin: 0;
+  padding: 9px 14px;
+  background: var(--rc-fond);
+  border: 1px solid var(--rc-refus);
+  border-radius: 3px;
+  font: 500 13px/1.3 var(--ui, inherit);
+  color: var(--rc-texte);
+}

@@ -1,0 +1,44 @@
+/* robuste.css — volet « interface-robuste » (chasse aux défauts du 17/11). */
+
+/* Terminal dont la liaison est tombée (Term.jsx, liaison.js) : dit sur la dalle, en haut à droite, à la taille de l'écran
+   (posé dans .term-scale, que sa transformation rend repère des éléments placés). Pas du jaune : le jaune ne dit que
+   « à toi de toucher » (design 3 plans). Rien d'animé (règle du plateau du téléphone). */
+.liaison-coupee {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: calc(100% - 16px);
+  margin: 0;
+  padding: 6px 8px 6px 12px;
+  background: var(--barre, #131729);
+  border: 1px solid var(--trait, rgba(190, 205, 255, 0.13));
+  border-left: 3px solid var(--error, #ff5d6c);
+  border-radius: 6px;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45);
+  font: 600 12.5px/1.3 var(--ui, inherit);
+  color: var(--texte, #e6e8f0);
+  overflow-wrap: anywhere;
+  pointer-events: auto;
+  cursor: default;
+}
+.liaison-coupee button {
+  flex: none;
+  min-height: 28px;
+  padding: 0 10px;
+  background: transparent;
+  border: 1px solid var(--trait, rgba(190, 205, 255, 0.25));
+  border-radius: 4px;
+  font: 600 12px/1 var(--ui, inherit);
+  color: inherit;
+  cursor: pointer;
+}
+@media (pointer: coarse) and (not (any-pointer: fine)) {
+  .liaison-coupee button {
+    min-height: 44px;
+  }
+}
+

@@ -1,0 +1,313 @@
+/* Carte « note » du plateau étendu (NoteNode.jsx, notes-md.jsx). Préfixe « et-note- » (le cadre porte déjà « et-note »,
+   posé par Carte.jsx). Couleurs par les jetons des deux thèmes (--slab, --slab-bar, --paper, --dim, --mat-line, --error) ;
+   polices --ui et --mono. Aucune transition ni animation : rien ne bouge sur le plateau du téléphone. */
+
+/* ── Lecture ── */
+.et-note-lire {
+  height: 100%;
+  overflow: auto;
+  padding: 10px 14px 14px;
+  cursor: text;
+  /* React Flow interdit la sélection dans les dalles : une note se copie. */
+  user-select: text;
+  -webkit-user-select: text;
+}
+.et-note-vide {
+  margin: 0;
+  color: var(--dim);
+  font-size: 13px;
+}
+
+/* ── Écriture ── */
+.et-note-ecrire {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.et-note-champ {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  margin: 0;
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 0;
+  resize: none;
+  background: transparent;
+  color: var(--paper);
+  font: 400 13px/1.55 var(--mono);
+  tab-size: 4;
+  user-select: text;
+  -webkit-user-select: text;
+}
+.et-note-champ::placeholder {
+  color: var(--dim);
+  opacity: 0.8;
+}
+.et-note-champ:focus,
+.et-note-champ:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 1px var(--mat-line);
+}
+.et-note-pied {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2px 10px;
+  min-height: 24px;
+  padding: 3px 10px;
+  border-top: 1px solid var(--mat-line);
+  background: var(--slab-bar);
+  font: 400 11px/1.3 var(--mono);
+  color: var(--dim);
+}
+.et-note-compte {
+  margin-left: auto;
+  white-space: nowrap;
+}
+.et-note-compte.est-pres {
+  color: var(--paper);
+}
+.et-note-compte.est-trop,
+.et-note-refus {
+  color: var(--error);
+  font-weight: 700;
+}
+
+/* L'état de l'enregistrement : dans le pied (écriture), en bas à droite de la note (lecture). */
+.et-note-etat {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--dim);
+}
+.et-note-etat.est-flottant {
+  position: absolute;
+  right: 8px;
+  bottom: 6px;
+  padding: 3px 6px;
+  border: 1px solid var(--mat-line);
+  border-radius: 4px;
+  background: var(--slab-bar);
+  font: 400 11px/1.2 var(--mono);
+  pointer-events: none;
+}
+.et-note-etat.est-echec {
+  color: var(--error);
+  text-align: left;
+  pointer-events: auto;
+}
+.et-note-etat.est-echec.est-flottant {
+  max-width: calc(100% - 16px);
+  border-color: var(--error);
+}
+
+/* Le bouton « Écrire » / « Lire » de la barre. */
+.et-note-bouton {
+  flex: none;
+  height: 24px;
+  padding: 0 8px;
+  border: 1px solid var(--mat-line);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--paper);
+  font-size: 12px;
+  line-height: 1;
+}
+.et-note-bouton:hover:not(:disabled) {
+  border-color: var(--paper);
+}
+.et-note-bouton:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ── Le Markdown ── */
+.et-note-md {
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.et-note-md > :first-child {
+  margin-top: 0;
+}
+.et-note-md > :last-child {
+  margin-bottom: 0;
+}
+.et-note-md h1,
+.et-note-md h2,
+.et-note-md h3,
+.et-note-md h4,
+.et-note-md h5,
+.et-note-md h6 {
+  margin: 14px 0 6px;
+  line-height: 1.25;
+  font-weight: 700;
+}
+.et-note-md h1 {
+  font-size: 20px;
+}
+.et-note-md h2 {
+  font-size: 17px;
+}
+.et-note-md h3 {
+  font-size: 15px;
+}
+.et-note-md h4,
+.et-note-md h5,
+.et-note-md h6 {
+  font-size: 14px;
+}
+.et-note-md h5,
+.et-note-md h6 {
+  color: var(--dim);
+}
+.et-note-md p {
+  margin: 6px 0;
+}
+.et-note-md ul,
+.et-note-md ol {
+  margin: 6px 0;
+  padding-left: 22px;
+}
+.et-note-md li {
+  margin: 2px 0;
+}
+.et-note-md li > p,
+.et-note-tache-texte > p {
+  margin: 0;
+}
+.et-note-md li > ul,
+.et-note-md li > ol,
+.et-note-tache-texte > ul,
+.et-note-tache-texte > ol {
+  margin: 2px 0;
+}
+/* Une tâche : la case à la place de la puce. */
+.et-note-md li.et-note-tache {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0 7px;
+  align-items: start;
+  margin-left: -20px;
+  list-style: none;
+}
+.et-note-md li.et-note-tache.est-faite > .et-note-tache-texte {
+  color: var(--dim);
+  text-decoration: line-through;
+  text-decoration-color: var(--dim);
+}
+input.et-note-case {
+  width: 14px;
+  height: 14px;
+  margin: 3px 0 0;
+  accent-color: var(--paper);
+  cursor: pointer;
+}
+/* Téléphone : une case dessinée, pas un champ. */
+span.et-note-case {
+  position: relative;
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-top: 3px;
+  border: 1.5px solid var(--dim);
+  border-radius: 3px;
+}
+span.et-note-case.est-cochee {
+  border-color: var(--paper);
+  background: var(--paper);
+}
+span.et-note-case.est-cochee::after {
+  content: '';
+  position: absolute;
+  left: 3.5px;
+  top: 0.5px;
+  width: 4px;
+  height: 8px;
+  border: solid var(--slab);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.et-note-md code {
+  padding: 1px 4px;
+  border: 1px solid var(--mat-line);
+  border-radius: 3px;
+  background: var(--slab-bar);
+  font: 400 12.5px/1.4 var(--mono);
+}
+.et-note-md pre {
+  margin: 8px 0;
+  padding: 8px 10px;
+  border: 1px solid var(--mat-line);
+  border-radius: 5px;
+  background: var(--slab-bar);
+  overflow-x: auto;
+}
+.et-note-md pre code {
+  padding: 0;
+  border: 0;
+  background: none;
+  white-space: pre;
+}
+.et-note-md blockquote {
+  margin: 8px 0;
+  padding: 1px 0 1px 12px;
+  border-left: 3px solid var(--mat-line);
+  color: var(--dim);
+}
+.et-note-md hr {
+  margin: 12px 0;
+  border: 0;
+  border-top: 1px solid var(--mat-line);
+}
+.et-note-md a,
+.et-note-md .et-note-lien {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--dim);
+  text-underline-offset: 2px;
+}
+.et-note-md a:hover {
+  text-decoration-color: var(--paper);
+}
+.et-note-md del {
+  color: var(--dim);
+}
+
+/* ── Plateau du téléphone ──
+   `far` y vaut toujours vrai (Board.jsx : far = onOuvre || farZoom) : le cadre passe en « vue de loin » (le nom seul, en
+   grand). La note garde sa barre, nom agrandi, et montre son texte, rogné : `overflow: clip` ne fait aucune zone de
+   défilement (ni calque, ni défilement possible, même par le code) ; `hidden` reste pour un navigateur qui ne connaît
+   pas `clip`. */
+.et-carte.et-note.est-tel.est-loin {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+.et-carte.et-note.est-tel.est-loin .et-barre {
+  height: auto;
+  min-height: 34px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--mat-line);
+  justify-content: flex-start;
+}
+.et-carte.et-note.est-tel.est-loin .et-titre {
+  font-size: 30px;
+  line-height: 1.15;
+}
+.et-carte.et-note.est-tel.est-loin .et-type {
+  font-size: 13px;
+}
+.et-carte.et-note.est-tel .et-corps,
+.et-carte.et-note.est-tel .et-note-lire,
+.et-carte.et-note.est-tel .et-note-md pre {
+  overflow: hidden;
+  overflow: clip;
+}
+.et-carte.et-note.est-tel .et-note-lire {
+  cursor: default;
+  user-select: none;
+  -webkit-user-select: none;
+}

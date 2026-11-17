@@ -1,0 +1,68 @@
+/* Volet plateau-pc (11/11) : A− / A+ dans la barre d'une console, dupliquer une console. */
+
+/* A− / A+ (tailles.jsx) : un groupe de deux boutons, de la même matière que Chat | >_ (styles.css, .bar-vue). */
+.bar-taille {
+  flex: none;
+  display: inline-flex;
+  height: 22px;
+  border: 1px solid var(--trait, var(--mat-line));
+  border-radius: 2px;
+  overflow: hidden;
+}
+.bar-taille button {
+  height: 100%;
+  padding: 0 5px;
+  background: none;
+  border: 0;
+  font: 700 11px/1 var(--mono);
+  color: var(--texte-2, var(--dim));
+  cursor: pointer;
+}
+.bar-taille button + button {
+  border-left: 1px solid var(--trait, var(--mat-line));
+}
+.bar-taille button:hover:not(:disabled) {
+  color: var(--texte, var(--paper));
+}
+.bar-taille button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+/* T'ATTEND : la barre est jaune, les boutons passent à l'encre (comme Chat | >_). */
+.slab.is-needs .bar-taille,
+.slab.is-needs .bar-taille button + button {
+  border-color: var(--encre-2, rgba(0, 0, 0, 0.5));
+}
+.slab.is-needs .bar-taille button {
+  color: var(--encre, #111);
+}
+/* Rien à grossir : console terminée. En discussion, A− / A+ restent : ils grossissent aussi le Chat (décision d'Orkun du
+   17/11, plateau-pc-7 « A− / A+ en Chat » : « Oui » ; discussion-taille.css). Avant, ils y étaient cachés. */
+.slab.is-closed .bar-taille {
+  display: none;
+}
+
+/* Place. La barre était déjà pleine : A− / A+ ne s'affichent que si toute la barre tient AVEC eux au pire cas mesuré au
+   banc (test/volets/plateau-pc/essai-taille.mjs : TRAVAILLE, âge « 12 h 05 », boucle « ↻ 10/10 », nom trop long) ; plus
+   étroite, la dalle garde exactement ce qu'elle avait, et la console agrandie les a toujours.
+   Réverbère : il faut 521 px de contenu (balayage du 11/11) → seuil 540 : une dalle de 720 px les garde jusqu'au
+   zoom 0,78 (la mosaïque d'un portable après « Ranger » est à 0,86) ; une dalle de 420 px ne les a pas. */
+@container (max-width: 539px) {
+  [data-theme='reverbere'] .bar-in .bar-taille {
+    display: none;
+  }
+}
+/* Tapis : le ruban du nom prend jusqu'à 55 % de la barre, il faut 718 px de contenu → seuil 730 (une dalle de 752 px).
+   L'en-tête devient le conteneur mesuré (Réverbère, lui, mesure déjà `.bar-in`). */
+[data-theme='tapis'] .slab-bar {
+  container-type: inline-size;
+}
+@container (max-width: 729px) {
+  [data-theme='tapis'] .slab-bar .bar-taille {
+    display: none;
+  }
+}
+/* « Arrêter ? » armé (3 s) : le bouton s'élargit, A− / A+ lui cèdent leur place. */
+.slab-bar:has(.slab-close.is-armed) .bar-taille {
+  display: none;
+}

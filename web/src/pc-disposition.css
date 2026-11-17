@@ -1,0 +1,290 @@
+/* Volet plateau-pc (11/11) : sélection multiple, annuler / rétablir la disposition, espaces de travail.
+   Ordinateur seulement : ces classes n'existent pas sur le plateau du téléphone (Board avec onOuvre), qui ne change pas.
+   Teintes prises au thème : Réverbère (--barre, --texte…), sinon Tapis (--slab-bar, --paper…). Même matière que
+   « Ranger » de la colonne : filet, petites capitales mono pour les commandes ; les noms d'Orkun en police d'interface. */
+
+.pc-dispo,
+.pc-selection,
+.react-flow.est-multi,
+.react-flow__selection {
+  --pc-fond: var(--barre, var(--slab-bar));
+  --pc-texte: var(--texte, var(--paper));
+  --pc-doux: var(--texte-2, var(--dim));
+  --pc-trait: var(--trait, var(--mat-line));
+  --pc-marque: var(--focus, var(--tape));
+  --pc-encre: var(--encre, var(--ink));
+  --pc-danger: var(--error);
+}
+
+/* ── Le lasso (Maj+glisser sur le fond) et les consoles choisies ── */
+.react-flow__selection {
+  background: color-mix(in srgb, var(--pc-marque) 10%, transparent);
+  border: 1px dashed var(--pc-marque);
+}
+/* Le cadre que React Flow pose sur une sélection faite au lasso couvrirait les terminaux (il prend la souris) : retiré.
+   On déplace les consoles choisies par la barre de l'une d'elles. */
+.react-flow__nodesselection {
+  display: none;
+}
+/* Plusieurs consoles choisies : un anneau autour de chacune, de la même épaisseur à l'écran quel que soit le zoom
+   (--zoom posé par ZoomWatch). Une seule choisie : rien ne change (ses poignées de taille, comme avant). */
+.react-flow.est-multi .react-flow__node.selected .slab {
+  outline: calc(2px / var(--zoom, 1)) solid var(--pc-marque);
+  outline-offset: calc(4px / var(--zoom, 1));
+}
+
+/* ── Commun aux deux bandeaux ── */
+.pc-histo,
+.pc-onglet,
+.pc-espace-ajoute,
+.pc-espace-champ,
+.pc-sel-barre,
+.pc-sel-confirme {
+  background: var(--pc-fond);
+  color: var(--pc-texte);
+  border: 1px solid var(--pc-trait);
+  border-radius: 3px;
+  box-shadow: 0 10px 24px -14px rgba(0, 0, 0, 0.85);
+}
+.pc-dispo button,
+.pc-selection button {
+  margin: 0;
+  background: none;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+}
+.pc-dispo button:disabled,
+.pc-selection button:disabled {
+  cursor: default;
+}
+.pc-dispo button:hover:not(:disabled),
+.pc-selection button:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--pc-texte) 9%, transparent);
+}
+.pc-dispo :focus-visible,
+.pc-selection :focus-visible {
+  outline: 2px solid var(--pc-marque);
+  outline-offset: -2px;
+}
+
+/* ── En haut à gauche : ↶ ↷ puis les onglets des espaces ── */
+.pc-dispo.react-flow__panel {
+  margin: 12px;
+  display: flex;
+  flex-wrap: wrap; /* beaucoup d'espaces : une seconde rangée plutôt qu'un débordement */
+  align-items: center;
+  gap: 8px;
+  max-width: calc(100% - 24px);
+}
+.pc-histo {
+  flex: none;
+  display: inline-flex;
+  height: 32px;
+  overflow: hidden;
+}
+.pc-dispo .pc-histo button {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 100%;
+}
+.pc-dispo .pc-histo button + button {
+  border-left: 1px solid var(--pc-trait);
+}
+.pc-dispo .pc-histo button:disabled {
+  color: var(--pc-doux);
+  opacity: 0.45;
+}
+.pc-espaces {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+}
+.pc-onglet {
+  display: inline-flex;
+  align-items: stretch;
+  height: 32px;
+  min-width: 0;
+  max-width: 230px;
+  overflow: hidden;
+}
+.pc-dispo .pc-onglet-nom {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  padding: 0 2px 0 11px;
+  font: 600 13px/30px var(--ui);
+  font-stretch: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--pc-doux);
+}
+.pc-dispo .pc-onglet-plus {
+  flex: none;
+  width: 26px;
+  font: 700 14px/1 var(--ui);
+  color: var(--pc-doux);
+  opacity: 0;
+}
+.pc-onglet:hover .pc-onglet-plus,
+.pc-onglet:focus-within .pc-onglet-plus,
+.pc-onglet.est-actif .pc-onglet-plus {
+  opacity: 1;
+}
+/* L'onglet dont la disposition est à l'écran : texte plein et trait dessous, tant que rien n'a bougé. */
+.pc-onglet.est-actif {
+  border-color: color-mix(in srgb, var(--pc-marque) 60%, var(--pc-trait));
+  box-shadow: inset 0 -2px 0 var(--pc-marque), 0 10px 24px -14px rgba(0, 0, 0, 0.85);
+}
+.pc-dispo .pc-onglet.est-actif .pc-onglet-nom {
+  color: var(--pc-texte);
+  font-weight: 700;
+}
+.pc-dispo .pc-espace-ajoute {
+  flex: none;
+  height: 32px;
+  padding: 0 11px;
+  background: var(--pc-fond);
+  border: 1px solid var(--pc-trait);
+  font: 700 11px/1 var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.pc-espace-champ {
+  display: inline-flex;
+  align-items: stretch;
+  height: 32px;
+  max-width: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+.pc-espace-champ input {
+  width: 190px;
+  min-width: 0;
+  padding: 0 9px;
+  background: none;
+  border: 0;
+  font: 600 13px/1 var(--ui);
+  font-stretch: normal;
+  color: var(--pc-texte);
+}
+.pc-espace-champ input::placeholder {
+  color: var(--pc-doux);
+}
+.pc-espace-champ input:focus-visible {
+  outline: none;
+}
+.pc-espace-champ:focus-within {
+  border-color: var(--pc-marque);
+}
+.pc-dispo .pc-espace-champ button {
+  flex: none;
+  padding: 0 11px;
+  border-left: 1px solid var(--pc-trait);
+  font: 700 11px/1 var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ── En bas au milieu : la barre de la sélection, et sa confirmation de fermeture ── */
+.pc-selection.react-flow__panel {
+  margin: 0 15px 16px;
+  max-width: min(600px, calc(100% - 30px));
+}
+.pc-sel-barre {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  min-height: 38px;
+  overflow: hidden;
+}
+.pc-selection .pc-sel-barre > * {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 13px;
+  white-space: nowrap;
+}
+.pc-selection .pc-sel-barre > * + * {
+  border-left: 1px solid var(--pc-trait);
+}
+.pc-sel-compte {
+  font: 700 13px/1 var(--ui);
+  font-stretch: normal;
+  color: var(--pc-texte);
+  cursor: help;
+}
+.pc-selection .pc-sel-barre button,
+.pc-selection .pc-sel-actions button {
+  font: 700 11px/1 var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.pc-sel-confirme {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+  padding: 14px 16px 12px;
+  font: 400 13px/1.4 var(--ui);
+  font-stretch: normal;
+}
+.pc-sel-confirme p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.pc-sel-titre {
+  font-weight: 700;
+}
+.pc-sel-noms {
+  margin: 0;
+  padding: 0 0 0 18px;
+  max-height: 30vh;
+  overflow-y: auto;
+}
+.pc-sel-noms li {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pc-sel-note {
+  color: var(--pc-doux);
+}
+.pc-sel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 2px;
+}
+.pc-selection .pc-sel-actions button {
+  height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--pc-trait);
+  border-radius: 3px;
+  white-space: nowrap;
+}
+.pc-selection .pc-sel-actions .pc-sel-danger {
+  background: var(--pc-danger);
+  border-color: var(--pc-danger);
+  color: var(--pc-encre);
+}
+.pc-selection .pc-sel-actions .pc-sel-danger:hover {
+  background: color-mix(in srgb, var(--pc-danger) 85%, white);
+}
+
+/* Espaces gardés sur le serveur (décision d'Orkun du 17/11, plateau-pc-2 : « Sur le serveur (partagés) ») : ce qui n'a pas
+   pu être gardé est dit dans la barre, sur une ligne coupée (le texte entier en infobulle). */
+.pc-espace-avis {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 420px;
+  overflow: hidden;
+  font: 400 11.5px/32px var(--ui);
+  color: var(--pc-texte);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

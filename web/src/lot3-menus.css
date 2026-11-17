@@ -1,0 +1,100 @@
+/* Chantier du 11/11 : lot3-menus (voir tasks/todo.md).
+   Le bouton « ⋯ » : le menu de l'appui prolongé, rendu visible (audit ergonomie du 10/11, constat 1).
+   Réverbère : filet fin, petites capitales mono, pas d'aplat jaune (réservé à ce qui attend Orkun). */
+
+/* La ligne porte son bouton : il est posé sur sa droite, hors du bouton principal (un bouton ne contient pas un bouton). */
+li:has(> .ligne-plus) {
+  position: relative;
+}
+.ligne-plus {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  width: 28px;
+  height: 28px;
+  margin-top: -14px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 3px;
+  color: inherit;
+  opacity: 0.7;
+  cursor: pointer;
+}
+.ligne-plus i {
+  font: 700 18px/1 var(--mono, monospace);
+  font-style: normal;
+  letter-spacing: -0.04em;
+  transform: translateY(-1px);
+}
+.ligne-plus:focus-visible {
+  opacity: 1;
+  background: rgba(190, 205, 255, 0.1);
+}
+/* Au survol seulement avec une vraie souris : au doigt, le « survol » reste collé après le toucher. */
+@media (hover: hover) {
+  .ligne-plus:hover {
+    opacity: 1;
+    background: rgba(190, 205, 255, 0.1);
+  }
+  .carte + .ligne-plus:hover {
+    background: rgba(11, 14, 24, 0.14);
+  }
+}
+.ligne-plus:focus-visible {
+  outline: 1px solid var(--focus, currentColor);
+}
+/* La place du bouton est réservée à la ligne : le nom, l'état et l'âge restent lisibles, rien ne passe dessous. */
+[data-theme] li:has(> .ligne-plus) > :is(.rang, .carte) {
+  padding-right: 40px;
+}
+
+/* Sur la carte jaune : l'encre, comme le reste de la carte. */
+.carte + .ligne-plus {
+  color: var(--encre, #0b0e18);
+  opacity: 0.8;
+  top: 8px;
+  margin-top: 0;
+}
+.carte + .ligne-plus:focus-visible {
+  background: rgba(11, 14, 24, 0.14);
+}
+
+/* Au doigt : 44 × 44 au moins, sur toute la hauteur de la ligne. */
+@media (pointer: coarse) {
+  .ligne-plus {
+    width: 44px;
+    height: 44px;
+    right: 0;
+    margin-top: -22px;
+    opacity: 0.85;
+  }
+  .carte + .ligne-plus {
+    top: 0;
+  }
+  [data-theme] li:has(> .ligne-plus) > :is(.rang, .carte) {
+    padding-right: 52px;
+  }
+}
+
+/* En-tête d'une console ouverte : au bout de la barre, après l'âge ou le bouton Chat. */
+.sheet-plus {
+  position: static;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  margin: 0 -6px 0 0;
+}
+@media (pointer: coarse) {
+  .sheet-plus {
+    width: 44px;
+    height: 44px;
+    margin: 0 -8px 0 0;
+  }
+}
+/* Console qui t'attend : la barre est jaune, le bouton prend l'encre. */
+.sheet.is-needs .sheet-plus {
+  color: var(--encre, #0b0e18);
+}

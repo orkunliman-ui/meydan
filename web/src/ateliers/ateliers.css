@@ -1,0 +1,717 @@
+/* Ateliers (volet du 13/11) : cartes Document, Code, Markdown, Diagramme ; menu « Ateliers ▴ » ; lecture en grand ; section
+   « Ateliers » de la liste du téléphone. Préfixe « at- » partout (cherché dans les deux thèmes avant de nommer : aucun
+   conflit). Couleurs par les jetons des deux thèmes ; jamais de jaune (réservé à ce qui attend Orkun) ; rien d'animé. */
+
+/* ── Titre d'une section du menu « Ajouter ▴ » (Cartes.jsx, volet plateau-creatif) : « Ateliers » ── */
+.cr-menu .cr-menu-titre {
+  margin: 4px 0 2px;
+  padding: 4px 10px 0;
+  color: var(--dim);
+  font: 700 10px/1.2 var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* ── Cadre commun ── */
+.at-carte .et-corps {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
+}
+.at-outil {
+  flex: none;
+  height: 24px;
+  padding: 0 8px;
+  border: 1px solid var(--mat-line);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--dim);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.at-outil:hover:not(:disabled) {
+  color: var(--paper);
+  border-color: var(--paper);
+}
+.at-outil.est-actif {
+  color: var(--paper);
+  border-color: var(--focus, var(--paper));
+}
+.at-outil:disabled {
+  opacity: 0.45;
+}
+.at-dim {
+  color: var(--dim);
+  font-size: 13px;
+  margin: 8px 12px;
+}
+.at-petit {
+  font-size: 11.5px;
+}
+.at-centre {
+  align-self: center;
+  justify-self: center;
+  text-align: center;
+}
+.at-erreur,
+.at-refus {
+  margin: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--mat-line);
+  border-left: 3px solid var(--error);
+  border-radius: 6px;
+  color: var(--paper);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.at-etat {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 10px;
+  margin: 0;
+  padding: 7px 10px;
+  border-radius: 6px;
+  background: var(--slab-bar);
+  border: 1px solid var(--mat-line);
+  font-size: 12.5px;
+  overflow-wrap: anywhere;
+}
+.at-lien {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--paper);
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.at-bouton {
+  height: 28px;
+  padding: 0 12px;
+  border: 1px solid var(--mat-line);
+  border-radius: 6px;
+  background: var(--slab);
+  color: var(--paper);
+  font-size: 13px;
+}
+.at-bouton.est-principal {
+  border-color: var(--paper);
+  font-weight: 600;
+}
+
+/* ── Choix du projet et du fichier ── */
+.at-choix {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+  min-height: 0;
+  padding: 10px 12px;
+}
+.at-choix-titre {
+  margin: 0;
+  font-weight: 600;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.at-choix-liste {
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+}
+.at-choix-liste button {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  padding: 5px 8px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--paper);
+  text-align: left;
+  font-size: 13px;
+}
+.at-choix-liste button:hover:not(:disabled) {
+  background: var(--slab-bar);
+}
+.at-choix-liste b {
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.at-choix-liste span {
+  color: var(--dim);
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+.at-choix-liste .est-dossier b {
+  font-weight: 600;
+}
+.at-choix-liste .est-grise {
+  opacity: 0.4;
+}
+.at-choix-pied {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ── Document ── */
+.at-doc-boite {
+  min-height: 0;
+  overflow: auto;
+  padding: 16px 20px 40px;
+}
+.at-doc {
+  max-width: 820px;
+  margin: 0 auto;
+}
+.at-doc .et-note-md {
+  font-size: 14.5px;
+  line-height: 1.6;
+}
+.at-doc-cadre {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  border: 0;
+  background: #fff;
+}
+.at-doc-boite:has(> .at-doc-cadre) {
+  padding: 0;
+  overflow: hidden;
+}
+.at-doc-texte {
+  margin: 0;
+  white-space: pre-wrap;
+  font: 13px/1.5 var(--mono);
+}
+.et-note-table {
+  max-width: 100%;
+  overflow-x: auto;
+  margin: 8px 0;
+}
+.et-note-table table {
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+.et-note-table th,
+.et-note-table td {
+  padding: 4px 9px;
+  border: 1px solid var(--mat-line);
+  text-align: left;
+  vertical-align: top;
+}
+.et-note-table th {
+  background: var(--slab-bar);
+}
+.at-lien-note {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--focus, var(--paper));
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.at-lien-note.est-casse {
+  color: var(--dim);
+  text-decoration-style: dashed;
+  cursor: default;
+}
+.at-lien-note.est-ambigu {
+  text-decoration-style: double;
+}
+.at-html h1,
+.at-html h2,
+.at-html h3 {
+  line-height: 1.25;
+}
+.at-html table {
+  border-collapse: collapse;
+}
+.at-html th,
+.at-html td {
+  padding: 4px 8px;
+  border: 1px solid var(--mat-line);
+}
+.at-html pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* ── Code et coffre : deux colonnes ── */
+.at-code-carte {
+  display: grid;
+  grid-template-columns: minmax(150px, 34%) minmax(0, 1fr);
+  min-height: 0;
+}
+.at-code-gauche {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 0;
+  padding: 8px 6px;
+  overflow: auto;
+  border-right: 1px solid var(--mat-line);
+}
+.at-code-droite {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  overflow: auto;
+}
+.at-code-droite > .at-doc {
+  padding: 14px 18px 40px;
+}
+.at-champ {
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--mat-line);
+  border-radius: 5px;
+  background: var(--slab-bar);
+  color: var(--paper);
+  font-size: 13px;
+}
+.at-arbre {
+  margin: 0;
+  padding: 0 0 0 calc(var(--at-prof, 0) * 0px);
+  list-style: none;
+}
+.at-arbre .at-arbre {
+  padding-left: 12px;
+}
+.at-arbre button {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding: 2px 6px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--paper);
+  font: 12.5px/1.5 var(--mono);
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.at-arbre button:hover {
+  background: var(--slab-bar);
+}
+.at-arbre .est-ouvert {
+  background: var(--slab-bar);
+  box-shadow: inset 2px 0 0 var(--focus, var(--paper));
+}
+.at-arbre .est-lourd {
+  color: var(--dim);
+}
+.at-arbre small {
+  color: var(--dim);
+  font-size: 11px;
+}
+.at-epingles {
+  padding-bottom: 6px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--mat-line);
+}
+.at-code-chemin {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  margin: 0;
+  padding: 6px 12px;
+  background: var(--slab-bar);
+  border-bottom: 1px solid var(--mat-line);
+  color: var(--dim);
+  font: 12px/1.4 var(--mono);
+  overflow-wrap: anywhere;
+}
+.at-code {
+  margin: 0;
+  padding: 8px 0 30px;
+  font: 12.5px/1.55 var(--mono);
+  tab-size: 2;
+  color: var(--paper);
+}
+.at-ligne {
+  display: grid;
+  grid-template-columns: var(--at-num, 4ch) minmax(0, 1fr);
+}
+.at-num {
+  padding: 0 10px 0 4px;
+  text-align: right;
+  color: var(--dim);
+  opacity: 0.6;
+  user-select: none;
+}
+.at-src {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding-right: 12px;
+}
+.at-code-brut {
+  display: block;
+  white-space: pre-wrap;
+  padding: 0 12px;
+  color: var(--dim);
+}
+.at-j-com {
+  color: #7f8aa3;
+  font-style: italic;
+}
+.at-j-chaine {
+  color: #9ad8a6;
+}
+.at-j-nombre {
+  color: #f0a986;
+}
+.at-j-motcle {
+  color: #8fb4ff;
+  font-weight: 600;
+}
+.at-j-ponct {
+  color: #a7aec2;
+}
+.at-j-balise {
+  color: #8fb4ff;
+}
+.at-j-attr {
+  color: #c8a2f0;
+}
+.at-j-titre {
+  color: #e8ebf4;
+  font-weight: 700;
+}
+.app.tapis .at-j-com,
+.tapis .at-j-com {
+  color: #93a39c;
+}
+.at-code-grand {
+  min-height: 0;
+  overflow: auto;
+}
+
+/* ── Graphe du coffre ── */
+.at-graphe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 260px;
+}
+.at-g-lien {
+  stroke: var(--dim);
+  stroke-opacity: 0.35;
+  stroke-width: 1;
+}
+.at-g-lien.est-proche {
+  stroke: var(--focus, var(--paper));
+  stroke-opacity: 0.9;
+  stroke-width: 1.6;
+}
+.at-g-note {
+  cursor: pointer;
+}
+.at-g-note circle {
+  fill: var(--dim);
+}
+.at-g-note.est-voisine circle {
+  fill: var(--paper);
+}
+.at-g-note.est-ouverte circle {
+  fill: var(--focus, var(--paper));
+}
+.at-g-note text {
+  fill: var(--paper);
+  font-size: 11px;
+  paint-order: stroke;
+  stroke: var(--slab);
+  stroke-width: 3px;
+}
+
+/* ── Diagramme ── */
+.at-dg {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 0;
+}
+.at-dg.avec-texte {
+  grid-template-columns: minmax(170px, 38%) minmax(0, 1fr);
+}
+.at-dg-texte {
+  min-height: 0;
+  padding: 10px;
+  border: 0;
+  border-right: 1px solid var(--mat-line);
+  background: var(--slab-bar);
+  color: var(--paper);
+  font: 12.5px/1.5 var(--mono);
+  resize: none;
+  outline: none;
+}
+.at-dg-vue {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: auto;
+  background: #fff;
+}
+.at-dg-vue > svg {
+  flex: none;
+  max-width: 100%;
+  height: auto;
+  margin: auto;
+}
+.at-dg-erreurs {
+  margin: 0;
+  padding: 6px 12px 8px 26px;
+  background: #fff3f4;
+  color: #8a1c2a;
+  font-size: 12px;
+}
+.at-dg-grand {
+  display: grid;
+  min-height: 0;
+  height: 100%;
+  overflow: auto;
+  background: #fff;
+}
+.at-dg-grand .at-dg-vue > svg {
+  max-width: none;
+}
+.at-diagramme {
+  margin: 10px 0;
+  padding: 8px;
+  background: #fff;
+  border-radius: 6px;
+  overflow-x: auto;
+}
+.at-diagramme svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+}
+.at-diagramme figcaption {
+  color: #8a1c2a;
+}
+
+/* ── Tuile du plateau du téléphone ── */
+.at-tuile {
+  display: grid;
+  align-content: center;
+  gap: 4px;
+  padding: 10px 14px;
+  min-width: 0;
+}
+.at-tuile b {
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+.at-tuile span {
+  color: var(--dim);
+  font: 13px/1.35 var(--mono);
+  overflow-wrap: anywhere;
+}
+
+/* ── Lecture en grand ── */
+.at-lecteur {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 60;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
+  background: var(--slab, #11151d);
+  color: var(--paper, #e8ebf4);
+  font-family: var(--ui);
+}
+.at-lecteur.est-tel {
+  left: 0;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.at-lecteur-barre {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  min-height: 48px;
+  padding: 6px 12px;
+  background: var(--slab-bar, #171d27);
+  border-bottom: 1px solid var(--mat-line);
+}
+.at-lecteur.est-tel .at-lecteur-barre {
+  padding-top: calc(6px + env(safe-area-inset-top));
+}
+.at-lecteur-sortie {
+  flex: none;
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--mat-line);
+  border-radius: 8px;
+  background: var(--slab);
+  color: var(--paper);
+  font-size: 14px;
+  font-weight: 600;
+}
+.at-lecteur-type {
+  flex: none;
+  font: 700 10px/1 var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+.at-lecteur-titre {
+  display: grid;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.at-lecteur-titre b,
+.at-lecteur-titre small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.at-lecteur-titre small {
+  color: var(--dim);
+  font: 11.5px/1.3 var(--mono);
+}
+.at-lecteur-outils {
+  display: flex;
+  flex: none;
+  gap: 6px;
+}
+.at-lecteur-corps {
+  position: relative;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 0;
+}
+.at-lecteur.est-tel .at-doc-boite {
+  padding: 14px 16px 40px;
+}
+.at-lecteur.est-tel .at-doc .et-note-md {
+  font-size: 16px;
+}
+.at-lecteur.est-tel .at-code {
+  font-size: 12px;
+}
+
+/* ── Section « Ateliers » de la liste du téléphone ── */
+.at-liste {
+  margin: 8px 0 0;
+  border-top: 1px solid var(--mat-line);
+  list-style: none;
+}
+.at-liste-tete {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 0;
+  background: transparent;
+  color: var(--dim);
+  font: 700 11px/1 var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-align: left;
+}
+.at-liste-tete i {
+  font-style: normal;
+  color: var(--paper);
+}
+.at-liste-tete span:last-child {
+  margin-left: auto;
+}
+.at-liste ul {
+  margin: 0;
+  padding: 0 8px 8px;
+  list-style: none;
+}
+.at-liste-ligne {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  gap: 2px 10px;
+  width: 100%;
+  min-height: 48px;
+  padding: 7px 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--paper);
+  text-align: left;
+}
+.at-liste-ligne:active {
+  background: var(--slab-bar);
+}
+.at-liste-type {
+  grid-row: 1 / 3;
+  align-self: center;
+  justify-self: start;
+  padding: 3px 6px;
+  border: 1px solid var(--mat-line);
+  border-radius: 4px;
+  color: var(--dim);
+  font: 700 9.5px/1 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.at-liste-ligne b {
+  font-size: 15px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.at-liste-ligne small {
+  color: var(--dim);
+  font: 12px/1.3 var(--mono);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Lecture HTML coupée (plus de 40 niveaux ou de 20 000 nœuds) : html-lecture.jsx le dit en bas du document. */
+.at-html-coupe {
+  margin: 12px 0 0;
+  padding: 8px 10px;
+  border: 1px dashed var(--mat-line);
+  border-radius: 6px;
+  color: var(--dim);
+  font-size: 13px;
+}
+
+/* « Ouvrir » d'un fichier cité dans le Chat : un petit bouton dans la phrase, pas une pastille de plus (capture du 13/11 :
+   deux pastilles par chemin hachaient le texte de l'agent à 390 px). */
+.at-ouvrir {
+  display: inline-flex;
+  align-items: center;
+  margin: 0 0 0 6px;
+  padding: 3px 10px;
+  min-height: 30px;
+  border: 1px solid var(--mat-line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--paper);
+  font: 600 12px/1.2 var(--ui);
+  vertical-align: baseline;
+  cursor: pointer;
+}
+.at-code-ouvrir {
+  white-space: normal;
+}

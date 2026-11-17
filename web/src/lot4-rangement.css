@@ -1,0 +1,32 @@
+/* Chantier du 11/11 : lot4-rangement (voir tasks/todo.md).
+   « Ranger » par groupes : le glissement des dalles vers leur place (plus de zone dessinée : « les liens seront suffisant »). */
+
+/* ───────── Le glissement ─────────
+   La transition n'existe QUE pendant le rangement (Board pose .est-range ~800 ms) : permanente, elle ferait traîner la
+   dalle qu'on glisse à la souris. Le décalage d'un groupe à l'autre (--dec) est posé sur chaque nœud par Board. La
+   courbe démarre vite et se pose doucement. */
+.react-flow.est-range .react-flow__node {
+  transition:
+    transform 650ms cubic-bezier(0.22, 0.8, 0.2, 1) var(--dec, 0ms),
+    width 650ms cubic-bezier(0.22, 0.8, 0.2, 1) var(--dec, 0ms),
+    height 650ms cubic-bezier(0.22, 0.8, 0.2, 1) var(--dec, 0ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .react-flow.est-range .react-flow__node {
+    transition: none;
+  }
+}
+
+/* Pendant le glissement, ce qui est tracé d'après la place FINALE des dalles (halo de celles qui attendent, liens
+   d'équipe) ne doit pas courir devant elles : ils s'effacent, puis reviennent en fondu quand les dalles ont fini. */
+.halos,
+.liens-plateau {
+  transition: opacity 500ms ease 80ms;
+}
+.react-flow.est-range .halos,
+.react-flow.est-range .liens-plateau {
+  opacity: 0;
+  transition-duration: 120ms;
+  transition-delay: 0ms;
+}

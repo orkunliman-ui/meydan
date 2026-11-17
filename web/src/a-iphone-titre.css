@@ -1,0 +1,137 @@
+/* Volet a-iphone : sélecteur de console dans le titre de la console ouverte sur le téléphone. */
+/* Essayé d'abord sous `?tel=2` (règles `[data-tel='2'] .sheet-nom / .passe` de styles.css, désormais recouvertes par
+   celles-ci, qui valent pour tous) ; tout est sous `.app.is-mobile` : l'ordinateur n'en voit rien. */
+
+/* Le titre est un bouton : le nom (et, en discussion, l'agent · l'état ou le sujet dessous), puis un chevron qui dit
+   qu'il se touche. Grille dont la première colonne ne dépasse pas la place restante : un nom trop long se coupe par
+   « … » et le chevron reste collé au texte, dans la barre (leçon du 10/11 : minmax(0, …) sur une grille à texte coupé). */
+.app.is-mobile .sheet-nom {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, max-content) auto;
+  justify-content: start;
+  align-items: center;
+  column-gap: 7px;
+  padding: 0; /* hauteur : 44 au doigt (lot3-tel.css), comme le retour */
+  background: none;
+  border: 0;
+  color: inherit;
+  text-align: left;
+}
+.app.is-mobile .sheet-nom > :is(b, .sheet-titre) {
+  min-width: 0;
+}
+.app.is-mobile .sheet-nom .sheet-titre {
+  grid-template-columns: minmax(0, 1fr);
+}
+.app.is-mobile .sheet-nom > i {
+  font: 400 13px/1 var(--ui);
+  font-style: normal;
+  opacity: 0.75;
+}
+.app.is-mobile .sheet-nom[aria-expanded='true'] > i {
+  transform: rotate(180deg);
+}
+/* Reel : le nom seul gardait la taille du bandeau (`.sheet-bar > b`), qu'il perd en passant dans le bouton. */
+[data-reel='oui'] .app.is-mobile .sheet.reel .sheet-nom > b {
+  font: 600 var(--t-tx) / 1.05 var(--ui);
+  color: var(--papier);
+}
+
+/* La liste : posée juste sous la barre (haut mesuré au toucher, MobileConsole.jsx), le fond voile le reste de la console
+   et avale le toucher qui ferme. Elle défile en elle-même, la page jamais. */
+.app.is-mobile .sheet {
+  position: relative;
+}
+.app.is-mobile .passe {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  background: rgba(8, 11, 24, 0.7);
+}
+.app.is-mobile .passe ul {
+  max-height: 72%;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  list-style: none;
+  background: var(--barre);
+  border-bottom: 1px solid var(--trait);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
+}
+/* Couché (844 × 390), 72 % tombait pile au bas de la 5e ligne : rien ne disait que la liste continue. Ici une ligne
+   coupée dépasse en bas (5,6 lignes sous une barre de 46, 5,7 sous une barre de 40). */
+@media (orientation: landscape) and (max-height: 520px) {
+  .app.is-mobile .passe ul {
+    max-height: calc(100% - 64px);
+  }
+}
+/* Une ligne : signe, nom, état, âge. 50 points de haut ; texte de 12 points au moins. */
+.app.is-mobile .passe button {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 50px;
+  padding: 0 16px 0 14px;
+  background: none;
+  border: 0;
+  border-top: 1px solid var(--trait-fin);
+  color: var(--texte);
+  text-align: left;
+}
+.app.is-mobile .passe li:first-child button {
+  border-top: 0;
+}
+.app.is-mobile .passe button b {
+  overflow: hidden;
+  font: 600 15px/1.2 var(--ui);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.app.is-mobile .passe button .etat {
+  font: 500 12px/1 var(--mono);
+  letter-spacing: 0.06em;
+  color: var(--texte-2);
+}
+.app.is-mobile .passe button .age {
+  min-width: 5ch;
+  font: 400 12px/1 var(--mono);
+  text-align: right;
+  color: var(--texte-2);
+}
+/* Aucune animation sans fin : les barres de « travaille » restent dessinées, immobiles. */
+.app.is-mobile .passe .s-working i {
+  animation: none;
+}
+/* T'ATTEND : la carte jaune de la liste. */
+.app.is-mobile .passe button.is-needs {
+  background: var(--appel);
+  color: var(--encre);
+}
+.app.is-mobile .passe button.is-needs :is(.signe, .etat, .age) {
+  font-weight: 700;
+  color: var(--encre);
+}
+/* FINI : le vert de la liste du rail (lot6-fini.css). */
+.app.is-mobile .passe button.is-fini {
+  background: linear-gradient(90deg, rgba(92, 232, 154, 0.16), rgba(92, 232, 154, 0.03) 70%);
+  box-shadow: inset 3px 0 0 var(--fini);
+}
+.app.is-mobile .passe button.is-fini .etat {
+  font-weight: 700;
+  color: var(--fini);
+}
+/* La console ouverte : un filet épais de la couleur du texte à gauche, le nom en gras. */
+.app.is-mobile .passe button.est-ici {
+  box-shadow: inset 5px 0 0 currentColor;
+}
+.app.is-mobile .passe button.est-ici:not(.is-needs, .is-fini) {
+  background: rgba(190, 205, 255, 0.08);
+}
+.app.is-mobile .passe button.est-ici b {
+  font-weight: 800;
+}

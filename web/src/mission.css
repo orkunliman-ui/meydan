@@ -1,0 +1,536 @@
+/* Carte de mission (Mission.jsx, MissionCorps.jsx) — décision d'Orkun du 17/11, raccourcis-4 : « Vue carte de mission ».
+   Ordinateur seulement (App.jsx ne la monte pas au téléphone). Une vue à part, par-dessus le plateau : toute la page,
+   fond de nuit OPAQUE (pas de flou sur un calque plein écran posé sur des terminaux vivants), une colonne par groupe.
+   Mêmes règles que le design « 3 plans » (lot-design/colonne.css) :
+   1. Jaune = à toi de toucher : le repère de ce qui t'attend, « Répondre », « Voir le capitaine ». Rien d'autre.
+   2. Les états à l'encre et au papier (Signe.jsx dit l'état par sa forme) ; ERREUR garde son rouge, FINI son vert.
+   3. Une chose grande (ce qui t'attend, en tête), le reste en 13 px (texte) et 10,5 px (étiquettes mono capitales).
+   La vue est hors de `.rail.reel3` et de `.react-flow` : les teintes de papier et les états repeints n'y existent pas.
+   Elle pose donc les siennes (leçon du 13/11 : une couleur choisie n'emprunte pas un jeton d'état repeint ailleurs), avec
+   le repli du thème Tapis (--slab-bar, --paper…), comme raccourcis.css. Une seule animation, à l'ouverture, en
+   opacité et translation ; les barres de TRAVAILLE y sont figées (leçon du 16/11 : rien qui tourne sans fin). */
+
+.mi {
+  --mi-sol: var(--sol-bas, var(--mat-deep));
+  --mi-papier: var(--texte, var(--paper));
+  --mi-papier-2: color-mix(in srgb, var(--mi-papier) 64%, transparent);
+  --mi-papier-3: color-mix(in srgb, var(--mi-papier) 46%, transparent);
+  --mi-filet: var(--trait-fin, var(--mat-line));
+  --mi-trait: var(--trait, var(--mat-line));
+  --mi-appel: var(--appel, var(--needs));
+  --mi-encre: var(--encre, var(--ink));
+  --mi-rouge: var(--error);
+  --mi-vert: var(--fini, #5ce89a);
+  --mi-focus: var(--focus, var(--tape));
+  --mi-verre: linear-gradient(180deg, #161c35, #0d1124);
+  --mi-verre-bord: rgba(214, 224, 255, 0.12);
+  --mi-verre-haut: rgba(214, 224, 255, 0.22);
+  --mi-et: 600 10.5px/1.2 var(--mono);
+  position: fixed;
+  inset: 0;
+  z-index: 1120; /* au-dessus du plateau et de la console agrandie ; sous l'aide des touches (1150) */
+  display: flex;
+  flex-direction: column;
+  background: radial-gradient(110% 55% at 8% 0%, #141c3c, rgba(8, 11, 24, 0) 70%), var(--mi-sol);
+  color: var(--mi-papier);
+  font: 400 13px/1.35 var(--ui);
+  -webkit-font-smoothing: antialiased;
+  animation: mi-entre 160ms ease-out;
+}
+@keyframes mi-entre {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mi {
+    animation: none;
+  }
+}
+/* Design « 3 plans » (par défaut) : les états à l'encre et au papier dans la vue, comme dans la colonne. */
+[data-theme='reverbere'][data-reel3='oui'] .mi {
+  --working: var(--mi-papier);
+  --starting: var(--mi-papier-2);
+  --running: var(--mi-papier-2);
+  --ready: var(--mi-papier-2);
+  --shell: var(--mi-papier-3);
+  --closed: var(--mi-papier-3);
+}
+/* Tapis : son tapis vert, ses étiquettes. Ses signes ne sont dessinés qu'en Réverbère : ici, une pastille de la couleur
+   de l'état (l'état se lit aussi en toutes lettres), à la même place. */
+[data-theme='tapis'] .mi {
+  --mi-verre: var(--slab-bar);
+  --mi-verre-bord: var(--mat-line);
+  --mi-verre-haut: var(--mat-line);
+  background: var(--mat-deep);
+}
+[data-theme='tapis'] .mi .signe {
+  flex: none;
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--mi-st, var(--mi-papier-3));
+}
+[data-theme='tapis'] .mi .signe i {
+  display: none;
+}
+.mi .s-working i {
+  animation: none;
+}
+.mi :focus-visible {
+  outline: 2px solid var(--mi-focus);
+  outline-offset: -2px;
+}
+
+/* ── En-tête : ce qui t'attend en grand, le bilan, « Revenir au plateau » ── */
+.mi-tete {
+  flex: none;
+  display: flex;
+  align-items: flex-end;
+  gap: 24px;
+  padding: 20px 28px 16px 32px;
+  border-bottom: 1px solid var(--mi-filet);
+}
+.mi-titres {
+  flex: 1;
+  min-width: 0;
+}
+.mi-sur,
+.mi-bilan {
+  margin: 0;
+  font: var(--mi-et);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--mi-papier-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mi-tete h1 {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 10px 0 9px;
+  font: 800 36px/1 var(--ui);
+  letter-spacing: -0.03em;
+  color: var(--mi-papier);
+}
+/* Le repère de ce qui t'attend : le petit carré jaune, seul jaune de l'en-tête. */
+.mi-tete h1.est-plein::before {
+  content: '';
+  flex: none;
+  width: 14px;
+  height: 14px;
+  background: var(--mi-appel);
+}
+.mi-aide {
+  flex: none;
+  margin: 0 0 12px;
+  font: 400 13px/1.3 var(--ui);
+  color: var(--mi-papier-3);
+}
+.mi-revenir {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  margin-bottom: 2px;
+  padding: 0 10px 0 16px;
+  background: none;
+  border: 1px solid var(--mi-trait);
+  border-radius: 3px;
+  font: 600 13px/1 var(--ui);
+  color: var(--mi-papier);
+  cursor: pointer;
+}
+.mi-revenir:hover {
+  background: color-mix(in srgb, var(--mi-papier) 7%, transparent);
+}
+.mi-revenir kbd {
+  min-width: 22px;
+  padding: 4px 6px 3px;
+  border: 1px solid var(--mi-trait);
+  border-radius: 3px;
+  font: var(--mi-et);
+  letter-spacing: 0.06em;
+  text-align: center;
+  color: var(--mi-papier-2);
+}
+
+/* Écran bas (MacBook 1736 × 884, portable 1366 × 768) : l'en-tête se serre, la place va aux colonnes. */
+@media (max-height: 960px) {
+  .mi-tete {
+    padding-top: 14px;
+    padding-bottom: 12px;
+  }
+  .mi-tete h1 {
+    margin: 7px 0 6px;
+    font-size: 30px;
+  }
+  .mi-corps {
+    padding-top: 12px;
+  }
+  .mi-liste {
+    gap: 7px;
+    padding-top: 10px;
+  }
+}
+
+/* ── Colonnes : une par groupe, chacune défile seule si elle déborde (la page, jamais) ── */
+.mi-corps {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  padding: 18px 32px 0;
+}
+.mi-colonnes {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  gap: 22px;
+}
+.mi-col {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.mi-col h2 {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0;
+  padding: 0 2px 11px;
+  border-bottom: 1px solid var(--mi-filet);
+  font: var(--mi-et);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--mi-papier-2);
+}
+.mi-n {
+  margin-left: auto;
+  letter-spacing: 0;
+  color: var(--mi-papier);
+}
+.mi-col-attend.est-plein h2::before {
+  content: '';
+  flex: none;
+  width: 7px;
+  height: 7px;
+  background: var(--mi-appel);
+}
+.mi-col-erreur h2 {
+  color: var(--mi-rouge);
+}
+.mi-col-fini h2 {
+  color: var(--mi-vert);
+}
+.mi-liste {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 12px 0 24px;
+  list-style: none;
+  overflow: hidden auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--mi-trait) transparent;
+}
+.mi-liste > li {
+  flex: none;
+  min-width: 0;
+}
+.mi-suite {
+  flex: none;
+  margin: 0;
+  padding: 9px 2px 14px;
+  border-top: 1px solid var(--mi-filet);
+  font: var(--mi-et);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--mi-papier-2);
+}
+.mi-col-attend .mi-suite {
+  color: var(--mi-papier);
+}
+.mi-vide {
+  margin: 14px 2px 0;
+  max-width: 34ch;
+  font: 400 13px/1.4 var(--ui);
+  color: var(--mi-papier-3);
+}
+
+/* ── Une carte : nom et âge ; projet, agent, état ; la question ; ce qu'elle fait ; « Répondre » ── */
+.mi-carte,
+.mi-equipe {
+  background: var(--mi-verre);
+  border: 1px solid var(--mi-verre-bord);
+  border-top-color: var(--mi-verre-haut);
+  border-radius: 4px;
+  box-shadow: 0 18px 30px -22px rgba(0, 0, 0, 0.95);
+}
+.mi-carte,
+.mi-equipe-tete {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr); /* une grille qui porte un texte à couper (leçon du 10/11) */
+  gap: 6px;
+  width: 100%;
+  margin: 0;
+  padding: 11px 13px 12px;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.mi-equipe-tete {
+  background: none;
+  border: 0;
+  border-radius: 4px 4px 0 0;
+}
+div.mi-equipe-tete {
+  cursor: default;
+}
+.mi-carte:hover,
+.mi-equipe:has(.mi-equipe-tete:hover) {
+  border-color: rgba(214, 224, 255, 0.24);
+}
+.mi-l1,
+.mi-l2 {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+.mi-l1 .signe {
+  font-size: 11px;
+}
+.mi-nom {
+  flex: 1;
+  min-width: 0;
+  font: 600 13px/1.25 var(--ui);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mi-age {
+  flex: none;
+  font: 400 10.5px/1 var(--mono);
+  color: var(--mi-papier-3);
+  white-space: nowrap;
+}
+.mi-l2 {
+  align-items: baseline;
+  font: 400 10.5px/1.25 var(--mono);
+  color: var(--mi-papier-3);
+}
+.mi-ou {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mi-etat {
+  flex: none;
+  font: var(--mi-et);
+  font-style: normal;
+  letter-spacing: 0.1em;
+  color: var(--mi-st, var(--mi-papier-2));
+  white-space: nowrap;
+}
+.mi .is-working,
+.mi .is-starting,
+.mi .is-running {
+  --mi-st: var(--working);
+}
+.mi .is-ready,
+.mi .is-shell {
+  --mi-st: var(--ready);
+}
+.mi .is-error {
+  --mi-st: var(--mi-rouge);
+}
+.mi .is-fini {
+  --mi-st: var(--mi-vert);
+}
+.mi .is-needs {
+  --mi-st: var(--mi-appel);
+}
+/* La question (ou le message d'erreur) : texte libre d'un agent, coupé au mot ou au caractère (leçon du 11/11). */
+.mi-q,
+.mi-fait {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
+}
+.mi-q {
+  -webkit-line-clamp: 3;
+  font: 600 13px/1.32 var(--ui);
+  color: var(--mi-papier);
+}
+.mi-fait {
+  -webkit-line-clamp: 2;
+  font: 400 13px/1.3 var(--ui);
+  color: var(--mi-papier-2);
+}
+.mi-alertes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+.mi-alertes .silence-badge,
+.mi-quota {
+  max-width: 100%;
+  padding: 3px 6px 2px;
+  border: 1px solid currentColor;
+  font: var(--mi-et);
+  letter-spacing: 0.08em;
+  color: var(--mi-papier);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* La question et son bouton sur une rangée ; le bouton en bas à droite de la question. */
+.mi-repondre {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  min-width: 0;
+  margin-top: 2px;
+}
+.mi-repondre .mi-q {
+  flex: 1;
+  min-width: 0;
+}
+.mi-repondre .mi-go {
+  flex: none;
+  margin: 0 0 -1px;
+}
+/* « Répondre › » : le bouton jaune de la colonne (même matière), le seul jaune de la carte avec son repère. */
+.mi-go {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+  padding: 8px 12px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--mi-appel) 78%, #fff) 0%, var(--mi-appel) 46%, color-mix(in srgb, var(--mi-appel) 86%, #8a7a00) 100%);
+  border-radius: 3px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.62), inset 0 -1px 0 rgba(90, 80, 0, 0.28), 0 5px 12px rgba(0, 0, 0, 0.55);
+  font: 700 13px/1 var(--ui);
+  letter-spacing: 0.02em;
+  color: var(--mi-encre);
+}
+.mi-go i {
+  font: 400 13px/1 var(--mono);
+  font-style: normal;
+}
+.mi-carte:hover .mi-go,
+.mi-equipe-tete:hover .mi-go {
+  background: color-mix(in srgb, var(--mi-appel) 84%, #fff);
+}
+
+/* Ce qui t'attend : le repère jaune à gauche (la colonne de la liste fait de même). */
+.mi-carte.is-needs,
+.mi-equipe.is-attend {
+  box-shadow: inset 2px 0 0 var(--mi-appel), 0 18px 30px -22px rgba(0, 0, 0, 0.95);
+}
+.mi-carte.is-needs .signe {
+  color: var(--mi-appel);
+}
+/* ERREUR : ses hachures rouges, comme la ligne de la liste. */
+.mi-carte.is-error {
+  background: repeating-linear-gradient(-45deg, rgba(255, 93, 108, 0.14) 0 6px, rgba(255, 93, 108, 0.04) 6px 12px), var(--mi-verre);
+  border-color: color-mix(in srgb, var(--mi-rouge) 45%, transparent);
+}
+/* FINI : le filet et la lueur verte de la liste. */
+.mi-carte.is-fini {
+  background: linear-gradient(90deg, rgba(92, 232, 154, 0.14), rgba(92, 232, 154, 0.02) 70%), var(--mi-verre);
+  box-shadow: inset 3px 0 0 var(--mi-vert), 0 18px 30px -22px rgba(0, 0, 0, 0.95);
+}
+
+/* ── Une équipe : son en-tête, puis le capitaine et les équipiers ── */
+.mi-tag {
+  flex: none;
+  font: var(--mi-et);
+  font-style: normal;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--mi-papier-3);
+}
+.mi-equipe.is-attend .mi-tag {
+  color: var(--mi-appel);
+}
+.mi-membres {
+  margin: 0;
+  padding: 2px 0 6px;
+  list-style: none;
+  border-top: 1px solid var(--mi-filet);
+}
+.mi-membre {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  column-gap: 9px;
+  row-gap: 3px;
+  width: 100%;
+  margin: 0;
+  padding: 7px 13px 7px 24px;
+  background: none;
+  border: 0;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.mi-membre:hover {
+  background: color-mix(in srgb, var(--mi-papier) 5%, transparent);
+}
+.mi-membre .signe {
+  font-size: 10px;
+}
+.mi-membre b {
+  min-width: 0;
+  font: 600 13px/1.25 var(--ui);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mi-membre small,
+.mi-membre .mi-alertes {
+  grid-column: 2 / -1;
+  min-width: 0;
+}
+.mi-membre small {
+  font: 400 10.5px/1.3 var(--mono);
+  color: var(--mi-papier-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mi-membre.is-needs {
+  box-shadow: inset 2px 0 0 var(--mi-appel);
+}
+.mi-membre.is-needs small {
+  color: var(--mi-papier);
+}
+
+/* Une demande de permission (« Bash · npm run deploy -- --prod ») : la commande en police de terminal. En Host Grotesk,
+   deux traits d'union se touchent et « -- » se lit comme un tiret long (« — —prod » sur la capture du banc). */
+.mi-q code {
+  padding: 0 2px;
+  font: 400 12px/1.32 var(--mono);
+  color: var(--mi-papier);
+  overflow-wrap: anywhere;
+}

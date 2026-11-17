@@ -1,0 +1,139 @@
+/* Lot 5 (11/11) : liens d'équipe ?liens=c|d|e (LiensVivants.jsx). Orkun, sur les liens a et b : « un meilleur lien. La
+   c'est moche ». Principe : un fil fin et net (1,5 px à l'écran à tout zoom), une aura très légère, et seul ce qui
+   circule s'anime (particules ou lumière qui voyagent, anneau à l'arrivée). Au calme : le fil seul, sans mouvement.
+   Couleurs : --lc / --lc2 de .ve-lien (lot4-vie.css) — turquoise travaille, jaune appel ou retour, vert fait. */
+
+/* Les règles des anciens liens (`.ve-lien circle`, `.ve-lien.est-travail circle`… dans styles.css) peignaient en aplat
+   tout cercle d'un lien, particules et masques compris : remises à zéro ici (même poids, feuille chargée après). Les
+   dégradés sont posés en `style` sur chaque élément, qui passe devant toute règle. */
+.ve-lien.lx circle {
+  fill: none;
+  stroke: none;
+}
+.lx path {
+  fill: none;
+  vector-effect: non-scaling-stroke;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.lx-aura {
+  stroke: var(--lc);
+  stroke-width: 7px;
+  opacity: 0.09;
+}
+.lx-fil {
+  stroke-width: 1.5px;
+  opacity: 0.9;
+}
+.lx.est-calme .lx-aura {
+  display: none;
+}
+.lx.est-calme .lx-fil,
+.lx.est-fait .lx-fil {
+  stroke-width: 1.2px;
+  opacity: 0.5;
+}
+.lx.est-appel .lx-aura,
+.lx.est-retour .lx-aura {
+  opacity: 0.14;
+}
+
+/* Les dégradés des particules : blanc au cœur, couleur de l'état, puis rien. */
+.lx-g0 {
+  stop-color: #fff;
+  stop-opacity: 1;
+}
+.lx-g1 {
+  stop-color: var(--lc2);
+  stop-opacity: 0.55;
+}
+.lx-g2 {
+  stop-color: var(--lc);
+  stop-opacity: 0;
+}
+/* Fibre : paliers intermédiaires pour une décroissance sans cassure (ni anneau ni bord visible). */
+.lx-g05 {
+  stop-color: var(--lc2);
+  stop-opacity: 0.92;
+}
+.lx-g15 {
+  stop-color: var(--lc);
+  stop-opacity: 0.2;
+}
+.lx-q1 {
+  stop-color: var(--lc2);
+  stop-opacity: 0.16;
+}
+.lx-q2 {
+  stop-color: var(--lc2);
+  stop-opacity: 0.7;
+}
+.lx-echelle {
+  transform: scale(var(--k));
+}
+/* Téléphone : le plateau reste immobile (lot5-memoire.css) ; les particules n'y sont pas dessinées. */
+.app.is-mobile .liens-plateau :is(.lx-paquet, .lx-ping) {
+  display: none;
+}
+
+/* Rayons regrossis au dézoom (--zb, borné 0,45–1) : la particule garde sa taille à l'écran. */
+.lx {
+  --k: calc(1 / var(--zb, 1));
+}
+.ve-lien.lx .lx-paquet-halo {
+  r: calc(12px * var(--k));
+}
+.ve-lien.lx .lx-paquet-halo.lx-petit {
+  r: calc(7px * var(--k));
+}
+.ve-lien.lx .lx-paquet-coeur {
+  r: calc(2.2px * var(--k));
+  fill: #fff;
+}
+.lx-trait-corps {
+  transform: scale(var(--k));
+}
+.ve-lien.lx .lx-ping {
+  r: calc(5px * var(--k));
+  fill: none;
+  stroke: var(--lc2);
+  stroke-width: 1.5px;
+  vector-effect: non-scaling-stroke;
+}
+
+/* Les prises : un anneau côté capitaine, un point côté équipier. */
+.ve-lien.lx .lx-prise-chef {
+  r: calc(5px * var(--k));
+  fill: var(--sol-bas, #080b18);
+  stroke: var(--lc);
+  stroke-width: 1.5px;
+  vector-effect: non-scaling-stroke;
+}
+.ve-lien.lx .lx-prise {
+  r: calc(3.5px * var(--k));
+  fill: var(--lc);
+}
+.ve-lien.lx.est-calme :is(.lx-prise-chef, .lx-prise) {
+  opacity: 0.6;
+}
+
+/* (e) Onde : une lumière douce glisse le long du fil (masque circulaire qui voyage). */
+.lx-onde {
+  stroke: var(--lc2);
+  stroke-width: 2.4px;
+}
+.lx-onde-aura {
+  stroke: var(--lc);
+  stroke-width: 10px;
+  opacity: 0.35;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lx-paquet,
+  .lx-trait,
+  .lx-ping,
+  .lx-onde,
+  .lx-onde-aura {
+    display: none;
+  }
+}

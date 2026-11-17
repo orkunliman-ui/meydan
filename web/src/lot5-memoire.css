@@ -1,0 +1,52 @@
+/* 11/11 : « en version iphone, quand je mets le mode paysage la page crash et n'affiche plus rien ». Mesuré au banc
+   (iPhone couché, densité 3, 14 consoles en taille « rangée » 1120 × 720) : ~37 Mpx de calques composités, soit ~1,3 Go
+   de mémoire graphique pour Safari, qui dessine chaque calque à sa pleine taille × densité² même dézoomé → onglet tué.
+   Deux causes, et rien d'autre (avec les deux retirées : 3 calques, ~0,7 Mpx) :
+   1. de loin, la tuile couvre le terminal, mais xterm restait peint dessous, avec sa zone de défilement (un calque par
+      console) ;
+   2. toute animation sans fin dans une dalle (barres « travaille », halo du cadre vivant, appel…) fait passer en calque
+      tout ce qui est peint par-dessus (la tuile, le bouton qui ouvre la console sur le téléphone). */
+
+/* 1. De loin (thème Réverbère : tuile opaque), le terminal n'est plus peint ; sa place reste, sa taille ne bouge pas. */
+.slab.is-far:has(.slab-far.tuile) .xterm {
+  visibility: hidden;
+}
+
+/* 2. Téléphone : le plateau est une vue de haut (toucher une console l'ouvre en grand) : immobile, et ses terminaux ne
+   défilent pas sur place. La console ouverte, elle, n'est pas dans .react-flow et garde tout. */
+/* (Une liste :is() ne peut pas porter de pseudo-éléments : trois sélecteurs.) */
+.app.is-mobile .react-flow *,
+.app.is-mobile .react-flow *::before,
+.app.is-mobile .react-flow *::after {
+  animation: none !important;
+}
+.app.is-mobile .react-flow .xterm-viewport {
+  overflow: hidden !important;
+}
+
+/* 3. Téléphone, fluidité (11/11 : « c'est vrmt pas fluide », le plateau en paysage). Sans calques (1 et 2), chaque image
+   d'un glissement repeint tout le plateau : rien de cher à repeindre. Fond uni (le dallage, rendu à chaque image, n'est
+   plus monté : Board.jsx), aucune ombre floue ni halo ; l'état d'une console se lit à un filet net de sa couleur, d'une
+   épaisseur constante à l'écran (--zoom : le zoom réel, posé par le plateau). */
+.app.is-mobile .react-flow {
+  background: var(--sol, #0e1429);
+}
+.app.is-mobile .react-flow .slab {
+  box-shadow: 0 0 0 calc(1px / var(--zoom, 1)) rgba(190, 205, 255, 0.22);
+}
+.app.is-mobile .react-flow .slab.is-working {
+  box-shadow: 0 0 0 calc(2px / var(--zoom, 1)) var(--working, #3fd9c4);
+}
+.app.is-mobile .react-flow .slab.is-needs {
+  box-shadow: 0 0 0 calc(3px / var(--zoom, 1)) var(--appel, #f2e94e);
+}
+.app.is-mobile .react-flow .slab.is-fini {
+  box-shadow: 0 0 0 calc(2px / var(--zoom, 1)) var(--fini, #5ce89a);
+}
+.app.is-mobile .react-flow .slab::before,
+.app.is-mobile .react-flow .slab::after {
+  display: none;
+}
+.app.is-mobile .react-flow .halos {
+  display: none;
+}

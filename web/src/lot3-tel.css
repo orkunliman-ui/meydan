@@ -1,0 +1,130 @@
+/* Chantier du 11/11 : lot3-tel (voir tasks/todo.md). Cibles au doigt, paysage, écran d'accueil iOS.
+   Tout est en surcharge : cette feuille est chargée après styles.css et reverbere.css, et chaque règle y est précédée de
+   `.app` pour passer devant les règles du thème (`[data-theme] .x`, même poids) sans !important. */
+
+/* ── 1. Cibles au doigt : 44 points de haut au moins (audit du 11/11, constat 2) ─────────────────────────────────
+   Seulement sous un pointeur grossier : la souris garde ses boutons compacts. On agrandit le bouton lui-même (pas un
+   halo invisible) pour que ce qui se mesure soit ce qui se touche. */
+@media (pointer: coarse) {
+  /* Filtres de la liste (Tout / T'attend / Travaille / Au repos) : 38 → 44. */
+  .app .tri button {
+    height: 44px;
+    border-radius: 22px;
+  }
+  .app .tri {
+    padding-block: 6px 8px; /* la rangée grossit de 10 points : on rogne le blanc autour pour ne pas pousser la liste */
+  }
+  /* « Arrêter » d'une équipe : un lien souligné de 31 points ; la zone invisible d'origine (::after) reste, mais la
+     mesure et le toucher doivent coïncider. */
+  .app .is-mobile .arreter,
+  .app.is-mobile .arreter {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding-block: 0;
+  }
+  /* « Voir le terminal › » sous une question : 33 → 44. */
+  .app .fil-question .fil-lien {
+    min-height: 44px;
+  }
+  /* Bandeau du plateau couché (« Annuler » du Ranger, « Terminé » du réglage de taille) : 34 → 44. */
+  .app .ve-bandeau button {
+    height: 44px;
+  }
+  .app .ve-bandeau {
+    padding-right: 0;
+  }
+  /* « Annuler » de Ranger dans l'en-tête de la colonne (40 → 44). */
+  .app .ranger-ouvre {
+    height: 44px;
+  }
+  /* Exemples de la barre de commande. */
+  /* Les panneaux (Ordre, Boucle) sont montés hors de `.app` : pas de préfixe. */
+  .ordre-exemples button {
+    min-height: 44px;
+  }
+  /* Bouton « Ordre » : 40 → 44 ; sa version courte (plateau couché) passe de 40 × 40 à 44 × 44. */
+  .app .ordre-ouvre {
+    height: 44px;
+  }
+  .app .ordre-ouvre.est-court {
+    width: 44px;
+    min-width: 44px;
+  }
+  /* Pas des réglages de boucle (− / +) : la case fait 44, ses boutons 42 (bordure d'1 px de chaque côté). */
+  .boucle-compte {
+    height: 46px;
+  }
+  .boucle-compte button {
+    height: 44px;
+  }
+  /* Bascule Plateau / Tuiles / Liste du téléphone couché, et « + Nouvelle console ». */
+  .app .ve-bascule button {
+    height: 44px;
+  }
+  .app .ve-plus {
+    height: 44px;
+  }
+  /* « Copier la réponse » sous une réponse de l'agent. */
+  .app .fil-copier {
+    min-height: 44px;
+  }
+  /* Retour à la liste : 40 → 44 en paysage (le thème donne 44, la règle de l'en-tête bas de styles.css le ramène à 40). */
+  .app.is-mobile .sheet-back,
+  .app.is-mobile .sheet-nom {
+    height: 44px;
+  }
+}
+
+/* ── 2. Paysage : la conversation doit garder l'essentiel de la hauteur (audit, constat 4) ────────────────────────
+   844 × 390 : l'en-tête faisait 58, la barre d'envoi 126 (deux rangées dans un bloc arrondi) : le fil n'avait que 54 %.
+   Ici : en-tête de 46 (le bouton Chat / >_ de 44 y tient), et le champ + joindre + dicter + envoyer sur UNE rangée. */
+@media (pointer: coarse) and (orientation: landscape) and (max-height: 520px) {
+  .app :is(.sheet, .slab).en-fil .sheet-bar {
+    height: 46px;
+    padding-block: 0;
+  }
+  .app.is-mobile .sheet-vue {
+    height: 44px; /* styles.css le ramène à 34 en paysage : trop bas pour un doigt */
+    margin-block: 0;
+  }
+  .app :is(.sheet, .slab).en-fil .envoi {
+    padding: 4px 12px calc(4px + env(safe-area-inset-bottom));
+  }
+  .app :is(.sheet, .slab).en-fil .envoi-rang {
+    padding: 0 0 0 0;
+  }
+  .app :is(.sheet, .slab).en-fil .envoi-rang:has(textarea) {
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    grid-template-areas: 'joindre champ dicter envoyer';
+    align-items: center;
+    gap: 6px;
+  }
+  /* Le champ reste à 16 px au moins : en dessous, l'iPhone zoome sur la page au toucher (réglé : 17 px). */
+  .app :is(.sheet, .slab).en-fil .envoi textarea {
+    min-height: 32px;
+    padding: 6px 8px 4px;
+    font-size: 17px;
+  }
+}
+
+/* ── 3. Écran d'accueil d'iOS : barre d'état translucide (apple-mobile-web-app-status-bar-style = black-translucent) ──
+   En plein écran (display-mode: standalone) la page passe SOUS l'heure et l'encoche : sans marge haute, le nom de la
+   console et le bouton Retour seraient cachés. env() vaut 0 partout ailleurs, la règle ne coûte rien dans Safari. */
+@media (display-mode: standalone) and (orientation: portrait) {
+  /* Liste du téléphone : la colonne (fond dégradé compris) descend sous l'heure. */
+  .app.is-mobile .rail {
+    padding-top: env(safe-area-inset-top);
+  }
+  /* Console ouverte (terminal et discussion) : la barre du haut grandit de la zone sûre, son contenu reste centré
+     dans sa hauteur d'origine (50 au terminal, 58 en discussion). Seulement en portrait : couché, l'iPhone n'affiche
+     pas d'heure (zone sûre haute nulle) et la barre basse de la section 2 doit rester à 44 / 46. */
+  .app.is-mobile .sheet-bar {
+    height: calc(50px + env(safe-area-inset-top));
+    padding-top: env(safe-area-inset-top);
+  }
+  .app.is-mobile .sheet.en-fil .sheet-bar {
+    height: calc(58px + env(safe-area-inset-top));
+  }
+}

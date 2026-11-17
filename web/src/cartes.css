@@ -1,0 +1,243 @@
+/* Plateau étendu (volet du 11/11) : le cadre commun des cartes (note, web, git) et la barre « Ajouter ».
+   Préfixe « et- » partout : la classe « .carte » existe déjà dans la colonne (reel.css, lot3-menus.css).
+   Couleurs par les jetons des deux thèmes (Réverbère les redéfinit : --slab, --slab-bar, --paper, --dim, --mat-line). */
+
+.react-flow__node[class*='react-flow__node-carte-'] {
+  border-radius: 6px;
+}
+.et-carte {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
+  background: var(--slab);
+  color: var(--paper);
+  border: 1px solid var(--mat-line);
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 18px 40px -24px rgba(0, 0, 0, 0.8);
+  font-family: var(--ui);
+}
+.et-carte.est-choisie {
+  border-color: var(--paper);
+}
+/* Plateau du téléphone : pas d'ombre floue (calques), tuile fixe. */
+.et-carte.est-tel {
+  box-shadow: none;
+}
+.et-barre {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  height: 34px;
+  padding: 0 6px 0 10px;
+  background: var(--slab-bar);
+  border-bottom: 1px solid var(--mat-line);
+  cursor: grab;
+  user-select: none;
+}
+.et-carte.est-tel .et-barre {
+  cursor: default;
+}
+.et-type {
+  flex: none;
+  font: 700 10px/1 var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+.et-titre {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+.et-renomme {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 24px;
+  padding: 0 6px;
+  background: var(--slab);
+  border: 1px solid var(--mat-line);
+  border-radius: 4px;
+}
+.et-retire {
+  flex: none;
+  min-width: 26px;
+  height: 24px;
+  padding: 0 6px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--dim);
+  font-size: 16px;
+  line-height: 1;
+}
+.et-retire:hover {
+  color: var(--paper);
+  border-color: var(--mat-line);
+}
+.et-retire.est-armee {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--error);
+  border-color: var(--error);
+}
+.et-corps {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+}
+/* Vue de loin : le nom en grand, lisible au zoom où les consoles deviennent des tuiles. */
+.et-carte.est-loin .et-barre {
+  height: 100%;
+  border-bottom: 0;
+  justify-content: center;
+}
+.et-carte.est-loin {
+  grid-template-rows: minmax(0, 1fr) 0;
+}
+.et-carte.est-loin .et-titre {
+  flex: 0 1 auto;
+  font-size: 44px;
+}
+.et-carte.est-loin .et-type {
+  font-size: 22px;
+}
+
+/* La barre « Ajouter » (ordinateur). */
+.et-outils {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  background: var(--slab-bar);
+  border: 1px solid var(--mat-line);
+  border-radius: 8px;
+}
+.et-outils-nom {
+  padding: 0 4px;
+  font: 700 10px/1 var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+.et-outils button {
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--mat-line);
+  border-radius: 6px;
+  background: var(--slab);
+  color: var(--paper);
+  font-size: 13px;
+}
+.et-outils button:hover {
+  border-color: var(--paper);
+}
+.et-outils-erreur {
+  max-width: 320px;
+  color: var(--error);
+  font-size: 12px;
+}
+
+/* ═══ Plateau créatif (volet du 13/11) : la barre du pied du plateau — « Ajouter ▴ » (menu vers le haut), les outils
+   Flèche / Stylo / Gomme (outil.js) et la couleur de l'encre. Préfixe « cr- ». Aucun jaune : un outil pris est au papier. ═══ */
+.cr-ajouter {
+  position: relative;
+}
+.cr-ajouter > button span {
+  margin-left: 2px;
+  color: var(--dim);
+}
+.cr-ajouter > button.est-ouvert {
+  border-color: var(--paper);
+}
+.cr-menu {
+  position: absolute;
+  left: -6px;
+  bottom: calc(100% + 10px);
+  z-index: 6;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 190px;
+  padding: 5px;
+  background: var(--slab-bar);
+  border: 1px solid var(--mat-line);
+  border-radius: 8px;
+  box-shadow: 0 18px 40px -20px rgba(0, 0, 0, 0.85);
+}
+.et-outils .cr-menu button {
+  height: 30px;
+  border-color: transparent;
+  background: transparent;
+  text-align: left;
+}
+.et-outils .cr-menu button:hover,
+.et-outils .cr-menu button:focus-visible {
+  border-color: var(--mat-line);
+  background: var(--slab);
+}
+.cr-menu hr {
+  width: 100%;
+  margin: 4px 0;
+  border: 0;
+  border-top: 1px solid var(--mat-line);
+}
+.cr-sep {
+  align-self: stretch;
+  width: 1px;
+  margin: 2px 2px;
+  background: var(--mat-line);
+}
+.et-outils button.cr-outil.est-pris {
+  border-color: var(--paper);
+  background: var(--paper);
+  color: var(--ink);
+}
+.cr-couleurs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 4px;
+}
+.et-outils button.cr-pastille {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid var(--mat-line);
+  border-radius: 50%;
+  background: var(--cr-c);
+}
+.et-outils button.cr-pastille.est-prise {
+  outline: 2px solid var(--paper);
+  outline-offset: 2px;
+}
+/* Les couleurs permises (cartes-types.js, COULEURS) : par les jetons du thème, avec un repli pour un thème qui n'en a pas. */
+.cr-coul-papier {
+  --cr-c: var(--paper);
+}
+.cr-coul-gris {
+  --cr-c: var(--dim);
+}
+.cr-coul-bleu {
+  --cr-c: var(--focus, #6e9bff);
+}
+.cr-coul-turquoise {
+  --cr-c: var(--working, #3fd9c4);
+}
+.cr-coul-vert {
+  --cr-c: var(--ready, #9ad8a6);
+}
+.cr-coul-rouge {
+  --cr-c: var(--error, #ff5d6c);
+}
+/* Design 3 plans (lot-design/plateau.css) : sur le plateau de l'ordinateur, --working et --ready passent au papier (les
+   états des consoles) ; une couleur choisie par Orkun pour une forme, une flèche ou l'encre garde sa teinte. */
+[data-theme='reverbere'] .cr-coul-turquoise {
+  --cr-c: #3fd9c4;
+}
+[data-theme='reverbere'] .cr-coul-vert {
+  --cr-c: #9ad8a6;
+}

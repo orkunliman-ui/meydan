@@ -1,0 +1,291 @@
+/* Chantier du 11/11 : lot4-vie (voir tasks/todo.md).
+   Orkun : « le cadre plus vivant quand la console bosse » et « le lien animé entre consoles plus voyant et stylé ».
+   Trois cadres (?vie=a|b|c) et deux liens (?liens=a|b) à choisir ; sans paramètre, l'aspect actuel reste. Tout est
+   animé en `transform`, `opacity`, `offset-distance` ou propriété enregistrée : jamais de mise en page recalculée, la
+   taille du terminal ne bouge pas. Turquoise = « travaille » ; l'aplat jaune reste réservé à ce qui attend Orkun. */
+
+@property --ang {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+/* ══ CADRE VIVANT d'une dalle qui travaille (plateau .slab, console agrandie .plein) ═══════════════════════════ */
+:is(.vie-a, .vie-b, .vie-c) .slab.is-working::before,
+.vie-c .slab.is-working::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+  z-index: 6; /* au-dessus du terminal, sans jamais recevoir un clic */
+}
+
+/* Dézoomé, la dalle est réduite avec son cadre : sans correction le trait d'un pixel et demi disparaît. `--zb` (zoom posé
+   par le plateau, borné à 0,45–1) sert à regrossir le cadre pour qu'il garde sa présence à l'écran. */
+:is(.vie-a, .vie-b, .vie-c) .slab {
+  --k: calc(1 / var(--zb, 1));
+}
+
+/* (a) Une lumière qui court le long du cadre : anneau de 2 px découpé dans un dégradé conique qui tourne. */
+.vie-a .slab.is-working::before {
+  inset: calc(-1px * var(--k));
+  padding: calc(2px * var(--k));
+  border-radius: 2px;
+  background: conic-gradient(from var(--ang), rgba(63, 217, 196, 0.24) 0 25%, rgba(63, 217, 196, 0.5) 50%, var(--working) 80%, #eafffb 96%, rgba(63, 217, 196, 0.24) 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  animation: vie-tour 3.6s linear infinite;
+}
+/* Halo fixe autour de l'anneau : une ombre qui ne bouge pas, donc sans coût d'animation. */
+.vie-a .slab.is-working::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 2px;
+  pointer-events: none;
+  box-shadow: 0 0 calc(22px * var(--k)) -2px rgba(63, 217, 196, 0.3);
+}
+@keyframes vie-tour {
+  to {
+    --ang: 360deg;
+  }
+}
+
+/* (b) Une respiration : halo turquoise qui gonfle puis se retire ; seule l'opacité est animée. */
+.vie-b .slab.is-working::before {
+  inset: 0;
+  border-radius: 2px;
+  box-shadow: 0 0 0 calc(1px * var(--k)) rgba(63, 217, 196, 0.7), 0 0 calc(40px * var(--k)) calc(6px * var(--k)) rgba(63, 217, 196, 0.5), inset 0 0 calc(34px * var(--k)) rgba(63, 217, 196, 0.22);
+  opacity: 0.12;
+  animation: vie-souffle 3.4s ease-in-out infinite;
+}
+@keyframes vie-souffle {
+  50% {
+    opacity: 1;
+  }
+}
+
+/* (c) Une comète sur le cadre : filet turquoise fixe, et une étincelle à traîne qui fait le tour de la dalle
+   (`offset-path` suit le bord, son orientation suit la tangente). */
+.vie-c .slab.is-working::before {
+  inset: -1px;
+  border-radius: 2px;
+  box-shadow: inset 0 0 0 calc(1px * var(--k)) rgba(63, 217, 196, 0.4);
+}
+.vie-c .slab.is-working::after {
+  left: 0;
+  top: 0;
+  width: calc(170px * var(--k));
+  height: calc(4px * var(--k));
+  border-radius: 3px;
+  background: linear-gradient(90deg, transparent, rgba(63, 217, 196, 0.55) 55%, #dffff9);
+  box-shadow: 0 0 calc(14px * var(--k)) calc(2px * var(--k)) rgba(63, 217, 196, 0.8);
+  offset-path: inset(-1px round 2px);
+  offset-rotate: auto;
+  offset-anchor: 100% 50%;
+  animation: vie-comete 4.2s linear infinite;
+}
+@keyframes vie-comete {
+  from {
+    offset-distance: 0%;
+  }
+  to {
+    offset-distance: 100%;
+  }
+}
+
+/* Au repos de l'animation (réglage « réduire les animations ») : le cadre reste allumé, immobile. */
+@media (prefers-reduced-motion: reduce) {
+  .vie-a .slab.is-working::before {
+    animation: none;
+    --ang: 250deg;
+  }
+  .vie-b .slab.is-working::before {
+    animation: none;
+    opacity: 0.6;
+  }
+  .vie-c .slab.is-working::after {
+    display: none;
+  }
+}
+/* Une dalle qui attend Orkun garde son cadre jaune seul : pas de turquoise par-dessus. */
+:is(.vie-a, .vie-b, .vie-c) .slab.is-needs::before,
+.vie-c .slab.is-needs::after {
+  display: none;
+}
+
+/* ══ LIENS D'ÉQUIPE ═══════════════════════════════════════════════════════════════════════════════════════════ */
+.ve-lien {
+  --lc: rgb(190, 205, 255);
+  --lc2: rgb(220, 228, 255);
+  --anim: 0;
+}
+.ve-lien.est-travail {
+  --lc: var(--working, #3fd9c4);
+  --lc2: #b8fff3;
+  --anim: 1;
+}
+.ve-lien.est-retour,
+.ve-lien.est-appel {
+  --lc: var(--appel, #f2e94e);
+  --lc2: #fffbc4;
+  --anim: 1;
+}
+.ve-lien.est-fait {
+  --lc: var(--ready, #9ad8a6);
+  --lc2: #d8f5dd;
+}
+.lv-s0 {
+  stop-color: var(--lc);
+  stop-opacity: 0.55;
+}
+.lv-s1 {
+  stop-color: var(--lc2);
+  stop-opacity: 1;
+}
+/* Les calques des variantes restent cachés tant qu'aucune n'est choisie. */
+.lv-halo,
+.lv-corps,
+.lv-eclat,
+.lv-fil,
+.lv-comete,
+.lv-tete {
+  display: none;
+  fill: none;
+  vector-effect: non-scaling-stroke;
+  stroke-linecap: round;
+  pointer-events: none;
+}
+
+/* (a) Trait épais en dégradé, halo, flux de lumière du capitaine vers l'équipier. */
+.liens-a .liens-plateau .ve-lien-fond,
+.liens-a .liens-plateau .ve-lien-flux,
+.liens-b .liens-plateau .ve-lien-fond,
+.liens-b .liens-plateau .ve-lien-flux {
+  display: none;
+}
+.liens-a .lv-halo,
+.liens-a .lv-corps,
+.liens-a .lv-eclat {
+  display: inline;
+}
+.liens-a .lv-halo {
+  stroke: var(--lc);
+  stroke-width: 13px;
+  opacity: 0.1;
+}
+.liens-a .lv-corps {
+  stroke-width: 4px;
+}
+.liens-a .lv-eclat {
+  stroke: #fff;
+  stroke-width: 4px;
+  stroke-dasharray: 80 220;
+  opacity: calc(0.8 * var(--anim));
+  animation: lv-court 1.9s linear infinite;
+  animation-delay: var(--decal);
+}
+.liens-a .est-retour .lv-eclat {
+  animation-direction: reverse;
+}
+.liens-a .est-calme .lv-corps,
+.liens-a .est-fait .lv-corps {
+  stroke-width: 3px;
+  opacity: 0.6;
+}
+.liens-a .est-calme .lv-halo {
+  display: none;
+}
+.liens-a .est-appel .lv-halo {
+  opacity: 0.18;
+}
+@keyframes lv-court {
+  to {
+    stroke-dashoffset: -300;
+  }
+}
+
+/* (b) Fil fin et comètes : quatre calques aux têtes alignées (tête d'un trait = début de motif + 90 px) font la traîne. */
+.liens-b .lv-fil,
+.liens-b .lv-comete,
+.liens-b .lv-tete {
+  display: inline;
+}
+.liens-b .lv-fil {
+  stroke-width: 2px;
+  opacity: 0.55;
+}
+.liens-b .lv-comete,
+.liens-b .lv-tete {
+  stroke: var(--lc);
+  opacity: var(--anim);
+  animation: lv-comete 2.6s linear infinite;
+  animation-delay: var(--decal);
+  stroke-linecap: butt;
+}
+.liens-b .est-retour .lv-comete,
+.liens-b .est-retour .lv-tete {
+  animation-direction: reverse;
+}
+/* Même vitesse pour tous les calques (400 px / 2,6 s ≈ 154 px/s) : les têtes s'alignent en décalant le départ des calques
+   longs de (longueur − 14 px) / 154 px/s. Pour un lien dans l'autre sens (retour), la tête est le début du trait : plus de décalage. */
+.liens-b .lv-c1 {
+  stroke: var(--lc2);
+  stroke-width: 6px;
+  stroke-dasharray: 14 386;
+}
+.liens-b .lv-c2 {
+  stroke-width: 4px;
+  stroke-dasharray: 50 350;
+  opacity: calc(0.8 * var(--anim));
+  animation-delay: calc(var(--decal) + 0.23s);
+}
+.liens-b .lv-c3 {
+  stroke-width: 2.5px;
+  stroke-dasharray: 110 290;
+  opacity: calc(0.4 * var(--anim));
+  animation-delay: calc(var(--decal) + 0.62s);
+}
+.liens-b .lv-tete {
+  stroke-width: 14px;
+  stroke-dasharray: 22 378;
+  opacity: calc(0.28 * var(--anim));
+  stroke-linecap: round;
+  animation-delay: calc(var(--decal) + 0.05s);
+}
+.liens-b .est-retour :is(.lv-c2, .lv-c3, .lv-tete) {
+  animation-delay: var(--decal);
+}
+@keyframes lv-comete {
+  to {
+    stroke-dashoffset: -400;
+  }
+}
+
+/* Les prises : plus grosses, avec un anneau de la couleur de l'état. */
+:is(.liens-a, .liens-b) .liens-plateau circle {
+  r: 8px;
+  stroke: var(--lc);
+  stroke-width: 2.5px;
+}
+:is(.liens-a, .liens-b) .liens-plateau .est-travail circle,
+:is(.liens-a, .liens-b) .liens-plateau .est-appel circle,
+:is(.liens-a, .liens-b) .liens-plateau .est-retour circle {
+  fill: var(--lc);
+}
+:is(.liens-a, .liens-b) .liens-plateau .est-calme circle,
+:is(.liens-a, .liens-b) .liens-plateau .est-fait circle {
+  fill: var(--sol-bas, #080b18);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :is(.liens-a, .liens-b) .lv-eclat,
+  :is(.liens-a, .liens-b) .lv-comete,
+  :is(.liens-a, .liens-b) .lv-tete {
+    animation: none !important;
+  }
+  .liens-b .lv-comete,
+  .liens-b .lv-tete {
+    display: none;
+  }
+}

@@ -1,0 +1,12 @@
+/* Volet « design-3-plans » (11/11) — les trois règles du reel @ayoships proposées sur l'ordinateur et le téléphone couché.
+   « If your app feels flat, design in three planes. Big type in the back, your subject in the middle, and the buttons on
+   top. […] pick a signal color. One color that only ever means tap this, and everything else is just ink and paper. […]
+   skip the middle sizes. Make one thing huge, everything else tiny, and nothing in between. »
+   Le téléphone debout a déjà les siennes (reel.css, en service depuis le 11/11 20:02 UTC) : rien ici ne le touche.
+   Tout vit sous [data-reel3='oui'] (`?reel3=oui`) ; « non », le défaut, rend l'écran en service au pixel près.
+   Couleurs gardées : jaune = à toi de toucher (ce qui t'attend, Répondre, Entrée), rouge = erreur, vert = FINI.
+   Une feuille par écran, chargées dans cet ordre. */
+@import './lot-design/colonne.css';
+@import './lot-design/plateau.css';
+@import './lot-design/plein.css';
+@import './lot-design/couche.css';

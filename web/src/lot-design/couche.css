@@ -1,0 +1,738 @@
+/* lot-design/couche.css — voir lot-design.css. Le téléphone COUCHÉ (844 × 390) : l'accueil en Plateau et en Tuiles (la
+   colonne de gauche et le plan), et la console ouverte. La Liste couchée est dans colonne.css.
+   Les trois règles, comme sur le téléphone debout (reel.css) :
+   1. Trois plans. Accueil : le nom du projet de la plus ancienne attente en très grand au fond de la colonne, sa question
+      sur une carte au milieu, « Répondre » par-dessus, à cheval sur le bord de la carte (Ensemble.jsx, Scene). Console :
+      pas de nom géant (retenu le 11/11) ; la barre à l'encre au fond, le terminal en carte au milieu, la barre d'envoi et
+      les touches sur des plateaux devant.
+   2. Le jaune ne veut dire que « à toi de toucher » : Répondre, Entrée, le repère de ce qui t'attend. Les états passent à
+      l'encre et au papier (leur forme, Signe.jsx, les dit déjà). ERREUR garde son rouge, FINI son vert (lot6-fini.css).
+   3. Une chose énorme (le nom du projet), le reste en 10,5 px (étiquettes mono capitales) et 13 px (texte). Champs ≥ 16 px,
+      cibles ≥ 44 points.
+   Plateau et tuiles du téléphone (lot5-memoire.css, deux plantages le 11/11) : aucune animation sans fin, aucun défilement
+   interne ajouté, aucun terminal, pas d'ombre floue ni de backdrop-filter — chaque effet peut créer un calque, que Safari
+   dessine à pleine taille. Les reliefs y sont des ombres nettes (sans flou). */
+
+@media (orientation: landscape) and (max-height: 520px) {
+
+[data-reel3='oui'] .app.is-mobile {
+  --papier: #e8ebf4;
+  --papier-2: rgba(232, 235, 244, 0.64);
+  --papier-3: rgba(232, 235, 244, 0.42);
+  --filet: rgba(214, 224, 255, 0.1);
+  --t-et: 600 10.5px/1 var(--mono); /* étiquette : mono, capitales espacées */
+  /* Règle 2 : les états à l'encre et au papier. */
+  --working: var(--papier);
+  --starting: var(--papier-2);
+  --running: var(--papier-2);
+  --ready: var(--papier-2);
+  --shell: var(--papier-3);
+  --closed: var(--papier-3);
+  /* Le jaune touché : un léger relief. Ombre nette ici (accueil) ; la console a droit au flou (--ombre-jaune). */
+  --jaune-haut: color-mix(in srgb, var(--appel, #f2e94e) 78%, #fff);
+  --jaune-bas: color-mix(in srgb, var(--appel, #f2e94e) 86%, #8a7a00);
+  --bouton-jaune: linear-gradient(180deg, var(--jaune-haut) 0%, var(--appel, #f2e94e) 46%, var(--jaune-bas) 100%);
+  --relief-jaune: inset 0 1px 0 rgba(255, 255, 255, 0.62), inset 0 -1px 0 rgba(90, 80, 0, 0.28), 0 2px 0 rgba(0, 0, 0, 0.55);
+  --ombre-jaune: inset 0 1px 0 rgba(255, 255, 255, 0.62), inset 0 -1px 0 rgba(90, 80, 0, 0.28), 0 14px 26px -12px color-mix(in srgb, var(--appel, #f2e94e) 60%, transparent), 0 6px 14px rgba(0, 0, 0, 0.55);
+  --verre-bord: rgba(214, 224, 255, 0.13);
+  --verre-haut: rgba(214, 224, 255, 0.26);
+  --plateau-devant: linear-gradient(180deg, #141a31, #0d1123);
+
+  /* ═════════ Accueil (Plateau, Tuiles) : la colonne de gauche ═════════
+     300 de large, comme la colonne de la Liste couchée : la bascule ne saute pas d'un affichage à l'autre. Le plateau n'y
+     perd rien (son cadrage est limité par la hauteur) ; les tuiles passent sur deux colonnes. */
+  & .ve {
+    grid-template-columns: 300px minmax(0, 1fr);
+  }
+  & .ve-rail {
+    gap: 0;
+    padding: 0 16px calc(10px + env(safe-area-inset-bottom));
+    background: radial-gradient(120% 45% at 20% 0%, #141c3c, rgba(8, 11, 24, 0) 70%), var(--sol-bas);
+    border-right: 1px solid var(--filet);
+  }
+  & .ve-marque {
+    flex: none;
+    height: 44px;
+    gap: 9px;
+  }
+  & .ve-marque .marque-signe {
+    width: 16px;
+    height: 16px;
+    border-color: var(--papier-3);
+    border-radius: 3px;
+  }
+  & .ve-marque .marque-signe::after {
+    left: 3px;
+    bottom: 3px;
+    width: 5px;
+    height: 5px;
+    background: var(--papier); /* plus de jaune décoratif */
+  }
+  & .ve-marque b {
+    font: 700 13px/1 var(--ui);
+    letter-spacing: 0.02em;
+  }
+  & .ve-liaison:not(.is-coupee) {
+    width: 6px;
+    height: 6px;
+    background: var(--papier-2);
+  }
+  & .ve-marque .ordre-ouvre {
+    margin-right: -12px;
+    background: none;
+    border: 0;
+  }
+  & .ve-marque .ordre-ouvre i {
+    color: var(--papier-2);
+  }
+
+  /* La scène : étiquette, mot géant (fond), carte (milieu), Répondre (devant). */
+  & .ve-sur {
+    flex: none;
+    height: 28px;
+    margin: 0;
+    overflow: hidden;
+    font: var(--t-et);
+    line-height: 28px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: var(--papier-2);
+  }
+  & .ve-scene {
+    position: relative;
+    flex: none;
+  }
+  & .ve-mot {
+    position: relative;
+    z-index: 0;
+    margin: 0 -1px calc(min(var(--gm, 48px), var(--gm-max, 72px)) * -0.28) -2px;
+    pointer-events: none;
+    user-select: none;
+  }
+  /* Deux lignes : plafonnées à 48 px, pour que la colonne tienne dans 390 de haut. */
+  & .ve-mot:has(span + span) {
+    --gm-max: 48px;
+  }
+  & .ve-mot .grand-mot-sonde {
+    position: absolute;
+    left: 0;
+    top: 0;
+    visibility: hidden;
+    white-space: nowrap;
+    font: 800 100px/1 var(--ui);
+    font-style: normal;
+    letter-spacing: -0.05em;
+    pointer-events: none;
+  }
+  & .ve-mot span {
+    display: block;
+    width: max-content;
+    padding-right: 0.06em; /* l'approche négative rogne la dernière lettre sinon */
+    font: 800 min(var(--gm, 48px), var(--gm-max, 72px)) / 0.8 var(--ui);
+    letter-spacing: -0.05em;
+    white-space: nowrap;
+    /* Papier qui s'éteint vers le bas : la lettre recule, la carte qui la chevauche avance. */
+    color: transparent;
+    background: linear-gradient(180deg, rgba(232, 235, 244, 0.58) 0%, rgba(232, 235, 244, 0.26) 52%, rgba(232, 235, 244, 0.08) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+  & .ve-carte {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+    width: 100%;
+    margin: 0;
+    padding: 10px 12px 28px;
+    background: linear-gradient(180deg, #19213f, #0e1328);
+    border: 1px solid var(--verre-bord);
+    border-top-color: var(--verre-haut);
+    border-radius: 4px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    font: inherit;
+    text-align: left;
+    color: var(--papier);
+    cursor: pointer;
+    -webkit-touch-callout: none;
+    user-select: none;
+  }
+  & .ve-qui {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+    font: var(--t-et);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--papier-2);
+  }
+  & .ve-qui .signe {
+    font-size: 11px;
+  }
+  & .ve-qui b {
+    min-width: 0;
+    overflow: hidden;
+    font: inherit;
+    line-height: 1.3; /* capitales mono : à 1, le haut des lettres était rogné */
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  & .ve-q {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    font: 600 13px/1.3 var(--ui);
+    overflow-wrap: anywhere;
+    color: var(--papier);
+  }
+  & .ve-go {
+    position: absolute;
+    right: 12px;
+    bottom: -22px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    height: 44px;
+    padding: 0 14px 0 18px;
+    background: var(--bouton-jaune);
+    border-radius: 3px;
+    box-shadow: var(--relief-jaune);
+    font: 700 13px/1 var(--ui);
+    letter-spacing: 0.02em;
+    color: var(--encre);
+  }
+  & .ve-go i {
+    font: 400 22px/0.8 var(--ui);
+    font-style: normal;
+  }
+  & .ve-carte:active .ve-go {
+    background: color-mix(in srgb, var(--appel) 84%, #fff);
+  }
+
+  /* Le reste de la colonne : petit, papier. */
+  & .ve-compte {
+    display: block;
+    flex: none;
+    margin: 2px 0 0;
+    font: var(--t-et);
+    line-height: 1.4;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--papier-3);
+  }
+  & .ve-scene + .ve-compte {
+    margin-top: 32px; /* sous Répondre, qui déborde de 22 */
+  }
+  & .ve-compte span + span::before {
+    content: '·';
+    margin: 0 7px;
+  }
+  & .ve-compte b {
+    min-width: 0;
+    font: inherit;
+    color: var(--papier);
+  }
+  & .ve-rail .ve-bascule {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    flex: none;
+    margin-top: auto;
+    padding-top: 6px;
+    border: 0;
+    border-radius: 0;
+    isolation: isolate; /* les pastilles (z-index -1) restent au-dessus du fond de la colonne */
+  }
+  /* 44 points au doigt, une pastille de 30 à l'œil (comme les filtres debout). */
+  & .ve-rail .ve-bascule button {
+    position: relative;
+    height: 44px;
+    background: none;
+    font: var(--t-et);
+    letter-spacing: 0.1em;
+    color: var(--papier-3);
+  }
+  & .ve-rail .ve-bascule button::before {
+    content: '';
+    position: absolute;
+    inset: 7px 0;
+    z-index: -1;
+    border: 1px solid var(--filet);
+    border-radius: 15px;
+  }
+  & .ve-rail .ve-bascule button[aria-pressed='true'] {
+    background: none;
+    color: var(--papier);
+  }
+  & .ve-rail .ve-bascule button[aria-pressed='true']::before {
+    background: rgba(232, 235, 244, 0.1);
+    border-color: rgba(232, 235, 244, 0.3);
+  }
+  & .ve-plus {
+    flex: none;
+    height: 44px;
+    margin-top: 6px;
+    background: linear-gradient(180deg, rgba(190, 205, 255, 0.08), rgba(190, 205, 255, 0.03));
+    border: 1px solid var(--verre-bord);
+    border-top-color: var(--verre-haut);
+    border-radius: 3px;
+    font: 600 13px/1 var(--ui);
+    letter-spacing: 0.02em;
+    color: var(--papier);
+  }
+
+  /* ═════════ Plateau (vue de haut, Board.jsx avec onOuvre) ═════════
+     Les tailles suivent le zoom (--zoom, posé par le plateau) pour valoir 13 / 10,5 px à l'écran ; plafonnées (--u) pour
+     qu'une dalle trop petite à l'écran rétrécisse son texte au lieu de le rogner. */
+  & .ve-plateau .react-flow {
+    --u: min(calc(1px / var(--zoom, 1)), 4.6px);
+  }
+  & .ve-ranger {
+    background: var(--sol-bas);
+    border-color: var(--filet);
+    box-shadow: none; /* plus d'ombre floue sur le plateau */
+    font: var(--t-et);
+    letter-spacing: 0.14em;
+    color: var(--papier-2);
+  }
+  /* Filets nets (lot5-memoire.css) : travaille n'est plus turquoise ; ce qui t'attend n'a plus de cadre jaune, son
+     repère et son Répondre le disent. FINI garde son filet vert, ERREUR ses hachures. */
+  & .ve-plateau .react-flow .slab.is-working {
+    box-shadow: 0 0 0 calc(1px / var(--zoom, 1)) var(--papier-3);
+  }
+  & .ve-plateau .react-flow .slab.is-needs {
+    border-color: var(--trait);
+    box-shadow: 0 0 0 calc(1px / var(--zoom, 1)) var(--papier-2);
+  }
+  & .ve-plateau .tuile {
+    gap: calc(6 * var(--u));
+    padding: calc(10 * var(--u)) calc(12 * var(--u));
+  }
+  & .ve-plateau .tuile b {
+    gap: calc(7 * var(--u));
+    font: 600 calc(13 * var(--u)) / 1.25 var(--ui);
+    color: var(--papier);
+  }
+  & .ve-plateau .tuile b .signe,
+  & .ve-plateau .tuile .pied .signe {
+    font-size: calc(11 * var(--u));
+  }
+  & .ve-plateau .tuile p {
+    -webkit-line-clamp: 2;
+    font: 600 calc(13 * var(--u)) / 1.3 var(--ui);
+    letter-spacing: 0;
+    text-wrap: pretty;
+    overflow-wrap: anywhere; /* un chemin sans espace élargissait la ligne au-delà de la dalle */
+    color: var(--papier);
+    max-height: round(down, 100% + 1px, calc(13 * 1.3 * var(--u))); /* lignes entières (voir plateau.css, chasse du 17/11) */
+  }
+  & .ve-plateau .tuile .pied {
+    gap: calc(7 * var(--u));
+    font: 400 calc(10.5 * var(--u)) / 1 var(--mono);
+  }
+  & .ve-plateau .tuile .etat {
+    font: 600 calc(10.5 * var(--u)) / 1 var(--mono);
+    letter-spacing: 0.1em;
+  }
+  & .ve-plateau .tuile .age {
+    font: 400 calc(10.5 * var(--u)) / 1 var(--mono);
+    color: var(--papier-3);
+  }
+  /* Ce qui t'attend : dalle sombre levée, question en blanc, repère jaune ; « T'ATTEND » ne se répète pas (le carré et
+     Répondre le disent), l'âge passe à gauche. */
+  & .ve-plateau .is-needs .tuile {
+    background: linear-gradient(180deg, #1b2346, #121831);
+    box-shadow: inset calc(2 * var(--u)) 0 0 var(--appel);
+  }
+  & .ve-plateau .is-needs .tuile :is(b, p) {
+    color: var(--papier);
+  }
+  & .ve-plateau .is-needs .tuile .signe {
+    color: var(--appel);
+  }
+  & .ve-plateau .is-needs .tuile .etat {
+    display: none;
+  }
+  & .ve-plateau .is-needs .tuile .age {
+    margin-left: 0;
+    color: var(--papier-3);
+  }
+  /* Répondre : un pseudo-élément du voile de la dalle (le bouton qui ouvre la console), à cheval sur le bord bas ; le
+     toucher y tombe sur le voile. Sa dalle passe devant ses voisines, sinon la rangée du dessous le couvrirait (une dalle
+     portée au doigt, .est-levee, garde son rang). */
+  & .ve-plateau .slab.is-needs .slab-ouvre::after {
+    content: 'Répondre ›';
+    position: absolute;
+    right: calc(10 * var(--u));
+    bottom: calc(-13 * var(--u));
+    height: calc(26 * var(--u));
+    padding: 0 calc(11 * var(--u));
+    background: var(--bouton-jaune);
+    border-radius: calc(3 * var(--u));
+    box-shadow: inset 0 var(--u) 0 rgba(255, 255, 255, 0.62), inset 0 calc(-1 * var(--u)) 0 rgba(90, 80, 0, 0.28), 0 calc(2 * var(--u)) 0 rgba(0, 0, 0, 0.55);
+    font: 700 calc(13 * var(--u)) / calc(26 * var(--u)) var(--ui);
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    color: var(--encre);
+  }
+  & .ve-plateau .react-flow__node:not(.est-levee):has(> .slab.is-needs) {
+    z-index: 1 !important; /* la position z de React Flow est un style en ligne */
+  }
+  /* Liens d'équipe du plateau (lot4-vie.css) : à l'encre. */
+  & .ve-lien.est-travail,
+  & .ve-lien.est-retour,
+  & .ve-lien.est-appel {
+    --lc: var(--papier-2);
+    --lc2: var(--papier);
+  }
+  & .ve-lien.est-fait {
+    --lc: var(--papier-3);
+    --lc2: var(--papier-2);
+  }
+
+  /* ═════════ Tuiles (vue par équipes) ═════════ */
+  /* Immobiles, comme le plateau : les barres de TRAVAILLE, le filet qui file et le flux des liens tournaient sans fin
+     (13 animations). La forme des signes dit l'état. (Pas de liste :is() : elle ne porterait pas les pseudo-éléments.) */
+  & .ve-plan *,
+  & .ve-plan *::before,
+  & .ve-plan *::after,
+  & .ve-colonnes *,
+  & .ve-colonnes *::before,
+  & .ve-colonnes *::after {
+    animation: none !important;
+  }
+  /* Rangées plus aérées : Répondre déborde de 14 sous sa tuile. */
+  & .ve-plan {
+    row-gap: 22px;
+  }
+  & .ve-membres,
+  & .ve-colonne > div {
+    gap: 22px;
+  }
+  & .ve-equipe {
+    padding-bottom: 16px;
+    border-color: var(--filet);
+  }
+  & .ve-equipe > header i {
+    font: var(--t-et);
+    line-height: 30px;
+    letter-spacing: 0.14em;
+    color: var(--papier-3);
+  }
+  & .ve-equipe > header b {
+    font: 600 13px/30px var(--ui);
+    color: var(--papier);
+  }
+  & .ve-equipe > header span {
+    font: 400 10.5px/30px var(--mono);
+    color: var(--papier-3);
+  }
+  & .ve-equipe.est-prete {
+    border-color: var(--filet);
+    box-shadow: inset 2px 0 0 var(--appel);
+  }
+  & .ve-colonne > header {
+    font: var(--t-et);
+    line-height: 28px;
+    letter-spacing: 0.14em;
+  }
+  & .ve-colonne.est-appel > header,
+  & .ve-colonne.est-appel > header b {
+    color: var(--papier);
+  }
+  & .vt {
+    gap: 6px;
+    background: var(--dalle);
+    border-color: var(--filet);
+  }
+  & .vt.is-working::before {
+    display: none; /* le filet turquoise qui filait */
+  }
+  & .vt-haut b {
+    font: 600 13px/1.25 var(--ui);
+  }
+  & .vt .signe {
+    font-size: 11px;
+  }
+  & .vt-sujet {
+    font: 400 10.5px/1.3 var(--mono);
+    color: var(--papier-3);
+  }
+  & .vt-direct {
+    font: 400 10.5px/1.3 var(--mono);
+    color: var(--papier-2);
+  }
+  & .vt-texte {
+    font: 400 13px/1.35 var(--ui);
+    color: var(--papier-2);
+    opacity: 1;
+  }
+  & .vt-texte.de-outils,
+  & .vt-texte.de-toi {
+    font: 400 10.5px/1.4 var(--mono);
+    color: var(--papier-3);
+  }
+  & .vt-texte.est-vide {
+    color: var(--papier-3);
+  }
+  & .vt-ecran {
+    font: 400 10.5px/1.4 var(--mono);
+    color: var(--papier-3);
+  }
+  & .vt-question {
+    font: 600 13px/1.3 var(--ui);
+    color: var(--papier);
+  }
+  & .vt-pied {
+    font: 400 10.5px/1 var(--mono);
+    color: var(--papier-3);
+  }
+  & .vt-pied .etat {
+    font: var(--t-et);
+    letter-spacing: 0.1em;
+  }
+  & .vt-pied em {
+    color: var(--papier-2);
+  }
+  /* Ce qui t'attend : plus d'aplat jaune. Tuile sombre levée, question en blanc, repère jaune à gauche, et Répondre en
+     jaune à cheval sur le bord bas (le pied remonte pour lui laisser la place). */
+  & .vt.is-needs {
+    overflow: visible;
+    padding-bottom: 22px;
+    background: linear-gradient(180deg, #1b2346, #121831);
+    border-color: var(--verre-bord);
+    border-top-color: var(--verre-haut);
+    box-shadow: inset 2px 0 0 var(--appel);
+    color: var(--papier);
+  }
+  & .vt.is-needs .signe {
+    color: var(--appel);
+  }
+  & .vt.is-needs .etat {
+    color: var(--papier);
+  }
+  & .vt.is-needs .vt-sujet,
+  & .vt.is-needs .vt-pied {
+    color: var(--papier-3);
+  }
+  & .vt.is-needs .vt-pied em {
+    color: var(--papier-2);
+  }
+  & .vt.is-needs .vt-pied i {
+    position: absolute;
+    right: 10px;
+    bottom: -14px;
+    display: inline-flex;
+    align-items: center;
+    height: 28px;
+    margin: 0;
+    padding: 0 12px;
+    background: var(--bouton-jaune);
+    border-radius: 3px;
+    box-shadow: var(--relief-jaune);
+    font: 700 13px/1 var(--ui);
+    font-style: normal;
+    letter-spacing: 0.02em;
+    color: var(--encre);
+  }
+  & .vt.is-needs:active .vt-pied i {
+    background: color-mix(in srgb, var(--appel) 84%, #fff);
+  }
+  /* Liens capitaine → équipiers : à l'encre, immobiles. */
+  & .ve-lien-fond {
+    stroke: rgba(232, 235, 244, 0.2);
+  }
+  & .ve-lien.est-travail .ve-lien-fond,
+  & .ve-lien.est-retour .ve-lien-fond,
+  & .ve-lien.est-appel .ve-lien-fond {
+    stroke: rgba(232, 235, 244, 0.32);
+    stroke-width: 1.5;
+  }
+  & .ve-lien.est-travail .ve-lien-flux,
+  & .ve-lien.est-retour .ve-lien-flux {
+    stroke: var(--papier-2);
+    filter: none;
+  }
+  & .ve-lien.est-fait .ve-lien-fond {
+    stroke: rgba(232, 235, 244, 0.45);
+  }
+  & .ve-lien.est-retour circle,
+  & .ve-lien.est-appel circle,
+  & .ve-lien.est-travail circle {
+    fill: var(--papier-2);
+    stroke: var(--papier-2);
+  }
+
+  /* ═════════ Console ouverte, couchée (MobileConsole.jsx) ═════════ */
+  & .sheet {
+    background: radial-gradient(90% 70% at 12% 0%, #141c3c, rgba(8, 11, 24, 0) 70%), var(--sol-bas);
+  }
+  /* Fond : la barre à l'encre, même quand l'agent attend (le jaune n'est plus un fond : il est sur Entrée). */
+  & .sheet-bar,
+  & .sheet.is-needs .sheet-bar {
+    height: 44px;
+    gap: 8px;
+    padding: 0 8px 0 2px;
+    background: none;
+    border-bottom: 0;
+    color: var(--papier);
+  }
+  & .sheet-back {
+    gap: 4px;
+    padding: 0 8px;
+    font: 600 13px/1 var(--ui);
+    color: var(--papier-2);
+  }
+  & .sheet-back i {
+    font: 400 22px/1 var(--ui);
+  }
+  & .sheet-titre {
+    gap: 4px;
+  }
+  & .sheet-titre b,
+  & .sheet-bar > b {
+    font: 600 13px/1.05 var(--ui);
+    color: var(--papier);
+  }
+  & .sheet-titre small {
+    font: 400 10.5px/1.1 var(--mono);
+    letter-spacing: 0;
+    text-transform: none;
+    opacity: 1;
+    color: var(--papier-3);
+  }
+  & .sheet-titre small em {
+    font-style: normal;
+  }
+  & .sheet-bar .signe,
+  & .sheet.is-needs .sheet-bar .signe {
+    font-size: 11px;
+    color: var(--st); /* le carré de T'ATTEND reste jaune : c'est ce qui t'attend */
+  }
+  & .sheet-bar .etat,
+  & .sheet.is-needs .sheet-bar .etat {
+    padding: 0;
+    background: none;
+    border-radius: 0;
+    font: var(--t-et);
+    letter-spacing: 0.14em;
+    color: var(--papier);
+  }
+  & .sheet-bar .age,
+  & .sheet.is-needs .sheet-bar .age {
+    font: 400 10.5px/1 var(--mono);
+    color: var(--papier-3);
+  }
+  & .sheet-vue,
+  & .sheet.is-needs .sheet-vue {
+    position: relative;
+    height: 44px;
+    padding: 0 14px;
+    background: none;
+    border: 0;
+    font: var(--t-et);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--papier-2);
+  }
+  & .sheet-vue::before {
+    content: '';
+    position: absolute;
+    inset: 7px 0;
+    border: 1px solid var(--filet);
+    border-radius: 15px;
+  }
+  & .sheet-plus,
+  & .sheet.is-needs .sheet-plus {
+    background: none;
+    color: var(--papier-2);
+  }
+  /* Milieu : le terminal sur une carte. */
+  & .sheet-zone {
+    position: relative;
+    z-index: 1;
+    margin-left: 6px;
+    padding-bottom: 10px; /* la barre d'envoi chevauche ces 10 points, pas le terminal */
+    background: var(--dalle);
+    border: 1px solid var(--verre-bord);
+    border-top-color: var(--verre-haut);
+    border-bottom: 0;
+    border-radius: 4px 4px 0 0;
+    box-shadow: 0 -20px 34px -18px rgba(0, 0, 0, 0.9);
+  }
+  /* La question : plus une bande jaune en très grand, une barre à l'encre en 13 px (le jaune reste au petit carré de
+     « T'ATTEND » et à Entrée, ce qui se touche ; pas de filet jaune sur une barre qui ne se touche pas). Toujours posée
+     par-dessus le haut du terminal (elle ne lui prend aucune ligne) et repliée au premier toucher, comme avant. */
+  & .sheet .plaque {
+    padding: 9px 14px 10px 16px;
+    background: linear-gradient(180deg, #19203c, #10152b);
+    border-bottom: 1px solid var(--filet);
+    border-radius: 4px 4px 0 0;
+    box-shadow: 0 10px 18px -10px rgba(0, 0, 0, 0.8);
+    color: var(--papier);
+  }
+  & .sheet .plaque b {
+    -webkit-line-clamp: 2;
+    font: 600 13px/1.32 var(--ui);
+    letter-spacing: 0;
+    color: var(--papier);
+  }
+  /* Devant : la barre d'envoi et les touches sur des plateaux qui chevauchent la carte. */
+  & .sheet > .envoi {
+    position: relative;
+    z-index: 2;
+    margin-top: -10px;
+    background: var(--plateau-devant);
+    border-top: 0;
+    border-radius: 6px 6px 0 0;
+    box-shadow: 0 -16px 30px -14px rgba(0, 0, 0, 0.95), inset 0 1px 0 rgba(214, 224, 255, 0.16);
+  }
+  & .envoi-avis {
+    font: 400 10.5px/1.4 var(--mono);
+    color: var(--papier-3);
+  }
+  & .sheet > .keys {
+    position: relative;
+    z-index: 2;
+    background: var(--plateau-devant);
+    border-left: 0;
+    border-radius: 6px 0 0 0;
+    box-shadow: -14px 0 26px -14px rgba(0, 0, 0, 0.95), inset 1px 0 0 rgba(214, 224, 255, 0.16);
+  }
+  & .keys button {
+    background: linear-gradient(180deg, rgba(190, 205, 255, 0.1), rgba(190, 205, 255, 0.045));
+    border: 1px solid rgba(214, 224, 255, 0.1);
+    border-top-color: rgba(214, 224, 255, 0.2);
+    border-radius: 3px;
+    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.4);
+    font: 600 13px/1 var(--ui);
+    color: var(--papier);
+  }
+  /* Entrée, quand l'agent attend : la touche qui répond. Le seul jaune de l'écran avec le carré de T'ATTEND. */
+  & .keys button.allume {
+    background: var(--bouton-jaune);
+    border-color: transparent;
+    box-shadow: var(--ombre-jaune);
+    font-weight: 700;
+    color: var(--encre);
+  }
+  & .keys button:active {
+    background: rgba(190, 205, 255, 0.22);
+  }
+  & .keys button.allume:active {
+    background: color-mix(in srgb, var(--appel) 84%, #fff);
+  }
+}
+
+/* Petit téléphone couché (≤ 380 de haut) : le compte s'efface d'abord, comme avant (styles.css). */
+@media (max-height: 380px) {
+  [data-reel3='oui'] .app.is-mobile .ve-compte {
+    display: none;
+  }
+}
+
+}

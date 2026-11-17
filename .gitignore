@@ -1,0 +1,17 @@
+node_modules/
+dist/
+data/
+*.log
+.dev.pid
+server.log
+# Essais : captures, builds et films produits par les bancs (lourds, régénérés à chaque essai)
+test/**/captures*/
+test/**/*-dist/
+test/**/dist-teste/
+test/**/film/
+test/**/*.png
+test/**/*.gif
+/dist-volet/
+/artifacts/
+# Réglages locaux (scripts/run.sh)
+meydan.env

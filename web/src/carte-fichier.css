@@ -1,0 +1,435 @@
+/* Carte « fichier » du plateau créatif (FichierNode.jsx, volet du 13/11). Préfixe « cr-fi- » (le cadre porte déjà
+   « et-fichier », posé par Carte.jsx). Couleurs par les jetons des deux thèmes (--slab, --slab-bar, --paper, --dim,
+   --mat-line, --error, --focus, --ink), polices --ui et --mono ; aucun jaune (réservé à ce qui attend Orkun).
+   Aucune transition ni animation : rien ne bouge sur le plateau du téléphone. Toute grille qui porte un texte a sa
+   colonne en minmax(0, 1fr) : un nom sans espace se coupe au lieu d'élargir la carte. */
+
+/* ── Commun : boutons, marques de genre, noms ── */
+.cr-fi-bouton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid var(--mat-line);
+  border-radius: 5px;
+  background: var(--slab-bar);
+  color: var(--paper);
+  font: 500 12.5px/1 var(--ui);
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.cr-fi-bouton:hover:not(:disabled):not(.est-inactif) {
+  border-color: var(--paper);
+}
+.cr-fi-bouton:disabled,
+.cr-fi-bouton.est-inactif {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.cr-fi-marque {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  min-width: 34px;
+  height: 20px;
+  padding: 0 4px;
+  border: 1px solid var(--mat-line);
+  border-radius: 4px;
+  color: var(--dim);
+  font: 700 10px/1 var(--mono);
+  letter-spacing: 0.08em;
+}
+.cr-fi-g-dossier {
+  border-color: var(--dim);
+}
+.cr-fi-g-texte {
+  color: var(--paper);
+}
+.cr-fi-g-image {
+  color: var(--focus, #6e9bff);
+  border-color: color-mix(in srgb, var(--focus, #6e9bff) 45%, transparent);
+}
+.cr-fi-g-pdf {
+  color: var(--working, #3fd9c4);
+  border-color: color-mix(in srgb, var(--working, #3fd9c4) 45%, transparent);
+}
+.cr-fi-nom {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cr-fi-meta {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--dim);
+  font: 400 11.5px/1.3 var(--mono);
+}
+.cr-fi-erreur {
+  margin: 0;
+  padding: 8px 12px;
+  color: var(--error);
+  font-size: 12.5px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.cr-fi-attente {
+  margin: 0;
+  padding: 10px 12px;
+  color: var(--dim);
+  font-size: 12.5px;
+}
+
+/* ── Le sélecteur ── */
+.cr-fi-choix {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
+  height: 100%;
+}
+.cr-fi-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--mat-line);
+}
+.cr-fi-nav-bouton {
+  flex: none;
+  height: 24px;
+  min-width: 26px;
+  padding: 0 7px;
+  border: 1px solid var(--mat-line);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--paper);
+  font: 500 12px/1 var(--ui);
+}
+.cr-fi-nav-bouton:disabled {
+  color: var(--dim);
+  cursor: default;
+}
+.cr-fi-nav-bouton:hover:not(:disabled) {
+  border-color: var(--paper);
+}
+/* Le fil d'Ariane : chaque pas se coupe ; le dossier où l'on est garde le plus de place. */
+.cr-fi-fil {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  padding: 0 0 0 2px;
+  list-style: none;
+  overflow: hidden;
+}
+.cr-fi-fil > li {
+  display: flex;
+  align-items: center;
+  flex: 0 1 auto;
+  min-width: 18px;
+}
+.cr-fi-fil > li:last-child {
+  flex-shrink: 0;
+  max-width: 62%;
+}
+.cr-fi-fil > li + li::before {
+  content: '/';
+  flex: none;
+  padding: 0 2px;
+  color: var(--dim);
+  font: 400 12px/1 var(--mono);
+}
+.cr-fi-fil-pas {
+  min-width: 0;
+  max-width: 100%;
+  padding: 2px 2px;
+  border: 0;
+  background: none;
+  color: var(--dim);
+  font: 400 12px/1.2 var(--mono);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cr-fi-fil-pas:hover:not(:disabled) {
+  color: var(--paper);
+  text-decoration: underline;
+}
+.cr-fi-fil-pas:disabled {
+  color: var(--paper);
+  font-weight: 700;
+  cursor: default;
+}
+.cr-fi-liste {
+  min-height: 0;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.cr-fi-choix.est-occupe .cr-fi-liste {
+  opacity: 0.55;
+}
+.cr-fi-entree {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 28px;
+  padding: 3px 6px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--paper);
+  font: 400 13px/1.25 var(--ui);
+  text-align: left;
+}
+.cr-fi-entree:hover:not(:disabled),
+.cr-fi-entree:focus-visible {
+  border-color: var(--mat-line);
+  background: var(--slab-bar);
+}
+.cr-fi-entree:disabled {
+  cursor: progress;
+}
+.cr-fi-entree.est-dossier .cr-fi-nom {
+  font-weight: 600;
+}
+.cr-fi-entree .cr-fi-meta {
+  max-width: 14ch;
+}
+.cr-fi-pied {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 34px;
+  padding: 4px 8px;
+  border-top: 1px solid var(--mat-line);
+  background: var(--slab-bar);
+}
+.cr-fi-pied-texte {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--dim);
+  font: 400 11.5px/1.3 var(--mono);
+  overflow-wrap: anywhere;
+}
+
+/* ── La carte avec son fichier ── */
+.cr-fi-carte {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
+  height: 100%;
+}
+.cr-fi-tete,
+.cr-fi-grand-tete {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--mat-line);
+}
+.cr-fi-titres {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2px;
+  min-width: 0;
+}
+.cr-fi-titres .cr-fi-nom {
+  font: 600 14px/1.25 var(--ui);
+}
+.cr-fi-vue {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+}
+.cr-fi-texte {
+  height: 100%;
+  margin: 0;
+  padding: 8px 12px;
+  overflow: hidden;
+  color: var(--paper);
+  font: 400 12px/1.5 var(--mono);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  tab-size: 4;
+  user-select: text;
+  -webkit-user-select: text;
+}
+.cr-fi-vue-image {
+  background: var(--slab-bar);
+}
+.cr-fi-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.cr-fi-icone {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 10px;
+  height: 100%;
+  padding: 12px;
+  text-align: center;
+}
+.cr-fi-icone p {
+  margin: 0;
+  color: var(--dim);
+  font-size: 12.5px;
+  overflow-wrap: anywhere;
+}
+.cr-fi-marque.cr-fi-marque-grande {
+  min-width: 72px;
+  height: 44px;
+  border-width: 2px;
+  border-radius: 6px;
+  font-size: 18px;
+}
+.cr-fi-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-top: 1px solid var(--mat-line);
+  background: var(--slab-bar);
+}
+
+/* ── « Ouvrir » : le panneau en grand, porté dans document.body ── */
+.cr-fi-fond {
+  position: fixed;
+  inset: 0;
+  z-index: 1150;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(4, 6, 12, 0.66);
+}
+.cr-fi-grand {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
+  width: min(100%, 1180px);
+  height: min(100%, 880px);
+  overflow: hidden;
+  border: 1px solid var(--mat-line);
+  border-radius: 10px;
+  background: var(--slab);
+  color: var(--paper);
+  font-family: var(--ui);
+  box-shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.9);
+}
+.cr-fi-grand-tete {
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  padding: 10px 14px;
+  background: var(--slab-bar);
+}
+.cr-fi-grand-tete .cr-fi-nom {
+  font-size: 16px;
+}
+.cr-fi-grand-corps {
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.cr-fi-grand-corps.cr-fi-vue-image {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  padding: 12px;
+}
+.cr-fi-texte.cr-fi-texte-grand {
+  height: auto;
+  min-height: 100%;
+  padding: 14px 18px;
+  overflow: visible;
+  font-size: 13px;
+}
+.cr-fi-image-grand {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+.cr-fi-note {
+  margin: 0;
+  padding: 8px 18px 14px;
+  color: var(--dim);
+  font: 400 12px/1.4 var(--mono);
+}
+.cr-fi-lien {
+  color: var(--paper);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* ── Plateau du téléphone couché : tuile fixe, lisible au zoom du plateau entier ──
+   La carte y est aussi « de loin » (Board : far = onOuvre || farZoom) : le cadre commun replie alors le corps
+   (cartes.css, .et-carte.est-loin) ; la tuile le rouvre sous une barre qui garde le nom en grand, comme la note et Git.
+   `overflow: clip` : aucune zone de défilement (ni calque, ni défilement possible, même par le code). */
+.et-carte.et-fichier.est-tel {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+.et-carte.et-fichier.est-tel .et-barre {
+  height: auto;
+  min-height: 34px;
+  padding: 14px 18px;
+  justify-content: flex-start;
+  border-bottom: 1px solid var(--mat-line);
+}
+.et-carte.et-fichier.est-tel .et-titre {
+  font-size: 46px;
+  line-height: 1.15;
+}
+.et-carte.et-fichier.est-tel .et-type {
+  font-size: 22px;
+}
+.et-carte.et-fichier.est-tel .et-corps,
+.cr-fi-tel {
+  overflow: hidden;
+  overflow: clip;
+}
+.cr-fi-tel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  justify-items: start;
+  gap: 10px;
+  height: 100%;
+  padding: 18px;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.cr-fi-tel p {
+  max-width: 100%;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.cr-fi-marque.cr-fi-marque-tel {
+  min-width: 120px;
+  height: 64px;
+  border-width: 3px;
+  border-radius: 8px;
+  font-size: 36px;
+}
+.cr-fi-tel-taille {
+  font: 700 48px/1.1 var(--mono);
+}
+.cr-fi-tel-genre {
+  color: var(--dim);
+  font: 600 40px/1.15 var(--ui);
+}

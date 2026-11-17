@@ -1,0 +1,554 @@
+/* ══ Volet « ordres » (13/11) : fil des ordres, @mention, plan détaillé, micro maintenu, « J'écoute » ═══════════════
+   Orkun : « On est encore loin de toutes les fonctionnalitēs de Symvibe ». Même matière que le panneau des boucles
+   (`.boucle`, styles.css) et les règles du design « 3 plans » : encre et papier, filets, petites capitales mono pour les
+   étiquettes ; jaune = le seul bouton qui exécute ; rouge = grave (fermer, texte risqué, échec). Aucune animation sans fin.
+   Le panneau est monté dans `body` (portail) : les teintes de la colonne (`--papier…`) n'y arrivent pas, on prend celles
+   du thème (`--texte`, `--trait`, `--barre`…) avec un repli. */
+
+/* ───────── Le panneau : une colonne dont seul le fil rétrécit et défile ; champ et bouton restent à l'écran ───────── */
+.boucle.ordre {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.ordre > header {
+  flex: none;
+  margin-bottom: 0;
+}
+.ordre-fil {
+  flex: 0 1 auto;
+  min-height: 0;
+  margin: 0 -8px;
+  padding: 2px 8px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.ordre-fil.est-vide {
+  display: none; /* rien à montrer : la place va au champ (le téléphone couché, lui, garde la colonne : voir plus bas) */
+}
+.ordre-fil.est-vide p {
+  margin: 0;
+  font: 500 13px/1.45 var(--ui, inherit);
+  color: var(--texte-2, inherit);
+}
+.ordre-bas {
+  flex: none;
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+@media (min-width: 761px) {
+  .boucle.ordre {
+    width: min(100% - 32px, 620px);
+    max-height: min(86dvh, 860px);
+  }
+}
+
+/* ───────── Le fil : un ordre (« › … », la source et l'heure), puis ce qu'il a rendu, en retrait ───────── */
+.ordre .ordre-fil ol {
+  display: grid;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ordre .ordre-g {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.ordre .ordre-dit {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  column-gap: 10px;
+  margin: 0;
+  font: 600 13.5px/1.4 var(--mono);
+  color: var(--texte, #e6e8f0);
+}
+.ordre .ordre-dit span {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.ordre .ordre-dit span::before {
+  content: '› ';
+  color: var(--texte-2, #9aa2ba);
+}
+.ordre .ordre-dit small {
+  font: 600 10.5px/1 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--texte-3, #7f88a6);
+}
+.ordre .ordre-rep {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  margin: 0 0 0 5px;
+  padding: 4px 0 4px 13px;
+  border-left: 2px solid var(--trait, rgba(190, 205, 255, 0.13));
+  font: 500 13px/1.45 var(--ui, inherit);
+  color: var(--texte-2, #9aa2ba);
+}
+.ordre .ordre-rep ul {
+  display: grid;
+  gap: 3px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ordre .ordre-rep li {
+  overflow-wrap: anywhere;
+}
+/* ✓ devant ce qui a été fait ; une réponse à une question n'en a pas (styles.css le pose sur tout `.ordre-fait`). */
+.ordre .ordre-rep.est-fait li::before {
+  content: '✓ ';
+  color: var(--texte, #e6e8f0);
+}
+.ordre .ordre-rep:not(.est-fait) li::before {
+  content: none;
+}
+.ordre .ordre-rep.est-fait,
+.ordre .ordre-rep.est-question {
+  color: var(--texte, #e6e8f0);
+}
+.ordre .ordre-rep.est-erreur {
+  border-left-color: var(--error, #ff5d6c);
+  color: var(--error, #ff5d6c);
+}
+.ordre .ordre-liens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+/* Liens vers une console : compacts, casse normale, une ligne (le nom trop long finit en « … »). */
+.ordre .ordre-lien {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 32px;
+  padding: 3px 10px;
+  background: none;
+  border: 1px solid var(--trait, rgba(190, 205, 255, 0.13));
+  border-radius: 3px;
+  font: 600 12.5px/1.25 var(--ui, inherit);
+  text-align: left;
+  white-space: nowrap;
+  color: var(--texte, #e6e8f0);
+  cursor: pointer;
+}
+.ordre .ordre-lien > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ordre .ordre-lien:hover {
+  border-color: var(--texte-2, #9aa2ba);
+}
+.ordre .ordre-lien.est-parti {
+  border-style: dashed;
+  color: var(--texte-3, #7f88a6);
+  cursor: default;
+}
+/* La ligne d'une réponse qui nomme une console est elle-même le lien : du texte, une flèche, un fond au survol. */
+.ordre .ordre-rep li.a-lien {
+  display: flex;
+  align-items: baseline;
+}
+.ordre .ordre-lien.est-ligne {
+  display: block;
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  margin: 0 0 0 -6px;
+  padding: 2px 6px;
+  border: 0;
+  border-radius: 6px;
+  font: inherit;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  color: inherit;
+}
+.ordre .ordre-rep.est-fait .ordre-lien.est-ligne {
+  margin-left: 0; /* après le ✓ */
+}
+.ordre .ordre-lien.est-ligne i {
+  font-style: normal;
+  color: var(--texte-2, #9aa2ba);
+}
+.ordre .ordre-lien.est-ligne:hover {
+  background: rgba(190, 205, 255, 0.08);
+}
+/* Réponse d'un agent : son nom, l'état de la remise, « ouvrir » ; puis les premières lignes de sa réponse. */
+.ordre .ordre-rep-tete {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 4px 10px;
+}
+.ordre .ordre-rep-tete b {
+  font: 600 13.5px/1.3 var(--ui, inherit);
+  overflow-wrap: anywhere;
+  color: var(--texte, #e6e8f0);
+}
+.ordre .ordre-etat {
+  font: 700 10.5px/1 var(--mono);
+  font-style: normal;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--texte-2, #9aa2ba);
+}
+.ordre .ordre-rep-texte {
+  display: grid;
+  gap: 4px;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.ordre .ordre-rep-texte p {
+  margin: 0;
+}
+/* En file : discret ; retenu (une permission l'attend) : filet pointillé, à l'encre ; réponse : le texte à l'encre ;
+   non remis ou console perdue : rouge. */
+.ordre .ordre-rep.etat-attend .ordre-rep-texte {
+  color: var(--texte-3, #7f88a6);
+}
+.ordre .ordre-rep.etat-retenu {
+  border-left-style: dashed;
+  border-left-color: var(--texte-2, #9aa2ba);
+}
+.ordre .ordre-rep.etat-retenu .ordre-etat,
+.ordre .ordre-rep.etat-repondu .ordre-etat,
+.ordre .ordre-rep.etat-remis .ordre-etat {
+  color: var(--texte, #e6e8f0);
+}
+.ordre .ordre-rep.etat-repondu {
+  border-left-color: var(--texte-2, #9aa2ba);
+}
+.ordre .ordre-rep.etat-repondu .ordre-rep-texte {
+  color: var(--texte, #e6e8f0);
+}
+.ordre .ordre-rep:is(.etat-expire, .etat-perdu) {
+  border-left-color: var(--error, #ff5d6c);
+}
+.ordre .ordre-rep:is(.etat-expire, .etat-perdu) .ordre-etat {
+  color: var(--error, #ff5d6c);
+}
+.ordre .ordre-plus {
+  display: block;
+  min-height: 36px;
+  margin: 0 auto 12px;
+  padding: 0 14px;
+  background: none;
+  border: 1px solid var(--trait, rgba(190, 205, 255, 0.13));
+  border-radius: 999px;
+  font: 700 10.5px/1 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--texte-2, #9aa2ba);
+  cursor: pointer;
+}
+
+/* ───────── @mention : la liste au-dessus du champ, dans le flux (le panneau défile : une liste posée par-dessus serait
+   rognée). Au plus un bon tiers de la hauteur visible : clavier levé (--vvh), le champ et le bouton restent à l'écran,
+   la liste défile. ───────── */
+.ordre .ordre-mentions {
+  display: grid;
+  gap: 2px;
+  max-height: calc(var(--vvh, 100dvh) * 0.36);
+  margin: 0;
+  padding: 4px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  list-style: none;
+  background: var(--dalle, rgba(0, 0, 0, 0.25));
+  border: 1px solid var(--trait, rgba(190, 205, 255, 0.13));
+  border-radius: 10px;
+}
+.ordre .ordre-mentions li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 12px;
+  min-height: 40px;
+  padding: 5px 10px;
+  border-radius: 7px;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.ordre .ordre-mentions li b {
+  font: 600 14px/1.25 var(--ui, inherit);
+  overflow-wrap: anywhere;
+  color: var(--texte, #e6e8f0);
+}
+.ordre .ordre-mentions li span {
+  grid-column: 1;
+  font: 500 11.5px/1.25 var(--mono);
+  overflow-wrap: anywhere;
+  color: var(--texte-2, #9aa2ba);
+}
+.ordre .ordre-mentions li em {
+  grid-row: 1 / span 2;
+  grid-column: 2;
+  font: 700 10.5px/1 var(--mono);
+  font-style: normal;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--texte-2, #9aa2ba);
+}
+.ordre .ordre-mentions li.est-choisie {
+  background: rgba(190, 205, 255, 0.12);
+  box-shadow: inset 2px 0 0 var(--texte, #e6e8f0);
+}
+.ordre .ordre-mentions li.est-grise {
+  opacity: 0.5;
+}
+
+/* ───────── Le plan : étapes du planificateur, passages risqués cités, second appui ───────── */
+.ordre .ordre-plan.est-ancien {
+  opacity: 0.55; /* calculé pour le texte d'avant : la frappe continue */
+}
+.ordre .ordre-plan.est-attente {
+  border-left-color: var(--texte-2, #9aa2ba);
+  color: var(--texte-2, #9aa2ba);
+}
+.ordre .ordre-etapes {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding: 0 0 0 24px;
+  font: 500 13.5px/1.4 var(--ui, inherit);
+}
+.ordre .ordre-etapes li {
+  overflow-wrap: anywhere;
+}
+.ordre .ordre-etapes li::marker {
+  font: 700 11px/1 var(--mono);
+  color: var(--texte-2, #9aa2ba);
+}
+.ordre .ordre-etapes li.est-grave,
+.ordre .ordre-etapes li.est-erreur {
+  color: var(--error, #ff5d6c);
+}
+/* Une étape dont le texte vient de Haiku (pas de la phrase d'Orkun) : surlignée, et dite. */
+.ordre .ordre-etapes li.est-ajoute {
+  margin-left: -6px;
+  padding: 4px 8px 5px 6px;
+  background: color-mix(in srgb, var(--error, #ff5d6c) 9%, transparent);
+  border-left: 2px solid var(--error, #ff5d6c);
+  border-radius: 0 6px 6px 0;
+}
+.ordre .ordre-ajoute {
+  display: block;
+  margin-top: 2px;
+  font: 700 10.5px/1.3 var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--error, #ff5d6c);
+}
+.ordre .ordre-risques {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ordre .ordre-risque {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: 4px 10px;
+  padding: 8px 11px;
+  background: color-mix(in srgb, var(--error, #ff5d6c) 9%, transparent);
+  border: 1px solid color-mix(in srgb, var(--error, #ff5d6c) 55%, transparent);
+  border-radius: 8px;
+}
+.ordre .ordre-risque b {
+  font: 700 10.5px/1.25 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--error, #ff5d6c);
+  overflow-wrap: anywhere;
+}
+.ordre .ordre-risque q {
+  font: 500 13px/1.4 var(--mono);
+  quotes: '« ' ' »';
+  overflow-wrap: anywhere;
+  color: var(--texte, #e6e8f0);
+}
+.ordre .ordre-meta {
+  margin: 0;
+  font: 600 10.5px/1.3 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--texte-2, #9aa2ba);
+}
+.ordre .ordre-confirme {
+  margin: 0;
+  font: 600 13.5px/1.4 var(--ui, inherit);
+  overflow-wrap: anywhere;
+  color: var(--error, #ff5d6c);
+}
+/* Le bouton reste en bas du panneau quand celui-ci défile (clavier levé, plan long, passages risqués). */
+.ordre .ordre-bas > .ordre-go {
+  position: sticky;
+  bottom: 0;
+  box-shadow: 0 -6px 8px var(--barre, #131729);
+}
+/* « Demander à Haiku » n'exécute rien : un contour, pas l'aplat jaune. */
+.ordre .ordre-go.est-haiku {
+  background: none;
+  border: 1.5px solid var(--texte, #e6e8f0);
+  color: var(--texte, #e6e8f0);
+}
+/* Pas d'animation sans fin (styles.css en posait une sur ces deux états) : « Haiku réfléchit… » et l'écoute le disent
+   en toutes lettres. */
+.ordre .ordre-go.part {
+  animation: none;
+  opacity: 0.7;
+}
+
+/* ───────── Micro : toucher pour commencer, ou maintenir pour parler ───────── */
+.ordre .ordre-micro {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: none;
+}
+.ordre .ordre-micro.is-ecoute {
+  animation: none;
+  background: none;
+  border-color: var(--texte, #e6e8f0);
+  color: var(--texte, #e6e8f0);
+}
+.ordre .ordre-ecoute {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font: 700 11px/1.3 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--texte, #e6e8f0);
+}
+.ordre .ordre-ecoute i,
+.parler i {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--error, #ff5d6c);
+}
+
+/* ───────── Ordinateur : « J'écoute — relâche Espace », repère fixe en haut, au milieu (le bas porte les barres du
+   plateau) ───────── */
+.parler {
+  position: fixed;
+  z-index: 1300;
+  left: 50%;
+  top: calc(18px + env(safe-area-inset-top));
+  translate: -50% 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: calc(100vw - 32px);
+  padding: 12px 18px;
+  background: var(--barre, #131729);
+  border: 1px solid var(--trait, rgba(190, 205, 255, 0.13));
+  border-radius: 999px;
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.55);
+  font: 700 11px/1.3 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+  color: var(--texte, #e6e8f0);
+  pointer-events: none;
+}
+.parler.est-erreur {
+  font: 600 13px/1.35 var(--ui, inherit);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--error, #ff5d6c);
+}
+
+/* ───────── Téléphone (même condition que `mobile` dans App.jsx) ───────── */
+@media (max-width: 760px), (max-height: 520px) and (pointer: coarse) {
+  /* Posé sur la zone réellement visible : clavier ouvert, le champ et « Exécuter » restent au-dessus de lui (--vvh /
+     --vvt, posés par App.jsx seulement clavier ouvert). */
+  .boucle-fond.ordre-fond {
+    top: var(--vvt, 0px);
+    bottom: auto;
+    height: var(--vvh, 100dvh);
+  }
+  .boucle.ordre {
+    max-height: calc(100% - env(safe-area-inset-top) - 10px);
+  }
+  /* Les exemples sur une seule rangée qui glisse : le fil garde la place. */
+  .ordre .ordre-exemples {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .ordre .ordre-exemples button {
+    flex: none;
+    white-space: nowrap;
+  }
+  .ordre .ordre-lien,
+  .ordre .ordre-lien.est-ligne {
+    min-height: 40px;
+  }
+  .ordre .ordre-lien.est-ligne {
+    padding: 9px 6px;
+  }
+  .ordre .ordre-plus {
+    min-height: 44px;
+  }
+  .ordre .ordre-mentions li {
+    min-height: 44px;
+  }
+}
+
+/* ───────── Téléphone couché (844 × 390) : deux colonnes, le fil à gauche, le champ et le bouton à droite ───────── */
+@media (max-height: 520px) and (pointer: coarse) and (orientation: landscape) {
+  .boucle-fond.ordre-fond {
+    align-items: center;
+    padding: 6px calc(8px + env(safe-area-inset-right)) 6px calc(8px + env(safe-area-inset-left));
+  }
+  .boucle.ordre {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 8px 18px;
+    width: min(100%, 860px);
+    height: 100%;
+    max-height: none;
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+    overflow: hidden;
+    border-bottom: 1px solid var(--trait, rgba(190, 205, 255, 0.13));
+    border-radius: 14px;
+  }
+  .ordre > header {
+    grid-column: 1 / -1;
+  }
+  .ordre .ordre-fil,
+  .ordre .ordre-fil.est-vide {
+    display: block;
+    grid-column: 1;
+    grid-row: 2;
+    margin: 0;
+    padding: 0 4px 0 0;
+  }
+  .ordre .ordre-bas {
+    grid-column: 2;
+    grid-row: 2;
+    align-content: start;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}

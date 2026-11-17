@@ -1,0 +1,172 @@
+#!/usr/bin/env node
+// Commande des agents Meydan : mémoire du projet pour toute console, et commandes d'une équipe (capitaine et équipiers).
+// Parle au serveur local avec le jeton de la console (MEYDAN_ID, MEYDAN_TOKEN_FILE, MEYDAN_PORT, posés par Meydan).
+import fs from 'node:fs'
+import { execFileSync } from 'node:child_process'
+
+const AIDE = `meydan — commandes des agents
+
+Retours locaux (trois entrées par projet/session au total) :
+  meydan suggere "<amélioration concrète>"
+  meydan plainte "<friction rencontrée>"
+
+Toute console Meydan (mémoire du projet, validée par Orkun) :
+  meydan fait "<une phrase>"              proposer un fait durable, utile à toute future console du projet (jamais un secret)
+  meydan faits                            les faits validés du projet de cette console
+
+Toute console Meydan (navigateur de la console, pages http://localhost:<port> seulement ; Orkun le voit sur le plateau) :
+  meydan nav ouvre <url>                  ouvrir une page (lance le navigateur au besoin)
+  meydan nav capture                      capture d'écran PNG, rend son chemin
+  meydan nav clique <sélecteur CSS>       clic réel sur l'élément
+  meydan nav tape <sélecteur CSS> <texte> remplace le contenu du champ par le texte
+  meydan nav permet <port>                un autre port permis à la page (ex. son API ; sinon seul le port ouvert)
+  meydan nav texte | console | etat | ferme   texte visible, journal de la page, état, fermeture
+  meydan nav aide                         le détail
+
+Équipe :
+  meydan statut <verbe> "<une ligne>"     déclarer son statut (working, needs-decision, blocked, done, failed, resolved)
+  meydan etat                             où en est l'équipe
+  meydan capitaine "<mission>"            sur l'ordre d'Orkun : cette console devient capitaine d'une équipe
+                                          posée sur son dossier (elle peut ensuite lancer des équipiers)
+
+Réservé au vérificateur de fin :
+  meydan verification etat
+  meydan verification relancer <id> "<défaut et preuve attendue>"
+  meydan verification conclure acceptee|refusee "<preuves et limites>"
+
+Réservé au capitaine :
+  meydan roles                            les rôles disponibles
+  meydan lancer <rôle> "<nom>" <fichier de tâche> [--base <branche>] [--dossier <sous-dossier>]
+                                          (--dossier : projet sans git, un sous-dossier par équipier qui écrit)
+  meydan voir <id>                        dernières lignes de la console d'un équipier
+  meydan dire <id> "<une ligne>"          message à un équipier (remis quand il est au repos)
+  meydan clore <id>                       fermer un équipier`
+
+const [cmd, ...a] = process.argv.slice(2)
+const fin = (message, code = 1) => {
+  console.error(`meydan : ${message}`)
+  process.exit(code)
+}
+if (!cmd || cmd === 'aide' || cmd === '--help' || cmd === '-h') {
+  console.log(AIDE)
+  process.exit(0)
+}
+// Retours locaux : aucun jeton et aucun appel réseau, y compris hors équipe.
+if (cmd === 'suggere' || cmd === 'plainte') {
+  const { deposeSuggestion } = await import('../lib/suggestions.mjs')
+  try {
+    const session = process.env.MEYDAN_ID || process.env.CODEX_THREAD_ID || process.env.CLAUDE_SESSION_ID || process.env.MEYDAN_SUGGESTION_SESSION
+    const x = deposeSuggestion({ type: cmd === 'suggere' ? 'suggestion' : 'plainte', texte: a.join(' '), projet: process.env.MEYDAN_SUGGESTION_PROJECT || process.cwd(), session })
+    console.log(`Entrée ${x.id} déposée.`)
+    process.exit(0)
+  } catch (e) { fin(`retour non déposé : ${e.message}`) }
+}
+
+const { MEYDAN_PORT: port, MEYDAN_ID: id } = process.env
+// Le jeton est lu dans un fichier que Meydan pose pour cette console (MEYDAN_TOKEN_FILE) : passé en variable sur la ligne
+// de commande de tmux, il resterait lisible par les autres comptes de la machine. MEYDAN_TOKEN reste accepté.
+let token = process.env.MEYDAN_TOKEN || ''
+if (!token && process.env.MEYDAN_TOKEN_FILE) {
+  try {
+    token = fs.readFileSync(process.env.MEYDAN_TOKEN_FILE, 'utf8').trim()
+  } catch {} // fichier absent ou illisible : traité comme une console hors équipe, message ci-dessous
+}
+// Console ouverte avant que Meydan donne un jeton à toutes ses consoles (11/11) : son agent ne voit pas la variable,
+// mais la session tmux la porte (posée par le serveur à son démarrage).
+if (!token && process.env.TMUX) {
+  try {
+    const ligne = execFileSync('tmux', ['show-environment', 'MEYDAN_TOKEN_FILE'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim()
+    if (ligne.startsWith('MEYDAN_TOKEN_FILE=')) token = fs.readFileSync(ligne.slice(18), 'utf8').trim()
+  } catch {} // pas de jeton pour cette console
+}
+if (!port || !id || !token) fin('cette console n’est pas une console Meydan, ou son jeton est introuvable (MEYDAN_ID, MEYDAN_PORT, MEYDAN_TOKEN_FILE).', 2)
+
+async function appel(method, chemin, corps) {
+  let r
+  try {
+    r = await fetch(`http://127.0.0.1:${port}/agent/${chemin}`, {
+      method,
+      headers: { 'x-meydan-id': id, 'x-meydan-token': token, ...(corps ? { 'content-type': 'application/json' } : {}) },
+      body: corps ? JSON.stringify(corps) : undefined,
+    })
+  } catch (e) {
+    fin(`serveur Meydan injoignable (${e.cause?.code || e.message})`)
+  }
+  const j = await r.json().catch(() => ({}))
+  if (!r.ok) fin(`refusé (${r.status}) — ${j.error || 'erreur'}`)
+  return j
+}
+const depuis = (t) => {
+  const s = Math.max(0, Math.round((Date.now() - t) / 1000))
+  return s < 90 ? `${s} s` : s < 5400 ? `${Math.round(s / 60)} min` : `${Math.round(s / 3600)} h`
+}
+
+if (cmd === 'nav') {
+  // Navigateur de l'agent (volet copies, 13/11) : lib/meydan-nav.mjs.
+  await (await import('../lib/meydan-nav.mjs')).nav(a, { appel, fin })
+} else if (cmd === 'verification') {
+  if (a[0] === 'etat') console.log(JSON.stringify(await appel('GET', 'verification'), null, 2))
+  else if (a[0] === 'relancer') console.log(JSON.stringify(await appel('POST', 'verification', { action: 'relancer', id: a[1], texte: a.slice(2).join(' ') })))
+  else if (a[0] === 'conclure') console.log(JSON.stringify(await appel('POST', 'verification', { action: 'conclure', verdict: a[1], texte: a.slice(2).join(' ') })))
+  else fin('usage : meydan verification etat | relancer <id> "<défaut précis>" | conclure acceptee|refusee "<preuves>"', 2)
+} else if (cmd === 'capitaine') {
+  // Orkun, 11/11 : « quand je demande a une console d'agir en capitaine, qu'il le fasse. Je donne les droits, c'est mon
+  // ordre qui prime sur tout. »
+  const r = await appel('POST', 'capitaine', { mission: a.join(' ') })
+  console.log(`capitaine de l'équipe « ${r.equipe.nom} » (${r.equipe.id}) · projet ${r.equipe.projet}\n  brief : ${r.brief}\n  ensuite : meydan roles, puis meydan lancer <rôle> "<nom>" <fichier de tâche> [--dossier <sous-dossier>]`)
+} else if (cmd === 'fait') {
+  // Mémoire du projet (docs/specs/2026-11-11-memoire-projet.md) : le fait attend la validation d'Orkun ; le projet est
+  // celui de cette console, choisi par le serveur.
+  const texte = a.join(' ').trim()
+  if (!texte) fin('usage : meydan fait "<une phrase>"', 2)
+  const r = await appel('POST', 'fait', { texte })
+  console.log(r.deja ? `déjà dans la mémoire du projet « ${r.projet} » (${r.deja === 'valide' ? 'validé par Orkun' : 'proposé, en attente d’Orkun'}) : rien d’ajouté` : `proposé pour la mémoire du projet « ${r.projet} » (${r.id}) : Orkun le validera`)
+} else if (cmd === 'faits') {
+  const r = await appel('GET', 'faits')
+  console.log(`Mémoire du projet « ${r.projet} » : ${r.faits.length} fait(s) validé(s) par Orkun${r.proposes ? `, ${r.proposes} proposition(s) en attente` : ''}`)
+  for (const f of r.faits) console.log(`- ${f}`)
+} else if (cmd === 'roles') {
+  for (const r of (await appel('GET', 'roles')).roles) console.log(`${r.nom} — ${r.agent}${r.modele ? ` ${r.modele}` : ''} — ${r.ecrit ? 'écrit' : 'lit seulement'} — ${r.resume}`)
+} else if (cmd === 'etat') {
+  const { equipe, membres } = await appel('GET', 'etat')
+  console.log(`Équipe « ${equipe.nom} » (${equipe.id}) · projet ${equipe.projet}${equipe.git ? ` · branche ${equipe.branche || 'tête détachée'} · intégration ${equipe.integration}` : ' · sans git'}`)
+  if (equipe.livre) console.log(`Livré il y a ${depuis(equipe.livre.at)} : ${equipe.livre.avant.slice(0, 7)} → ${equipe.livre.apres.slice(0, 7)}`)
+  for (const m of membres) {
+    const etat = m.etat ? `${m.etat.verbe} (il y a ${depuis(m.etat.at)}) — ${m.etat.texte || 'sans détail'}` : 'aucun statut déclaré'
+    console.log(`- ${m.id} · ${m.role} « ${m.nom} » · console : ${m.statut}${m.attente ? ` · ${m.attente} message(s) en attente` : ''}\n    ${etat}${m.branche ? `\n    branche ${m.branche}` : ''}`)
+  }
+} else if (cmd === 'voir') {
+  if (!a[0]) fin('usage : meydan voir <id>', 2)
+  console.log((await appel('GET', `voir?id=${encodeURIComponent(a[0])}`)).ecran)
+} else if (cmd === 'statut') {
+  if (!a[0]) fin('usage : meydan statut <verbe> "<une ligne>"', 2)
+  await appel('POST', 'statut', { verbe: a[0], texte: a.slice(1).join(' ') })
+  console.log(`statut noté : ${a[0]}`)
+} else if (cmd === 'lancer') {
+  const i = a.indexOf('--base')
+  const base = i >= 0 ? a.splice(i, 2)[1] : undefined
+  const j = a.indexOf('--dossier')
+  const dossier = j >= 0 ? a.splice(j, 2)[1] : undefined
+  const [role, nom, fichier] = a
+  if (!role || !nom || !fichier || (i >= 0 && !base) || (j >= 0 && !dossier)) fin('usage : meydan lancer <rôle> "<nom>" <fichier de tâche> [--base <branche>] [--dossier <sous-dossier>]', 2)
+  let tache
+  try {
+    tache = fs.readFileSync(fichier === '-' ? 0 : fichier, 'utf8')
+  } catch (e) {
+    fin(`fichier de tâche illisible : ${e.message}`, 2)
+  }
+  const r = await appel('POST', 'lancer', { role, nom, tache, base, dossier })
+  // 202 (volet quota) : l'équipe est « à valider », rien n'est lancé tant qu'Orkun n'a pas accepté.
+  if (r.attente) console.log(`demande envoyée à Orkun (${r.demande}) : il doit l'accepter ; tu recevras sa réponse dans cette console par un message [Meydan]. Ne relance pas la commande.`)
+  else console.log(`lancé : ${r.id} · ${r.nom}\n  dossier ${r.dossier}${r.branche ? `\n  branche ${r.branche}` : ''}`)
+} else if (cmd === 'dire') {
+  if (!a[0] || !a[1]) fin('usage : meydan dire <id> "<une ligne>"', 2)
+  await appel('POST', 'dire', { id: a[0], texte: a.slice(1).join(' ') })
+  console.log('message déposé : il sera remis quand l’équipier sera au repos')
+} else if (cmd === 'clore') {
+  if (!a[0]) fin('usage : meydan clore <id>', 2)
+  const r = await appel('POST', 'clore', { id: a[0] })
+  console.log(`clos${r.branche ? ` · branche ${r.branche}` : ''}${r.garde ? ` · dossier gardé (travail non commité) : ${r.garde}` : ''}`)
+} else {
+  fin(`commande inconnue : ${cmd}\n\n${AIDE}`, 2)
+}
