@@ -48,6 +48,10 @@ import { NOM, deNom } from './lib/nom.mjs'
 import { ouvreBudget } from './lib/budget.mjs' // volet quota (17/11) : usage par console, budgets, validation des lancements
 // Équipes « locales » (tâche 18 du 17/11) : Claude Code sur le modèle du Mac d'Orkun (oMLX par son tunnel).
 import { ouvreLocale } from './lib/locale.mjs'
+// Volet livraison-equipes (17/11, idées de Hangar) : file de livraison, fichiers réservés, un bloc de ports par équipier.
+import * as livraisons from './lib/livraisons.mjs'
+import * as reserves from './lib/reserves.mjs'
+import * as blocsPorts from './lib/ports.mjs'
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url))
 const DATA = process.env.MEYDAN_DATA || path.join(ROOT, 'data')
@@ -465,7 +469,9 @@ function resumable(c) {
 
 // Commande qui lance l'agent d'une console. `reprise` : reprendre sa conversation si c'est possible.
 function launchOf(c, reprise = false) {
-  if (c.verificationTeam) {
+  // Le relecteur d'une livraison (`c.revue`, volet livraison-equipes) part comme le vérificateur de fin : Codex en lecture
+  // seule, contexte neuf, son mandat dans data/verifications/<console>/brief.md.
+  if (c.verificationTeam || c.revue) {
     const brief = path.join(DATA, 'verifications', c.id, 'brief.md')
     return `${CODEX_RUN} -s read-only -a on-request${codexSansMcp()} -- 'Lis ${equipage.sur(brief)} et applique uniquement ce mandat de vérification.'`
   }
@@ -534,6 +540,8 @@ async function terminalDans(id, dir, ident = null) {
 async function openSession(c, dir, launch, commande = null, ident = null) {
   const id = c.id
   const env = ['-e', `MEYDAN_ID=${id}`, '-e', `MEYDAN_PORT=${PORT}`, '-e', `MEYDAN_TOKEN_FILE=${fichierJeton(c)}`]
+  // Bloc de ports d'un équipier (volet livraison-equipes, lib/ports.mjs) : ses serveurs de développement et d'essai.
+  if (c.ports) env.push('-e', `MEYDAN_PORTS=${blocsPorts.texte(c.ports)}`, '-e', `PORT=${c.ports.debut}`)
   // Le nom réglé (lib/nom.mjs, déjà validé) suit jusqu'à `meydan` dans la console : CHILD_ENV ne le transmet pas.
   if (process.env.MEYDAN_NOM !== undefined) env.push('-e', `MEYDAN_NOM=${NOM}`)
   // Compte 2 (« Plusieurs comptes Claude / Codex ») : son dossier passe par l'environnement de la SESSION, pas devant la
@@ -566,6 +574,14 @@ async function revive(c) {
   if (!Object.hasOwn(KINDS, c.kind)) throw refus(`type « ${c.kind} » indisponible sur ce serveur`)
   if ((await panes()).has(c.id)) throw refus('cette console tourne déjà')
   const dir = safeDir(c.cwd) // lève si le dossier a disparu
+  // Bloc de ports d'un équipier (volet livraison-equipes) : il le garde, sauf si une autre console porte le même (état
+  // restauré à la main, doublon) : un autre bloc lui est alors donné.
+  if (c.ports && consoles.some((x) => x !== c && x.ports?.debut === c.ports.debut)) {
+    const b = prendPorts(c)
+    if (b) portsEnCours.delete(b.debut)
+    if (b) c.ports = b
+    else delete c.ports
+  }
   // Console locale : plafond et Mac joignable, comme à son lancement (lib/locale.mjs) ; Mac hors ligne au redémarrage du
   // VPS : elle n'est pas rouverte (dit au journal par reviveAfterBoot), Orkun la relance une fois le Mac réveillé.
   // Sans elle-même : au redémarrage du VPS, la console à rouvrir n'est pas encore « closed » dans l'état (relecture du
@@ -1023,6 +1039,7 @@ async function reconcile1() {
     await limiteUsage(c, ecranLu)
   }
   for (const t of teams) await verifieFin(t)
+  for (const t of teams) surveilleFile(t) // file de livraison (volet livraison-equipes)
   surveilleFils()
 }
 
@@ -1539,7 +1556,7 @@ async function openMember(team, role, m) {
   // Équipe locale : tout membre est une console Claude sur le Mac, quel que soit l'agent de son rôle (`agent: codex` du
   // constructeur compris) ; modèle, effort, conseiller et outils du rôle ne s'appliquent pas (ligneLocale).
   const agent = team.locale ? { local: true } : { modele: role.modele, effort: role.effort, ...(role.conseiller && { conseiller: role.conseiller }), ...(role.outils?.length && { outils: role.outils }) }
-  const plus = { id: m.id, team: team.id, role: role.nom, nom: m.nom, chief: !!m.chief, ecrit: role.ecrit, ...agent, branch: m.branch || '', base: m.base || '', etat: null, tour: '' }
+  const plus = { id: m.id, team: team.id, role: role.nom, nom: m.nom, chief: !!m.chief, ecrit: role.ecrit, ...agent, branch: m.branch || '', base: m.base || '', etat: null, tour: '', ...(m.ports && { ports: m.ports }), ...(m.fichiers?.length && { fichiers: m.fichiers }) }
   const dossier = path.join(TEAMS_DATA, team.id, m.id)
   fs.mkdirSync(dossier, { recursive: true, mode: 0o700 })
   const texte = equipage.brief({ role, tache: m.tache || '', membre: { ...plus, cwd: m.cwd, baseRef: m.baseRef || '' }, equipe: team, cli: CLI, dossier: m.chief ? teamDir(team.id) : dossier, memoire: memoireEquipe(team) })
@@ -1668,6 +1685,9 @@ async function lancer(chief, body) {
   const tache = String(body.tache ?? '').replace(/\r/g, '').trim()
   if (!tache) throw refus('tâche vide')
   if (tache.length > equipage.MAX_TASK) throw refus(`tâche trop longue (${equipage.MAX_TASK} caractères au plus)`)
+  // Fichiers réservés (volet livraison-equipes) : lus ici, contrôlés contre les tâches en cours plus bas (reserveFichiers).
+  const fichiers = reserves.lisMotifs(body.fichiers)
+  if (fichiers.length && !role.ecrit) throw refus(`--fichiers : seul un rôle qui écrit réserve des fichiers (« ${role.nom} » lit seulement)`)
   const crew = membersOf(team.id).filter((c) => !c.chief)
   if (crew.length >= equipage.MAX_CREW) throw refus(`${equipage.MAX_CREW} équipiers au plus par équipe : clos-en un d'abord`, 409)
   // Projet sans git : un équipier peut travailler dans un sous-dossier du projet (`dossier`, par ex. `api` pour une
@@ -1729,11 +1749,17 @@ async function lancer(chief, body) {
     await equipage.addWorktree(team.projet, cwd, { branche: branch, base, prive: TEAMS_LOG })
   }
   let libere = () => {}
+  let resa = null, ports = null
   try {
+    // Volet livraison-equipes : fichiers réservés contrôlés ET inscrits sans attente entre les deux (deux équipes du même
+    // projet lancent en parallèle), puis un bloc de ports ; tous deux rendus en fin de lancement (la console les porte).
+    resa = reserveFichiers(team, `${role.nom} « ${nom} »`, fichiers)
+    ports = prendPorts()
     // Équipe locale (lib/locale.mjs) : une place de console locale (plafond commun à toutes les équipes, réservée tout
     // de suite) et le Mac joignable ; sinon le capitaine reçoit la phrase de refus, et le worktree créé à l'instant part.
     if (team.locale) libere = await locale.prend(consoles)
-    const c = await openMember(team, role, { id, nom, cwd, branch, base, baseRef, tache, attendu })
+    const c = await openMember(team, role, { id, nom, cwd, branch, base, baseRef, tache, attendu, ports, fichiers })
+    fs.writeFileSync(path.join(serverDir(c), 'tache.md'), tache + '\n', { mode: 0o600 }) // relue par la file (relecteur), hors de portée de l'équipier
     team.lances = (team.lances || 0) + 1
     save()
     return c
@@ -1747,7 +1773,59 @@ async function lancer(chief, body) {
     throw e
   } finally {
     libere()
+    reservationsEnCours.delete(resa)
+    if (ports) portsEnCours.delete(ports.debut)
   }
+}
+
+// ── Fichiers réservés et blocs de ports (volet livraison-equipes, 17/11 ; lib/reserves.mjs, lib/ports.mjs) ──
+const reel = (p) => {
+  try {
+    return fs.realpathSync(p)
+  } catch {
+    return p // dossier disparu : comparé tel quel
+  }
+}
+// Un membre tient ses fichiers réservés tant que sa tâche court : jusqu'à sa clôture, son échec, et (sous git) l'atterrissage
+// de sa livraison par la file, (sans git) son « done ». Un « done » renvoyé en correction les tient encore (la règle « un
+// seul qui écrit par dossier » des projets sans git les libère au « done », comme celle-ci).
+function tientFichiers(c) {
+  const t = c.team && c.fichiers?.length && c.etat?.verbe !== 'failed' && findTeam(c.team)
+  if (!t) return false
+  return t.git ? !c.livree : c.etat?.verbe !== 'done'
+}
+const reservationsEnCours = new Set() // lancements en cours : { equipe, qui, fichiers }
+function reserveFichiers(team, qui, fichiers) {
+  if (!fichiers.length) return null
+  const racine = reel(team.projet)
+  const tenus = [...consoles.filter(tientFichiers).map((c) => ({ equipe: findTeam(c.team), qui: who(c), fichiers: c.fichiers })), ...reservationsEnCours]
+  const depuis = Date.now() // un seul budget de temps pour toute la comparaison (lib/reserves.mjs)
+  // Même projet, ou l'un posé dans l'autre (équipe sans git sur ~/x, équipe git sur ~/x/projet) : les motifs de la
+  // plus profonde sont lus depuis la racine de l'autre (`projet/src/**`).
+  const sous = (de, vers) => path.relative(de, vers).split(path.sep).join('/')
+  for (const x of tenus) {
+    const autre = reel(x.equipe.projet)
+    let miens = fichiers, leurs = x.fichiers
+    if (autre !== racine) {
+      if (racine.startsWith(autre + path.sep)) miens = fichiers.map((f) => `${sous(autre, racine)}/${f}`)
+      else if (autre.startsWith(racine + path.sep)) leurs = x.fichiers.map((f) => `${sous(racine, autre)}/${f}`)
+      else continue
+    }
+    const [p] = reserves.chevauchements(miens, leurs, depuis)
+    if (p)
+      throw refus(reserves.texteChevauche(p, x.qui, x.equipe.id !== team.id ? x.equipe : null), 409)
+  }
+  const resa = { equipe: team, qui: `${qui} (lancement en cours)`, fichiers }
+  reservationsEnCours.add(resa)
+  return resa
+}
+const portsEnCours = new Set() // débuts des blocs choisis par un lancement pas encore inscrit dans `consoles`
+function prendPorts(sauf = null) {
+  const pris = new Set([...portsEnCours, ...consoles.filter((x) => x.ports && x !== sauf).map((x) => x.ports.debut)])
+  const b = blocsPorts.choisit({ pris, exclus: new Set([PORT]) })
+  if (b) portsEnCours.add(b.debut)
+  else console.error('[ports] aucun bloc de ports libre : équipier lancé sans')
+  return b
 }
 function memberOf(chief, id) {
   const m = find(String(id ?? ''))
@@ -1808,8 +1886,13 @@ async function declare(c, verbe, texte) {
     const suite = verbe !== 'done' ? '' : c.branch ? ` · branche ${c.branch}` : c.ecrit ? '' : ` · rapport ${path.join(memberDir(c), 'rapport.md')}`
     const regard = contenu?.sensibles.length ? ` · à regarder avant de rassembler : ${contenu.sensibles.join(', ')}` : ''
     // Le texte de l'équipier est cité : c'est son compte rendu, pas une consigne de Meydan.
-    wake(team.id, `${who(c)} : ${verbe} — il écrit : « ${texte || 'sans détail'} »${suite}${regard}`)
+    const ligneDone = `${who(c)} : ${verbe} — il écrit : « ${texte || 'sans détail'} »${suite}${regard}`
+    // File de livraison active (volet livraison-equipes) : le « done » d'un équipier qui écrit entre dans la file ; le
+    // capitaine apprend son résultat (atterrie, refusée…) dans un message groupé qui reprend cette ligne.
+    if (verbe === 'done' && c.branch && fileActive(team)) soumet(team, c, ligneDone, contenu?.sensibles || [])
+    else wake(team.id, ligneDone)
   }
+  if (verbe !== 'done') delete c.livree // repart au travail : ses fichiers réservés comptent de nouveau
   save()
   broadcast({ type: 'console', console: c })
 }
@@ -1854,6 +1937,8 @@ async function closeMember(c, strict = true) {
     branche = await equipage.git(chief && fs.existsSync(chief.cwd) ? chief.cwd : team.projet, 'branch', '-d', c.branch).then(() => 'supprimée (déjà rassemblée)', () => 'gardée (pas rassemblée)')
   }
   await envois.forget(DATA, c.id)
+  // File de livraison : une livraison de lui qui attendait encore son tour n'a plus lieu (pendant un arrêt : sans bruit).
+  for (const L of team?.livraisons || []) if (L.membre === c.id) interromptLivraison(team, L, 'équipier clos avant que sa livraison atterrisse', arrets.has(team.id))
   // `garde` : son dossier de travail laissé sur le disque (travail non commité) ; l'arrêt de l'équipe le redit (17/11, n°9).
   if (team) (team.membresClos ||= []).push({ id: c.id, name: c.name, kind: c.kind, agent: c.agent, cwd: c.cwd, team: c.team, etat: c.etat, ferme: true, ...(c.local && { local: true }), ...(garde && { garde }) })
   consoles = consoles.filter((x) => x.id !== c.id)
@@ -1878,6 +1963,7 @@ function stopTeam(team) {
 }
 async function arreteEquipe(team) {
   await (lancements.get(team.id) || Promise.resolve()).catch(() => {}) // le lancement en cours finit, sa console sera fermée avec les autres
+  await arreteFile(team) // file de livraison : vérification tuée, relecteur fermé, worktrees temporaires retirés
   if (team.verification?.etat === 'active') finVerification(team, 'refusee', `Équipe arrêtée par ${NOM} : la vérification est terminée sans validation.`)
   const gardes = []
   for (const c of membersOf(team.id).sort((a, b) => Number(!!a.chief) - Number(!!b.chief))) {
@@ -1919,10 +2005,357 @@ async function deliver(team) {
   return team
 }
 
+// ── File de livraison des équipiers (volet livraison-equipes, 17/11 ; lib/livraisons.mjs) ──
+// Idée de Hangar (docs/guide/orchestration.md) : la branche rendue d'un équipier entre dans une file ; chaque livraison
+// est (a) fusionnée à part, (b) vérifiée par la commande de l'équipe, (c) relue par un relecteur au contexte neuf en
+// lecture seule, (d) posée par avance rapide ; un échec revient à l'équipier. Ici :
+//   - réglée par Orkun équipe par équipe (`team.file` = { active, commande }, route de session seulement : jamais par un
+//     agent), éteinte par défaut ; équipes sous git seulement (sans git, rien ne change) ;
+//   - (c) = la console Codex en lecture seule du vérificateur de fin (lib/verification.mjs, briefRevue), quand la case
+//     « Contrôle Codex » de l'équipe est cochée ; le texte du rôle `relecteur` lui dit comment relire ;
+//   - (d) sur la branche d'INTÉGRATION (dossier du capitaine), jamais sur le projet : « Livrer » reste à Orkun ;
+//   - une livraison à la fois par équipe (la suivante attend la relecture de la précédente) ; si le capitaine fait bouger
+//     l'intégration pendant ce temps, fusion et vérification sont refaites sur sa nouvelle tête (3 essais), la relecture
+//     acceptée reste (elle portait sur le travail de l'équipier) ;
+//   - le capitaine apprend les résultats par un message « [Meydan] File de livraison » groupé (annonce).
+const MAX_RENVOIS = 3 // refus renvoyés à un même équipier ; au-delà, le capitaine décide
+const MAX_LIVRAISONS = 20 // livraisons finies gardées par équipe (affichage, `meydan etat`)
+const DELAI_RELECTURE = 30 * 60 * 1000
+const GROUPE_MS = 3000 // une annonce attend les suivantes 3 s (20 s au plus) : un seul réveil pour plusieurs résultats
+const GROUPE_MAX_MS = 20000
+const FINIES = new Set(['atterrie', 'refusee', 'retenue', 'annulee', 'erreur'])
+const MOTS = { atterrie: 'atterrie', refusee: 'refusée', retenue: 'retenue pour toi', annulee: 'annulée', erreur: 'en erreur' }
+const fileActive = (t) => !!(t?.git && t.file?.active)
+const fileEnCours = new Map() // équipe → promesse du traitement de sa file
+const verifsEnCours = new Map() // livraison → processus de sa commande de vérification
+const journalLivraison = (team, L) => path.join(TEAMS_LOG, team.id, 'livraisons', `${L.id}.log`)
+const arretFile = () => Object.assign(new Error('équipe arrêtée'), { arret: true })
+// Relecture indépendante du volet (n°2, 3, 7, 13) : une livraison en cours s'arrête dès que son équipe est arrêtée, que
+// la file est coupée ou que son équipier est clos ; contrôlé à chaque étape et après chaque attente (`garde`).
+function garde(team, L) {
+  if (arrets.has(team.id) || !findTeam(team.id)) throw arretFile()
+  if (!fileActive(team)) throw Object.assign(new Error(livraisons.texteFileCoupee(L.branche)), { annule: true })
+  const c = find(L.membre)
+  if (!c || c.team !== team.id) throw Object.assign(new Error('équipier clos avant sa livraison'), { annule: true })
+}
+// Interrompre une livraison qui n'est pas finie : sa vérification tuée (groupe, par PID), son relecteur fermé, elle-même
+// annulée (sans bruit pendant un arrêt d'équipe). La boucle qui la traitait s'arrête à sa prochaine garde.
+function interromptLivraison(team, L, raison, silencieux = false) {
+  if (FINIES.has(L.etat)) return
+  const p = verifsEnCours.get(L.id)
+  if (p) {
+    try {
+      process.kill(-p.pid, 'SIGKILL')
+    } catch {} // déjà fini
+  }
+  if (L.revue?.etat === 'active') L.revue.etat = 'interrompue'
+  for (const r of consoles.filter((x) => x.revue?.livraison === L.id && x.status !== 'closed')) fermeRelecteur(r, 0)
+  finLivraison(team, L, 'annulee', raison, { silencieux })
+}
+
+function soumet(team, c, ligneDone, sensibles) {
+  const liste = (team.livraisons ||= [])
+  // Un second « done » du même équipier avant son tour remplace le premier : c'est sa dernière tête qui est livrée.
+  // (finLivraison : son worktree temporaire, s'il en avait un — relecture acceptée, atterrissage à faire —, part avec elle.)
+  for (const x of liste) if (x.membre === c.id && x.etat === 'attente') finLivraison(team, x, 'annulee', 'remplacée par un « done » plus récent', { silencieux: true })
+  liste.push({ id: 'l' + crypto.randomBytes(3).toString('hex'), membre: c.id, nom: c.nom, qui: who(c), branche: c.branch, tip: c.etat.head, texte: c.etat.texte, ligne: ligneDone, sensibles, reserves: c.fichiers || [], at: Date.now(), etat: 'attente' })
+  rangeFile(team)
+  save()
+  broadcast({ type: 'team', team })
+  pousseFile(team)
+}
+function rangeFile(team) {
+  const finies = (team.livraisons || []).filter((x) => FINIES.has(x.etat))
+  if (finies.length > MAX_LIVRAISONS) {
+    const vieilles = new Set(finies.slice(0, finies.length - MAX_LIVRAISONS))
+    team.livraisons = team.livraisons.filter((x) => !vieilles.has(x))
+  }
+}
+// Un traitement par équipe à la fois. Une livraison soumise pendant qu'il se termine est reprise par surveilleFile.
+function pousseFile(team) {
+  if (fileEnCours.has(team.id)) return
+  fileEnCours.set(team.id, traiteFile(team.id).catch((e) => console.error(`[livraison] ${team.id} : ${e.message}`)).finally(() => fileEnCours.delete(team.id)))
+}
+async function traiteFile(teamId) {
+  for (;;) {
+    const team = findTeam(teamId)
+    if (!fileActive(team) || arrets.has(teamId)) return
+    const liste = team.livraisons || []
+    if (liste.some((x) => x.etat === 'relecture')) return // attend le verdict du relecteur (revueApi)
+    const L = liste.find((x) => x.etat === 'attente')
+    if (!L) return
+    try {
+      await livre1(team, L)
+    } catch (e) {
+      if (e.arret) return
+      if (!FINIES.has(L.etat)) finLivraison(team, L, e.annule ? 'annulee' : 'erreur', e.annule ? e.message : `${e.message} ; rassemble-la à la main si elle doit entrer (git merge ${L.branche})`)
+    }
+  }
+}
+function etape(team, L, e) {
+  garde(team, L)
+  L.etat = e
+  save()
+  broadcast({ type: 'team', team })
+}
+async function livre1(team, L) {
+  const c = find(L.membre)
+  if (!c || c.team !== team.id) return finLivraison(team, L, 'annulee', 'équipier clos avant sa livraison')
+  const chef = chiefOf(team.id)
+  if (!chef || !fs.existsSync(chef.cwd)) return finLivraison(team, L, 'erreur', 'dossier du capitaine introuvable')
+  for (let essai = 1; essai <= 3; essai++) {
+    etape(team, L, 'fusion')
+    const gene = await livraisons.configGenante(team.projet)
+    if (gene) return finLivraison(team, L, 'retenue', `${gene} : la file ne fusionne pas ce dépôt, rassemble-la à la main (git merge ${L.branche})`)
+    // (a) Fusion, refaite si l'intégration a bougé depuis la précédente.
+    const base = await equipage.tete(team.projet, `refs/heads/${team.integration}`)
+    if (L.base !== base || !L.merge) {
+      const f = await livraisons.fusionne(team.projet, base, L.tip, `Livraison de ${L.qui}\n\n${L.texte || ''}`)
+      garde(team, L)
+      if (f.deja) return atterrie(team, L, c, `déjà dans ${team.integration} (rassemblée à la main)`, base)
+      if (f.conflits)
+        return renvoi(team, L, 'fusion', `conflit avec ${team.integration} dans ${f.conflits.slice(0, 8).map((n) => equipage.ligne(n, 200)).join(', ')}${f.conflits.length > 8 ? '…' : ''}`, `Fusionne ${team.integration} dans ta branche (\`git merge ${team.integration}\`), règle les conflits en gardant les deux côtés (ce qui est déjà sur l'intégration est le travail d'un autre), commite. Si git te refuse la fusion (bac à sable), déclare \`blocked\` : le capitaine rassemblera à la main.`)
+      await retireTemporaire(team, L)
+      Object.assign(L, { base, merge: f.merge, verifie: '' })
+      const tous = await livraisons.changes(team.projet, base, f.merge)
+      L.changes = tous.slice(0, 200)
+      L.hors = L.reserves?.length ? tous.filter((p) => !reserves.couvre(p, L.reserves)).slice(0, 50) : []
+    }
+    // (b) Vérification : la commande d'Orkun, dans un worktree temporaire posé sur le commit de fusion.
+    const commande = team.file.commande || ''
+    L.commande = commande
+    if (commande && L.verifie !== L.merge) {
+      etape(team, L, 'verification')
+      const dossier = await dossierTemporaire(team, L)
+      garde(team, L) // n°2 : rien ne se lance après « Arrêter » (ni après la file coupée, l'équipier clos)
+      const ports = prendPorts()
+      const suivi = (p) => {
+        verifsEnCours.set(L.id, p)
+        L.verifPid = { pid: p.pid, debut: livraisons.debutProcessus(p.pid) } // pour la tuer après un redémarrage de Meydan
+        save()
+      }
+      let r
+      try {
+        r = await livraisons.verifie({ dossier, commande, env: envVerification(ports), journal: journalLivraison(team, L), suivi })
+      } finally {
+        verifsEnCours.delete(L.id)
+        delete L.verifPid
+        if (ports) portsEnCours.delete(ports.debut)
+      }
+      garde(team, L)
+      L.verification = { commande, ok: r.ok, code: r.code, delai: r.delai, duree: r.duree }
+      if (!r.ok) {
+        const fin = r.fin.split('\n').map((l) => equipage.ligne(l, 300)).join('\n').trim()
+        return renvoi(team, L, 'vérification', `« ${commande} » ${r.delai ? `a dépassé ${livraisons.DELAI_VERIFICATION / 60000} min` : `a échoué (${r.signal ? `signal ${r.signal}` : `code ${r.code}`})`}`, `Fin de sa sortie :\n${fin || '(rien)'}\nJournal complet : ${journalLivraison(team, L)}`)
+      }
+      L.verifie = L.merge
+    }
+    // (c) Relecture (case « Contrôle Codex ») : la suite viendra du verdict (revueApi).
+    if (team.verifierFin && L.revue?.etat !== 'acceptee') return lanceRelecture(team, L)
+    await retireTemporaire(team, L)
+    // (d) Atterrissage sur l'intégration, dans le dossier du capitaine.
+    etape(team, L, 'atterrissage')
+    const geneChef = await livraisons.configGenante(chef.cwd)
+    if (geneChef) return finLivraison(team, L, 'retenue', `${geneChef}, vu depuis ton dossier : la file ne l'avance pas, rassemble-la à la main (git merge ${L.branche})`)
+    garde(team, L)
+    try {
+      if ((await livraisons.atterrit(chef.cwd, team.integration, L.base, L.merge)).ok) return atterrie(team, L, c)
+    } catch (e) {
+      if (e.cote === 'capitaine') return finLivraison(team, L, 'retenue', `${e.message}. Rassemble-la à la main quand ton dossier est prêt (git merge ${L.branche})`)
+      throw e
+    }
+  }
+  finLivraison(team, L, 'retenue', `l'intégration a bougé à chacun des 3 essais : rassemble-la à la main (git merge ${L.branche})`)
+}
+// L'environnement de la vérification : celui des consoles (jamais un jeton ni une variable du serveur), CI=1, et un bloc
+// de ports à elle, rendu à la fin (relecture du volet, n°9 : avec ceux de l'équipier, son serveur de développement encore
+// à l'écoute faisait échouer un essai qui lance le sien sur $PORT, et le refus lui revenait à tort).
+const envVerification = (ports) => ({ ...CHILD_ENV, CI: '1', ...(ports && { PORT: String(ports.debut), MEYDAN_PORTS: blocsPorts.texte(ports) }) })
+async function dossierTemporaire(team, L) {
+  if (L.dossier && L.dossierPour === L.merge && fs.existsSync(L.dossier)) return L.dossier
+  await retireTemporaire(team, L)
+  const d = path.join(TEAMS_DIR, slug(path.basename(team.projet)), team.id, `livraison-${L.id}`)
+  await equipage.addWorktree(team.projet, d, { branche: '', base: L.merge, prive: TEAMS_LOG })
+  Object.assign(L, { dossier: d, dossierPour: L.merge })
+  return d
+}
+async function retireTemporaire(team, L) {
+  if (!L.dossier) return
+  const d = L.dossier
+  delete L.dossier
+  delete L.dossierPour
+  await equipage.dropWorktree(team.projet, d, true).catch((e) => console.error(`[livraison] worktree ${d} : ${e.message}`))
+}
+const retraits = new Map() // livraison → retrait en cours de son worktree temporaire (attendu par un arrêt d'équipe)
+function finLivraison(team, L, etat, detail, { silencieux = false, merge = '' } = {}) {
+  Object.assign(L, { etat, detail: equipage.ligne(detail, 600), fin: Date.now(), ...(merge && { merge }) })
+  const retrait = retireTemporaire(team, L).catch(() => {})
+  retraits.set(L.id, retrait)
+  retrait.finally(() => retraits.get(L.id) === retrait && retraits.delete(L.id))
+  if (!silencieux) annonce(team, `${L.ligne} · livraison ${MOTS[etat]} : ${L.detail}`)
+  rangeFile(team)
+  save()
+  broadcast({ type: 'team', team })
+}
+function atterrie(team, L, c, detail = '', merge = '') {
+  if (find(c.id) === c) {
+    c.livree = merge || L.merge // ses fichiers réservés sont libres
+    c.renvois = 0
+    broadcast({ type: 'console', console: c })
+  }
+  // L'intégration a bougé : le « prêt » du capitaine ne la décrit plus (« Livrer » le refuserait).
+  if (team.pret && !detail) team.pret = null
+  const v = L.verification?.ok ? ` · vérification « ${L.verification.commande} » réussie (${Math.round(L.verification.duree / 1000)} s)` : ''
+  const r = L.revue?.etat === 'acceptee' ? ' · relecture Codex acceptée' : ''
+  const hors = L.hors?.length ? ` · hors de ses fichiers réservés : ${L.hors.slice(0, 6).join(', ')}${L.hors.length > 6 ? '…' : ''}` : ''
+  finLivraison(team, L, 'atterrie', detail || `sur ${team.integration} (${L.merge.slice(0, 7)})${v}${r}${hors}. Tu peux le clore`, { merge })
+}
+// Un refus qui revient à l'équipier : ce qui a échoué, et quoi faire. Au-delà de MAX_RENVOIS, le capitaine décide.
+function renvoi(team, L, etapeRefus, raison, consigne) {
+  finLivraison(team, L, 'refusee', `${etapeRefus} : ${raison}`, { silencieux: true })
+  const c = find(L.membre)
+  const n = c?.team === team.id ? (c.renvois = (c.renvois || 0) + 1) : 0
+  if (n && n <= MAX_RENVOIS) {
+    c.etat = { verbe: 'working', texte: `Livraison refusée (${etapeRefus}) : à corriger`, at: Date.now() }
+    delete c.livree
+    enqueue(c, livraisons.texteRenvoi({ etape: etapeRefus, raison: equipage.ligne(raison, 600), consigne, branche: L.branche }))
+    broadcast({ type: 'console', console: c })
+    annonce(team, `${L.ligne} · livraison refusée (${etapeRefus} : ${equipage.ligne(raison, 300)}) : renvoyée à l'équipier (${n}/${MAX_RENVOIS}).`)
+  } else annonce(team, `${L.ligne} · livraison refusée (${etapeRefus} : ${equipage.ligne(raison, 300)})${n ? ` pour la ${n}e fois : pas renvoyée, à toi de décider (voir ${c.id}, puis dire ou clore)` : ' ; équipier déjà clos'}.`)
+}
+// Réveil groupé du capitaine : les résultats qui tombent à quelques secondes d'écart partent en un seul message.
+const annonces = new Map() // équipe → { lignes, debut, minuteur }
+function annonce(team, ligne) {
+  let a = annonces.get(team.id)
+  if (!a) annonces.set(team.id, (a = { lignes: [], debut: Date.now() }))
+  a.lignes.push(ligne)
+  clearTimeout(a.minuteur)
+  a.minuteur = setTimeout(() => {
+    annonces.delete(team.id)
+    wake(team.id, livraisons.texteAnnonce(a.lignes))
+  }, Math.max(0, Math.min(GROUPE_MS, a.debut + GROUPE_MAX_MS - Date.now())))
+}
+// (c) Le relecteur : une console Codex en lecture seule (launchOf, `c.revue`), posée sur le worktree temporaire.
+async function lanceRelecture(team, L) {
+  etape(team, L, 'relecture')
+  const dossier = await dossierTemporaire(team, L)
+  const id = newId()
+  const dir = path.join(DATA, 'verifications', id)
+  fs.mkdirSync(dir, { recursive: true, mode: 0o700 })
+  const diff = path.join(dir, 'difference.patch')
+  fs.writeFileSync(diff, await livraisons.difference(team.projet, L.base, L.merge), { mode: 0o600 })
+  // La tâche gardée par le serveur au lancement (hors de portée de l'équipier) : son brief, lui, est dans un dossier qu'il
+  // écrit (relecture du volet, n°8 : il pouvait réécrire la tâche contre laquelle il est relu).
+  let tache = ''
+  try {
+    tache = fs.readFileSync(path.join(TEAMS_LOG, team.id, L.membre, 'tache.md'), 'utf8').trim()
+  } catch {} // équipier lancé avant ce volet : la relecture se fait sur la différence et l'affirmation
+  const role = equipage.loadRoles(ROLES_DIR).relecteur?.texte || ''
+  fs.writeFileSync(path.join(dir, 'brief.md'), verification.briefRevue({ equipe: team, livraison: L, tache, role, diff, journal: journalLivraison(team, L), cli: CLI }), { mode: 0o600 })
+  garde(team, L)
+  L.revue = { etat: 'active', console: id, debut: Date.now() }
+  save()
+  try {
+    const r = await createConsole({ kind: 'codex', cwd: dossier, name: `Relecture · ${L.nom}`, plus: { id, revue: { equipe: team.id, livraison: L.id } } })
+    try {
+      garde(team, L)
+    } catch (e) {
+      fermeRelecteur(r, 0) // n°3 : l'équipe s'est arrêtée (ou la file a été coupée) pendant sa création
+      throw e
+    }
+  } catch (e) {
+    if (e.arret || e.annule) throw e
+    L.revue.etat = 'interrompue'
+    finLivraison(team, L, 'erreur', `le relecteur n'a pas pu démarrer (${e.message}) : rassemble-la à la main (git merge ${L.branche}), ou décoche « Contrôle Codex »`)
+  }
+}
+// Routes /agent/ du relecteur d'une livraison : mêmes commandes que le vérificateur de fin, sans relance.
+async function revueApi(req, res, url, me) {
+  const team = findTeam(me.revue.equipe)
+  const L = team?.livraisons?.find((x) => x.id === me.revue.livraison)
+  if (!L || L.revue?.console !== me.id) throw refus('relecture inconnue', 403)
+  if (req.method === 'GET' && url.pathname === '/agent/verification') {
+    const { id, qui, branche, base, merge, changes: fichiers, reserves: motifs, hors, sensibles, commande, verification: v, texte } = L
+    return send(res, 200, { mandat: 'relecture d’une livraison d’équipier', mission: team.mission, livraison: { id, qui, branche, integration: team.integration, base, merge, fichiers, reserves: motifs, hors, sensibles, commande, verification: v, affirmation: texte }, revue: L.revue })
+  }
+  if (req.method !== 'POST' || url.pathname !== '/agent/verification' || L.revue.etat !== 'active') throw refus('action hors mandat ou relecture terminée', 403)
+  const b = await readJson(req)
+  // Relecture du volet, n°5 : revérifié après l'attente du corps (un second verdict, ou un délai tombé entre-temps).
+  if (L.revue.etat !== 'active' || L.etat !== 'relecture') throw refus('relecture terminée', 403)
+  if (b.action === 'relancer') throw refus('pas de relance pour la relecture d’une livraison : conclus « refusee », ton texte est remis à l’équipier', 403)
+  if (b.action !== 'conclure') throw refus('action inconnue')
+  if (!['acceptee', 'refusee'].includes(b.verdict) || typeof b.texte !== 'string' || b.texte.trim().length < 15 || b.texte.length > 4000) throw refus('verdict et preuves attendus (15 à 4 000 caractères)')
+  const texte = equipage.ligne(b.texte, 2000) // remis à l'équipier : sans invisible (comme relancerMembre)
+  Object.assign(L.revue, { etat: b.verdict, verdict: texte, fin: Date.now() })
+  fermeRelecteur(me) // dans 2 s : la commande du relecteur reçoit d'abord sa réponse
+  if (b.verdict === 'refusee') renvoi(team, L, 'relecture', 'le relecteur Codex a refusé', `Ce qu'il écrit : « ${texte} »`)
+  else {
+    L.etat = 'attente' // reprise : atterrissage (fusion et vérification refaites seulement si l'intégration a bougé)
+    save()
+    broadcast({ type: 'team', team })
+    pousseFile(team)
+  }
+  return send(res, 200, { revue: L.revue })
+}
+function fermeRelecteur(c, delai = 2000) {
+  setTimeout(() => {
+    if (find(c.id) === c && c.status !== 'closed') fermeEnHistorique(c).then(save, (e) => console.error(`[livraison] relecteur ${c.id} : ${e.message}`))
+  }, delai)
+}
+// Réconciliation (toutes les 3 s) : relecteur arrêté ou muet trop longtemps, livraison soumise pendant une fin de traitement.
+function surveilleFile(team) {
+  for (const L of team.livraisons || []) {
+    if (L.etat !== 'relecture' || L.revue?.etat !== 'active') continue
+    const c = find(L.revue.console)
+    const mort = !c || ['closed', 'shell', 'error'].includes(c.status)
+    if (!mort && Date.now() - L.revue.debut < DELAI_RELECTURE) continue
+    L.revue.etat = 'interrompue'
+    if (c) fermeRelecteur(c, 0)
+    finLivraison(team, L, 'erreur', `${mort ? 'relecteur arrêté sans verdict' : `relecteur sans verdict en ${DELAI_RELECTURE / 60000} min`} : rassemble-la à la main (git merge ${L.branche}), ou fais redonner « done » à l'équipier pour une nouvelle relecture`)
+  }
+  if (!fileEnCours.has(team.id)) for (const L of team.livraisons || []) if (L.etat === 'relecture' && L.revue?.etat !== 'active') Object.assign(L, { etat: 'attente', detail: 'relecture à relancer' })
+  if (!fileActive(team)) {
+    for (const L of team.livraisons || []) if (L.etat === 'attente') finLivraison(team, L, 'annulee', livraisons.texteFileCoupee(L.branche))
+  } else if (!fileEnCours.has(team.id) && team.livraisons?.some((x) => x.etat === 'attente')) pousseFile(team)
+}
+// Arrêt de l'équipe : la vérification en cours est tuée (groupe, par PID), le relecteur fermé, les worktrees retirés.
+async function arreteFile(team) {
+  for (const L of team.livraisons || []) interromptLivraison(team, L, livraisons.TEXTE_ARRET, true)
+  await (fileEnCours.get(team.id) || Promise.resolve()).catch(() => {})
+  for (const r of consoles.filter((x) => x.revue?.equipe === team.id && x.status !== 'closed')) await fermeEnHistorique(r).catch(() => {})
+  await Promise.all((team.livraisons || []).map((L) => retraits.get(L.id)))
+  for (const L of team.livraisons || []) await retireTemporaire(team, L)
+}
+// Au démarrage : une étape coupée par l'arrêt de Meydan (fusion, vérification, atterrissage) repart du début ; un worktree
+// temporaire resté d'avant est retiré, sauf celui d'une relecture en cours (sa console tmux a pu survivre).
+async function repriseFiles() {
+  for (const team of teams) {
+    for (const L of team.livraisons || []) {
+      // Sa commande de vérification a survécu à l'arrêt (groupe détaché) : tuée par son PID, si c'est bien elle.
+      if (L.verifPid && livraisons.tueVerificationRestee(L.verifPid)) console.log(`[livraison] ${L.id} : vérification restée d'avant le redémarrage, arrêtée`)
+      delete L.verifPid
+      if (['fusion', 'verification', 'atterrissage'].includes(L.etat) || (L.etat === 'relecture' && L.revue?.etat !== 'active')) Object.assign(L, { etat: 'attente', detail: 'reprise après un redémarrage de Meydan' })
+    }
+    const racine = path.join(TEAMS_DIR, slug(path.basename(team.projet)), team.id)
+    let noms = []
+    try {
+      noms = fs.readdirSync(racine).filter((n) => /^livraison-l[0-9a-f]{6}$/.test(n))
+    } catch {} // pas de dossier : rien à balayer
+    for (const n of noms) {
+      const L = team.livraisons?.find((x) => `livraison-${x.id}` === n)
+      if (L?.etat === 'relecture') continue
+      if (L) delete L.dossier
+      await equipage.dropWorktree(team.projet, path.join(racine, n), true).catch((e) => console.error(`[livraison] balayage ${n} : ${e.message}`))
+    }
+  }
+  save()
+}
+
 function teamView(me) {
   const t = findTeam(me.team)
+  const file = t.git && me.chief ? { file: { active: !!t.file?.active, commande: t.file?.commande || '', relecture: !!t.verifierFin, livraisons: (t.livraisons || []).slice(-8).map(({ id, membre, nom, etat, merge, detail, at, fin }) => ({ id, membre, nom, etat, merge: merge || '', detail: detail || '', at, fin })) } } : {}
   return {
-    equipe: { id: t.id, nom: t.nom, projet: t.projet, git: t.git, branche: t.branche, integration: t.integration, pret: t.pret, livre: t.livre },
+    equipe: { id: t.id, nom: t.nom, projet: t.projet, git: t.git, branche: t.branche, integration: t.integration, pret: t.pret, livre: t.livre, ...file },
     membres: (me.chief ? membersOf(t.id) : [me]).map((c) => ({ id: c.id, role: c.role, nom: c.nom, chief: !!c.chief, statut: c.status, etat: c.etat || null, branche: c.branch || '', dossier: c.cwd, attente: c.attente?.length || 0 })),
   }
 }
@@ -1986,6 +2419,7 @@ async function verifierApi(req, res, url, c) {
   if (req.method === 'GET' && url.pathname === '/agent/verification') return send(res, 200, { mission: team.mission, verification: v, membres: preuvesEquipe(team) })
   if (req.method !== 'POST' || url.pathname !== '/agent/verification' || v.etat !== 'active') throw refus('action hors mandat ou vérification terminée', 403)
   const b = await readJson(req)
+  if (team.verification !== v || v.etat !== 'active') throw refus('vérification terminée', 403) // revérifié après l'attente du corps (même course que la relecture d'une livraison)
   if (b.action === 'conclure') finVerification(team, b.verdict, b.texte)
   else if (b.action === 'relancer') {
     const m = membersOf(team.id).find((x) => x.id === b.id && v.membres.includes(x.id))
@@ -2038,7 +2472,7 @@ async function agentApi(req, res, url, me) {
   if (action === 'lancer') {
     if (budget.aValider(me.team)) return send(res, 202, budget.demandeLancement(me, body)) // volet quota : Orkun valide d'abord
     const c = await addMember(me, body)
-    return send(res, 201, { id: c.id, nom: c.name, dossier: c.cwd, branche: c.branch })
+    return send(res, 201, { id: c.id, nom: c.name, dossier: c.cwd, branche: c.branch, ports: c.ports ? blocsPorts.texte(c.ports) : '', fichiers: c.fichiers || [] })
   }
   if (action === 'dire') {
     const x = memberOf(me, body.id)
@@ -2735,6 +3169,19 @@ async function api(req, res, url) {
       save(); broadcast({ type: 'team', team })
       return send(res, 200, { team })
     }
+    // File de livraison (volet livraison-equipes) : Orkun l'active et règle sa commande de vérification. Route de session :
+    // un agent ne peut ni l'activer ni changer la commande (elle tourne hors de tout bac à sable).
+    if (parts.length === 4 && parts[3] === 'livraison' && m === 'PATCH') {
+      if (!team.git) throw refus('projet sans git : pas de file de livraison (les équipiers écrivent dans le dossier même)', 409)
+      const b = await readJson(req)
+      if (b.active !== undefined && typeof b.active !== 'boolean') throw refus('réglage invalide')
+      team.file = { active: b.active ?? !!team.file?.active, commande: b.commande === undefined ? team.file?.commande || '' : livraisons.lisCommande(b.commande) }
+      if (!team.file.active) for (const L of team.livraisons || []) interromptLivraison(team, L, livraisons.texteFileCoupee(L.branche))
+      save()
+      broadcast({ type: 'team', team })
+      if (team.file.active) pousseFile(team)
+      return send(res, 200, { team })
+    }
     if (parts.length === 4 && parts[3] === 'livrer' && m === 'POST') {
       // Orkun livre ce qu'il a lu : l'écran renvoie le commit prêt qu'il affichait au moment de l'appui. Si le capitaine
       // a redéclaré autre chose entre-temps, rien ne part (et ce n'est pas au capitaine d'agir : il n'est pas réveillé).
@@ -3041,6 +3488,7 @@ const server = http.createServer(async (req, res) => {
       const me = find(String(req.headers['x-meydan-id'] || ''))
       if (!me || !same(req.headers['x-meydan-token'], tokenOf(me.id))) return send(res, 403, { error: 'refusé' })
       if (me.verificationTeam) return await verifierApi(req, res, url, me)
+      if (me.revue) return await revueApi(req, res, url, me) // relecteur d'une livraison (volet livraison-equipes)
       if (url.pathname === '/agent/capitaine' && req.method === 'POST') {
         const team = await promouvoir(me, (await readJson(req)).mission)
         return send(res, 201, { equipe: { id: team.id, nom: team.nom, projet: team.projet }, brief: path.join(memberDir(me), 'brief.md') })
@@ -3195,6 +3643,7 @@ server.on('upgrade', (req, socket, head) => {
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   revientDePlantage() // avant l'écoute : aucune page n'est encore là pour taire la notification
   await reviveAfterBoot() // premier lancement depuis un redémarrage du VPS : les consoles qui vivaient sont rouvertes
+  await repriseFiles() // file de livraison : étapes coupées par l'arrêt reprises, worktrees temporaires balayés
   await reconcile()
   // Consoles ouvertes avant le jeton pour tous (11/11) : le fichier est écrit et sa place posée dans la session tmux, où
   // `meydan` la lit (l'agent déjà lancé ne voit pas une variable ajoutée après lui).

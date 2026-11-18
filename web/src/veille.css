@@ -46,3 +46,6 @@
 /* Le formulaire prend le premier plan pendant la création, y compris sur un téléphone de 667 points de haut. */
 [data-reel='oui'] .app.is-mobile .rail:has(.pli.is-ouvert) > :is(.scene, .veille-acces),
 [data-reel='oui'] .app.is-mobile .rail:has(.pli.is-ouvert) > .rail-utiles > .veille-acces { display: none; }
+/* File de livraison d'une équipe (volet livraison-equipes) : la commande sur toute la largeur, l'état sur une ligne. */
+.verification-reglage .file-commande { display: block; width: 100%; box-sizing: border-box; margin: 4px 0 2px; padding: 4px 6px; font: 12px/1.3 var(--mono, monospace); background: transparent; color: inherit; border: 1px solid var(--line, currentColor); }
+.verification-reglage .file-etat { margin: 2px 0 0; font-size: 12px; opacity: .85; }

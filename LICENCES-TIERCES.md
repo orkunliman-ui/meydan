@@ -30,6 +30,39 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
+## Hangar
+
+Le volet « livraison-equipes » (17/11/2026) reprend trois idées de Hangar (`hangar-ai/hangar`, commit `279d6ee` lu le
+17/11/2026) : la file de livraison des équipiers (fusion à part, commande de vérification, relecteur au contexte neuf,
+avance rapide ; `lib/livraisons.mjs`, d'après `crates/hangar-core/src/delivery.rs`), les fichiers réservés d'une tâche
+(`lib/reserves.mjs` : la lecture des motifs et leur chevauchement sont portés en JavaScript depuis
+`crates/hangar-core/src/delivery/owns.rs` et `crates/hangar-core/src/board.rs`, avec leurs tables d'essai) et un bloc de
+20 ports par équipier (`lib/ports.mjs`, d'après `crates/hangar-core/src/pty.rs`). Aucun de ses fichiers n'est embarqué.
+
+```
+MIT License
+
+Copyright (c) 2026 simnJS
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
 ## Iosevka (police « Iosevka UI »)
 
 `web/src/fonts/IosevkaUI-Regular.woff` et `IosevkaUI-Bold.woff` sont un sous-ensemble d'Iosevka 22.1.2 (Renzhi Li,

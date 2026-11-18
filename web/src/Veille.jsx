@@ -19,11 +19,38 @@ export function ReglageVerification({ team }) {
   }
   const v = team.verification
   return <div className="verification-reglage">
-    <label title="Quand le capitaine déclare le travail fini, Codex le relit avant la livraison : une vérification, 2 relances par équipier au plus"><input type="checkbox" checked={!!team.verifierFin} disabled={busy} onChange={(e) => change(e.target.checked)} /> Contrôle Codex avant livraison</label>
+    <label title="Quand le capitaine déclare le travail fini, Codex le relit avant la livraison : une vérification, 2 relances par équipier au plus. File de livraison active : Codex relit aussi chaque livraison d’équipier avant qu’elle entre dans l’intégration"><input type="checkbox" checked={!!team.verifierFin} disabled={busy} onChange={(e) => change(e.target.checked)} /> Contrôle Codex avant livraison</label>
     <small>Codex relit le travail fini avant que tu livres</small>
     {v && <p role="status">{v.etat === 'active' ? 'Vérification en cours' : v.etat === 'acceptee' ? 'Vérification acceptée' : 'Vérification à reprendre'}{v.verdict ? ` — ${v.verdict}` : ''}</p>}
+    {team.git && <ReglageFile team={team} />}
     {erreur && <p role="alert">{erreur}</p>}
   </div>
+}
+
+// File de livraison d'une équipe sous git (volet livraison-equipes, 17/11) : Orkun l'active et règle sa commande de
+// vérification ici, à côté du contrôle Codex ; l'état de la file tient sur une ligne, sous le réglage.
+const ETATS_FILE = { attente: 'en attente', fusion: 'en fusion', verification: 'en vérification', relecture: 'en relecture', atterrissage: 'atterrit' }
+const FINS_FILE = { atterrie: 'atterrie', refusee: 'refusée', retenue: 'retenue pour le capitaine', annulee: 'annulée', erreur: 'en erreur' }
+function ReglageFile({ team }) {
+  const [commande, setCommande] = useState(team.file?.commande || '')
+  const [erreur, setErreur] = useState('')
+  const [busy, setBusy] = useState(false)
+  useEffect(() => setCommande(team.file?.commande || ''), [team.file?.commande])
+  const regle = async (corps) => {
+    setBusy(true); setErreur('')
+    try { await api('PATCH', `/api/equipes/${team.id}/livraison`, corps) }
+    catch (e) { setErreur(e.message) } finally { setBusy(false) }
+  }
+  const active = !!team.file?.active
+  const liste = team.livraisons || []
+  const enCours = liste.filter((l) => ETATS_FILE[l.etat])
+  const derniere = [...liste].reverse().find((l) => FINS_FILE[l.etat])
+  return <>
+    <label className="file-case" title="Le « done » d’un équipier qui écrit : sa branche est fusionnée à part, vérifiée par ta commande, relue par Codex si le contrôle est coché, puis posée sur la branche d’intégration de l’équipe (jamais sur le projet : « Livrer » reste à toi)"><input type="checkbox" checked={active} disabled={busy} onChange={(e) => regle({ active: e.target.checked })} /> File de livraison</label>
+    {active && <input className="file-commande" type="text" aria-label="Commande de vérification de l’équipe" placeholder="Commande de vérification (npm test…)" maxLength={500} value={commande} disabled={busy} onChange={(e) => setCommande(e.target.value)} onBlur={() => commande.trim() !== (team.file?.commande || '') && regle({ commande })} onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()} />}
+    {(enCours.length > 0 || derniere) && <p role="status" className="file-etat">File : {enCours.length ? enCours.map((l) => `${l.nom} ${ETATS_FILE[l.etat]}`).join(' · ') : 'vide'}{derniere ? ` — dernière : ${derniere.nom} ${FINS_FILE[derniere.etat]}${derniere.etat === 'atterrie' && derniere.merge ? ` ${derniere.merge.slice(0, 7)}` : ''}` : ''}</p>}
+    {erreur && <p role="alert">{erreur}</p>}
+  </>
 }
 
 export function Veille({ consoles }) {

@@ -37,8 +37,9 @@ Réservé au vérificateur de fin :
 
 Réservé au capitaine :
   meydan roles                            les rôles disponibles
-  meydan lancer <rôle> "<nom>" <fichier de tâche> [--base <branche>] [--dossier <sous-dossier>]
-                                          (--dossier : projet sans git, un sous-dossier par équipier qui écrit)
+  meydan lancer <rôle> "<nom>" <fichier de tâche> [--base <branche>] [--dossier <sous-dossier>] [--fichiers '<motifs>']
+                                          (--dossier : projet sans git, un sous-dossier par équipier qui écrit ;
+                                           --fichiers : fichiers réservés, refus si une tâche en cours les chevauche)
   meydan voir <id>                        dernières lignes de la console d'un équipier
   meydan dire <id> "<une ligne>"          message à un équipier (remis quand il est au repos)
   meydan clore <id>                       fermer un équipier`
@@ -132,6 +133,12 @@ if (cmd === 'nav') {
   const { equipe, membres } = await appel('GET', 'etat')
   console.log(`Équipe « ${equipe.nom} » (${equipe.id}) · projet ${equipe.projet}${equipe.git ? ` · branche ${equipe.branche || 'tête détachée'} · intégration ${equipe.integration}` : ' · sans git'}`)
   if (equipe.livre) console.log(`Livré il y a ${depuis(equipe.livre.at)} : ${equipe.livre.avant.slice(0, 7)} → ${equipe.livre.apres.slice(0, 7)}`)
+  // File de livraison (volet livraison-equipes) : réglée par Orkun ; les livraisons récentes, la plus neuve en dernier.
+  if (equipe.file) {
+    const f = equipe.file
+    console.log(`File de livraison : ${f.active ? `active · vérification ${f.commande ? `« ${f.commande} »` : 'aucune'} · relecture Codex ${f.relecture ? 'oui' : 'non'}` : 'inactive (fusionne à la main)'}`)
+    for (const l of f.livraisons || []) console.log(`  - ${l.id} · ${l.nom} (${l.membre}) : ${l.etat}${l.merge ? ` ${l.merge.slice(0, 7)}` : ''} (il y a ${depuis(l.fin || l.at)})${l.detail ? ` — ${l.detail}` : ''}`)
+  }
   for (const m of membres) {
     const etat = m.etat ? `${m.etat.verbe} (il y a ${depuis(m.etat.at)}) — ${m.etat.texte || 'sans détail'}` : 'aucun statut déclaré'
     console.log(`- ${m.id} · ${m.role} « ${m.nom} » · console : ${m.statut}${m.attente ? ` · ${m.attente} message(s) en attente` : ''}\n    ${etat}${m.branche ? `\n    branche ${m.branche}` : ''}`)
@@ -148,18 +155,25 @@ if (cmd === 'nav') {
   const base = i >= 0 ? a.splice(i, 2)[1] : undefined
   const j = a.indexOf('--dossier')
   const dossier = j >= 0 ? a.splice(j, 2)[1] : undefined
+  // Fichiers réservés (volet livraison-equipes) : `--fichiers '<motifs>'`, plusieurs fois si besoin.
+  const fichiers = []
+  for (let k = a.indexOf('--fichiers'); k >= 0; k = a.indexOf('--fichiers')) {
+    const v = a.splice(k, 2)[1]
+    if (!v) fin('usage : --fichiers \'<motifs>\' (par ex. --fichiers \'src/paiements/**\')', 2)
+    fichiers.push(v)
+  }
   const [role, nom, fichier] = a
-  if (!role || !nom || !fichier || (i >= 0 && !base) || (j >= 0 && !dossier)) fin('usage : meydan lancer <rôle> "<nom>" <fichier de tâche> [--base <branche>] [--dossier <sous-dossier>]', 2)
+  if (!role || !nom || !fichier || (i >= 0 && !base) || (j >= 0 && !dossier)) fin('usage : meydan lancer <rôle> "<nom>" <fichier de tâche> [--base <branche>] [--dossier <sous-dossier>] [--fichiers \'<motifs>\']', 2)
   let tache
   try {
     tache = fs.readFileSync(fichier === '-' ? 0 : fichier, 'utf8')
   } catch (e) {
     fin(`fichier de tâche illisible : ${e.message}`, 2)
   }
-  const r = await appel('POST', 'lancer', { role, nom, tache, base, dossier })
+  const r = await appel('POST', 'lancer', { role, nom, tache, base, dossier, ...(fichiers.length && { fichiers }) })
   // 202 (volet quota) : l'équipe est « à valider », rien n'est lancé tant qu'Orkun n'a pas accepté.
   if (r.attente) console.log(`demande envoyée à ${NOM} (${r.demande}) : il doit l'accepter ; tu recevras sa réponse dans cette console par un message [Meydan]. Ne relance pas la commande.`)
-  else console.log(`lancé : ${r.id} · ${r.nom}\n  dossier ${r.dossier}${r.branche ? `\n  branche ${r.branche}` : ''}`)
+  else console.log(`lancé : ${r.id} · ${r.nom}\n  dossier ${r.dossier}${r.branche ? `\n  branche ${r.branche}` : ''}${r.ports ? `\n  ports ${r.ports}` : ''}${r.fichiers?.length ? `\n  fichiers réservés ${r.fichiers.join(' ')}` : ''}`)
 } else if (cmd === 'dire') {
   if (!a[0] || !a[1]) fin('usage : meydan dire <id> "<une ligne>"', 2)
   await appel('POST', 'dire', { id: a[0], texte: a.slice(1).join(' ') })

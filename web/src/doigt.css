@@ -46,6 +46,19 @@
       position: absolute;
       inset: -18px 0 -6px;
     }
+    /* Case « File de livraison » (volet livraison-equipes, équipe git), juste sous « Contrôle Codex » : avec le même débord
+       vers le haut, sa zone recouvrait TOUTE la ligne de la première (sonde du 17/11 : un toucher au milieu de « Contrôle
+       Codex » cochait la file). Sa zone de 44 px est sa propre hauteur, 6 px sous la zone de la première, sans débord. */
+    .equipe .verification-reglage label.file-case {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      min-height: 44px;
+      margin-top: 6px;
+    }
+    .equipe .verification-reglage label.file-case::before {
+      content: none;
+    }
     .equipe-tete .livrer {
       position: relative;
       z-index: 1;
